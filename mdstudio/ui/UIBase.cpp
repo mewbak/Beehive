@@ -3659,6 +3659,7 @@ PropertyPanelBase::PropertyPanelBase( wxWindow* parent, wxWindowID id, const wxP
 	fgSizer63->Add( m_labelName, 0, wxALL, 5 );
 
 	m_propertyGrid = new wxPropertyGrid(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxPG_DEFAULT_STYLE);
+	m_propertyGrid->SetExtraStyle( wxPG_EX_HELP_AS_TOOLTIPS );
 	fgSizer63->Add( m_propertyGrid, 0, wxALL|wxEXPAND, 5 );
 
 

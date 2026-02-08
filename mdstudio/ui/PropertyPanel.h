@@ -47,17 +47,22 @@ private:
 
 	enum class BuiltInProperties
 	{
-		Name
+		Name,
+		SizeFromSprite,
+		Width,
+		Height
 	};
 
-	void GetEditingVariables(GameObjectType*& gameObjectType, GameObject*& gameObject, GameObjectType*& prefabChildType, GameObjectType::PrefabChild*& prefabChild, GameObjectArchetype*& archetype, Actor*& actor, std::vector<GameObjectVariable>*& typeVariables, std::vector<GameObjectVariable>*& instanceVariables, std::string& editingName);
-	GameObjectVariable* FindVariable(std::vector<GameObjectVariable>& variables, const std::string& name, int componentIdx);
-	GameObjectVariable* FindVariableByTag(std::vector<GameObjectVariable>& variables, const std::string& tag, int componentIdx);
-	GameObjectVariable& AddVariable(std::vector<GameObjectVariable>& variables);
+	GameObjectBase* GetEditingObject();
+	GameObjectType* GetEditingType();
+	std::string GetEditingName();
+	GameObjectVariable* PrepareVarForEditing(const char* variableName, int componentIdx);
+
+	void SetObjectProperty(GameObjectVariable* variable, GameObjectBase* gameObject);
 
 	void OnContextMenuClick(wxCommandEvent& event);
 
-	void AddProperty(const GameObject* gameObject, const GameObjectType* gameObjectType, const GameObjectVariable& variable, int componentIdx, const Actor* actor, const GameObjectVariable* spriteSheetVar, bool enabled = true);
+	void AddProperty(const GameObjectBase* gameObject, const GameObjectType* gameObjectType, const GameObjectVariable& variable, int componentIdx, bool enabled = true);
 	int PopulateSpriteActorList(wxArrayString& list, const std::string& selectedValue);
 	int PopulateSpriteSheetList(wxArrayString& list, const Actor& actor, const std::string& selectedValue);
 	int PopulateSpriteAnimList(wxArrayString& list, const Actor& actor, SpriteSheetId spriteSheetId, const std::string& selectedValue);

@@ -31,7 +31,7 @@
     <property name="relative_path">1</property>
     <property name="use_microsoft_bom">0</property>
     <property name="use_native_eol">0</property>
-    <object class="Frame" expanded="true">
+    <object class="Frame" expanded="false">
       <property name="aui_managed">0</property>
       <property name="aui_manager_style">wxAUI_MGR_DEFAULT</property>
       <property name="bg"></property>
@@ -60,7 +60,7 @@
       <property name="window_name"></property>
       <property name="window_style">wxTAB_TRAVERSAL</property>
       <property name="xrc_skip_sizer">1</property>
-      <object class="wxMenuBar" expanded="true">
+      <object class="wxMenuBar" expanded="false">
         <property name="bg"></property>
         <property name="context_help"></property>
         <property name="context_menu">1</property>
@@ -82,17 +82,17 @@
         <property name="window_extra_style"></property>
         <property name="window_name"></property>
         <property name="window_style"></property>
-        <object class="wxMenu" expanded="true">
+        <object class="wxMenu" expanded="false">
           <property name="label">Project</property>
           <property name="name">m_menuProject</property>
           <property name="permission">protected</property>
-          <object class="submenu" expanded="true">
+          <object class="submenu" expanded="false">
             <property name="bitmap"></property>
             <property name="label">Open Recent</property>
             <property name="name">m_menuOpenRecent</property>
             <property name="permission">protected</property>
           </object>
-          <object class="separator" expanded="true">
+          <object class="separator" expanded="false">
             <property name="name">m_separator1</property>
             <property name="permission">none</property>
           </object>
@@ -153,11 +153,11 @@
             <event name="OnMenuSelection">OnBtnProjSettings</event>
           </object>
         </object>
-        <object class="wxMenu" expanded="true">
+        <object class="wxMenu" expanded="false">
           <property name="label">Build</property>
           <property name="name">m_menuBuild</property>
           <property name="permission">protected</property>
-          <object class="wxMenuItem" expanded="true">
+          <object class="wxMenuItem" expanded="false">
             <property name="bitmap"></property>
             <property name="checked">0</property>
             <property name="enabled">1</property>
@@ -171,7 +171,7 @@
             <property name="unchecked_bitmap"></property>
             <event name="OnMenuSelection">OnBtnBuildExport</event>
           </object>
-          <object class="wxMenuItem" expanded="true">
+          <object class="wxMenuItem" expanded="false">
             <property name="bitmap"></property>
             <property name="checked">0</property>
             <property name="enabled">1</property>
@@ -185,7 +185,7 @@
             <property name="unchecked_bitmap"></property>
             <event name="OnMenuSelection">OnBtnBuildAssemble</event>
           </object>
-          <object class="wxMenuItem" expanded="true">
+          <object class="wxMenuItem" expanded="false">
             <property name="bitmap"></property>
             <property name="checked">0</property>
             <property name="enabled">1</property>
@@ -12838,7 +12838,7 @@
         </object>
       </object>
     </object>
-    <object class="Dialog" expanded="true">
+    <object class="Dialog" expanded="false">
       <property name="aui_managed">0</property>
       <property name="aui_manager_style">wxAUI_MGR_DEFAULT</property>
       <property name="bg"></property>
@@ -12867,7 +12867,7 @@
       <property name="window_name"></property>
       <property name="window_style"></property>
       <event name="OnClose">OnClose</event>
-      <object class="wxBoxSizer" expanded="true">
+      <object class="wxBoxSizer" expanded="false">
         <property name="minimum_size"></property>
         <property name="name">bSizer69</property>
         <property name="orient">wxVERTICAL</property>
@@ -26862,7 +26862,7 @@
         </object>
       </object>
     </object>
-    <object class="Panel" expanded="false">
+    <object class="Panel" expanded="true">
       <property name="aui_managed">0</property>
       <property name="aui_manager_style">wxAUI_MGR_DEFAULT</property>
       <property name="bg"></property>
@@ -26886,7 +26886,7 @@
       <property name="window_extra_style"></property>
       <property name="window_name"></property>
       <property name="window_style">wxTAB_TRAVERSAL</property>
-      <object class="wxFlexGridSizer" expanded="false">
+      <object class="wxFlexGridSizer" expanded="true">
         <property name="cols">1</property>
         <property name="flexible_direction">wxBOTH</property>
         <property name="growablecols">0</property>
@@ -26988,7 +26988,7 @@
             <property name="docking">Left</property>
             <property name="drag_accept_files">0</property>
             <property name="enabled">1</property>
-            <property name="extra_style"></property>
+            <property name="extra_style">wxPG_EX_HELP_AS_TOOLTIPS</property>
             <property name="fg"></property>
             <property name="floatable">1</property>
             <property name="font"></property>

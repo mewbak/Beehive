@@ -145,7 +145,7 @@ private:
 template <typename T> void TimelinePanel::SyncSpriteObj(AnimationActor& animActor, const GameObjectType& gameObjType, T& spriteObj, ion::Vector2i positionOffset)
 {
 	float frame = m_animation->GetFrame();
-	SpriteAnimId originalSpriteAnim = spriteObj.GetSpriteAnim();
+	SpriteAnimId originalSpriteAnim = spriteObj.GetSpriteAnimId();
 
 	//Apply all track values to object
 	if (animActor.m_trackPosition.GetNumKeyframes() > 0)
@@ -160,7 +160,7 @@ template <typename T> void TimelinePanel::SyncSpriteObj(AnimationActor& animActo
 	{
 		std::pair<SpriteSheetId, SpriteAnimId> spriteAnim = animActor.m_trackSpriteAnim.GetValue(frame);
 		spriteObj.SetSpriteSheetId(spriteAnim.first);
-		spriteObj.SetSpriteAnim(spriteAnim.second);
+		spriteObj.SetSpriteAnimId(spriteAnim.second);
 
 		//Advance current sprite anim
 		if (Actor* spriteActor = m_project.GetActor(gameObjType.GetSpriteActorId()))

@@ -1868,8 +1868,8 @@ void MainWindow::OnMenuToolsTweaksGameObjCentreOrigin(wxCommandEvent& event)
 						for (int j = 0; j < prefabChildren.size(); j++)
 						{
 							GameObjectType::PrefabChild& child = prefabChildren[j];
-							const float childWidth = (child.dimensions.x > 0) ? child.dimensions.x : (gameObject.GetDimensions().x > 0) ? gameObject.GetDimensions().x : gameObjectType->GetDimensions().x;
-							const float childHeight = (child.dimensions.y > 0) ? child.dimensions.y : (gameObject.GetDimensions().y > 0) ? gameObject.GetDimensions().y : gameObjectType->GetDimensions().y;
+							const float childWidth = (child.GetDimensions().x > 0) ? child.GetDimensions().x : (gameObject.GetDimensions().x > 0) ? gameObject.GetDimensions().x : gameObjectType->GetDimensions().x;
+							const float childHeight = (child.GetDimensions().y > 0) ? child.GetDimensions().y : (gameObject.GetDimensions().y > 0) ? gameObject.GetDimensions().y : gameObjectType->GetDimensions().y;
 							child.relativePos.x = -(width / 2) + child.relativePos.x + (childWidth / 2);
 							child.relativePos.y = -(height / 2) + child.relativePos.y + (childHeight / 2);
 						}
@@ -3212,7 +3212,6 @@ void MainWindow::OnBtnTilesDelete(wxCommandEvent& event)
 
 void MainWindow::OnBtnTilesCleanup(wxCommandEvent& event)
 {
-#if !BEEHIVE_FIXED_STAMP_MODE //No tile/collision editing in fixed mode
 	if(m_project.get())
 	{
 		if(m_project->CleanupTiles())
@@ -3220,7 +3219,6 @@ void MainWindow::OnBtnTilesCleanup(wxCommandEvent& event)
 			RefreshAll();
 		}
 	}
-#endif
 }
 
 void MainWindow::OnBtnColMapClear(wxCommandEvent& event)

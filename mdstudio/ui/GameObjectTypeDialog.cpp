@@ -190,7 +190,7 @@ void GameObjectTypeDialog::OnBtnApplyObjChanges(wxCommandEvent& event)
 					if (const SpriteSheet* spriteSheet = actor->FindSpriteSheet(m_choiceSpriteSheet->GetStringSelection().c_str().AsChar()))
 					{
 						gameObjType->SetSpriteSheetId(actor->FindSpriteSheetId(m_choiceSpriteSheet->GetStringSelection().c_str().AsChar()));
-						gameObjType->SetSpriteAnim(spriteSheet->FindAnimationId(m_choiceSpriteAnim->GetStringSelection().c_str().AsChar()));
+						gameObjType->SetSpriteAnimId(spriteSheet->FindAnimationId(m_choiceSpriteAnim->GetStringSelection().c_str().AsChar()));
 					}
 				}
 			}
@@ -352,7 +352,7 @@ void GameObjectTypeDialog::PopulateSpriteAnims(const GameObjectType& gameObjType
 					m_choiceSpriteAnim->AppendString(it->second.GetName());
 				}
 
-				if (const SpriteAnimation* spriteAnim = spriteSheet->GetAnimation(gameObjType.GetSpriteAnim()))
+				if (const SpriteAnimation* spriteAnim = spriteSheet->GetAnimation(gameObjType.GetSpriteAnimId()))
 				{
 					m_choiceSpriteAnim->SetStringSelection(spriteAnim->GetName());
 				}

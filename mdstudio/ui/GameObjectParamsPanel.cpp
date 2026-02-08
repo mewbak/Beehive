@@ -132,7 +132,7 @@ void GameObjectParamsPanel::OnButtonNewArchetype(wxCommandEvent& event)
 
 			if (const GameObjectArchetype* archetype = gameObjectType->GetArchetype(archetypeId))
 			{
-				m_choiceArchetypes->SetStringSelection(archetype->name);
+				m_choiceArchetypes->SetStringSelection(archetype->GetName());
 			}
 		}
 	}
@@ -289,7 +289,7 @@ void GameObjectParamsPanel::OnSelectSpriteAnim(wxCommandEvent& event)
 	{
 		if (const SpriteSheet* spriteSheet = actor->GetSpriteSheet(m_gameObject->GetSpriteSheetId()))
 		{
-			m_gameObject->SetSpriteAnim(spriteSheet->FindAnimationId(m_choiceSpriteAnim->GetStringSelection().c_str().AsChar()));
+			m_gameObject->SetSpriteAnimId(spriteSheet->FindAnimationId(m_choiceSpriteAnim->GetStringSelection().c_str().AsChar()));
 		}
 	}
 }
@@ -303,7 +303,7 @@ void GameObjectParamsPanel::PopulateArchetypeList(wxChoice& list, GameObjectType
 	{
 		for (TGameObjectArchetypeMap::const_iterator it = gameObjectType->GetArchetypes().begin(), end = gameObjectType->GetArchetypes().end(); it != end; ++it)
 		{
-			list.AppendString(it->second.name);
+			list.AppendString(it->second.GetName());
 		}
 	}
 }
@@ -357,7 +357,7 @@ void GameObjectParamsPanel::PopulateSpriteAnimList(wxChoice& list, SpriteSheetId
 				list.AppendString(it->second.GetName());
 			}
 
-			if (const SpriteAnimation* spriteAnim = spriteSheet->GetAnimation(m_gameObject->GetSpriteAnim()))
+			if (const SpriteAnimation* spriteAnim = spriteSheet->GetAnimation(m_gameObject->GetSpriteAnimId()))
 			{
 				list.SetStringSelection(spriteAnim->GetName());
 			}

@@ -74,7 +74,7 @@ void GameObjectTypesPanel::PopulateArchetypes(GameObjectTypeId gameObjectTypeId)
 		for (TGameObjectArchetypeMap::const_iterator it = archetypes.begin(), end = archetypes.end(); it != end; ++it, ++index)
 		{
 			m_archetypeMap.push_back(it->second.id);
-			m_listGameObjArchetypes->Insert(it->second.name, index);
+			m_listGameObjArchetypes->Insert(it->second.GetName(), index);
 
 			if (it->first == m_project.GetPaintGameObjectArchetype())
 			{

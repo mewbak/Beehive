@@ -59,7 +59,7 @@ void SceneExplorerPanel::Refresh(bool eraseBackground, const wxRect *rect)
 						{
 							if (const GameObjectType* prefabChildType = m_project.GetGameObjectType(prefabChild.typeId))
 							{
-								std::string childName = prefabChild.name;
+								std::string childName = prefabChild.GetName();
 								if(childName.size() == 0)
 									childName = "[" + prefabChildType->GetName() + "_id" + std::to_string(labelIdx++) + "]";
 								wxTreeItemId childId = m_tree->AppendItem(itemId, childName);
@@ -226,7 +226,7 @@ void SceneExplorerPanel::OnItemContextMenu(wxTreeEvent& event)
 		{
 			ArchetypeEntry archetypeEntry;
 			archetypeEntry.archetypeId = archetype.first;
-			archetypeEntry.archetypeName = archetype.second.name;
+			archetypeEntry.archetypeName = archetype.second.GetName();
 			archetypeEntry.typeId = objectType.first;
 			archetypeEntry.typeName = objectType.second.GetName();
 
@@ -317,7 +317,7 @@ void SceneExplorerPanel::OnContextMenuClick(wxCommandEvent& event)
 						newObj.SetDimensions(originalObj->GetDimensions().x == 0 ? originalType->GetDimensions() : originalObj->GetDimensions());
 						newObj.SetSpriteActorId(m_project.GetActor(originalObj->GetSpriteActorId()) ? originalObj->GetSpriteActorId() : originalType->GetSpriteActorId());
 						newObj.SetSpriteSheetId(originalObj->GetSpriteSheetId() == InvalidSpriteSheetId ? originalType->GetSpriteSheetId() : originalObj->GetSpriteSheetId());
-						newObj.SetSpriteAnim(originalObj->GetSpriteAnim() == InvalidSpriteAnimId ? originalType->GetSpriteAnim() : originalObj->GetSpriteAnim());
+						newObj.SetSpriteAnimId(originalObj->GetSpriteAnimId() == InvalidSpriteAnimId ? originalType->GetSpriteAnimId() : originalObj->GetSpriteAnimId());
 
 						//Remove original and place new
 						m_project.GetEditingMap().RemoveGameObject(it->second);

@@ -62,7 +62,7 @@ namespace
 
 			if(trackMask & (1 << eTrackSpriteAnim))
 			{
-				AddOrEditKeyframe(std::make_pair(gameObject->GetSpriteSheetId(), gameObject->GetSpriteAnim()), actor.m_trackSpriteAnim, frame);
+				AddOrEditKeyframe(std::make_pair(gameObject->GetSpriteSheetId(), gameObject->GetSpriteAnimId()), actor.m_trackSpriteAnim, frame);
 			}
 		}
 	}
@@ -686,7 +686,7 @@ void TimelinePanel::OnSelectSpriteAnim(wxCommandEvent& event)
 		if(GameObject* gameObject = m_project.GetEditingMap().GetGameObject(m_selectedActor->GetGameObjectId()))
 		{
 			gameObject->SetSpriteSheetId(m_spriteSheetCache[m_choiceSpriteAnim->GetSelection()].first);
-			gameObject->SetSpriteAnim(m_spriteSheetCache[m_choiceSpriteAnim->GetSelection()].second);
+			gameObject->SetSpriteAnimId(m_spriteSheetCache[m_choiceSpriteAnim->GetSelection()].second);
 
 			PopulateTimeline(*m_animation);
 			m_mainWindow.RedrawPanel(MainWindow::ePanelMap);

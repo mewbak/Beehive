@@ -45,27 +45,40 @@ std::string MapToolManipulatorStamp::GetStatusText()
 std::string MapToolManipulatorStamp::GetTooltipText(const MapObjIdentifierStamp& object, const ion::Vector2i& cursorPosPx)
 {
 	const ion::Vector2i tileSize(GetProject().GetPlatformConfig().tileWidth, GetProject().GetPlatformConfig().tileHeight);
-	const ion::Vector2i cursorPosTl = cursorPosPx * tileSize;
+	const ion::Vector2i cursorPosTl = cursorPosPx / tileSize;
 	int stampX = ion::maths::Clamp(cursorPosTl.x % object.stamp->GetWidth(), 0, object.stamp->GetWidth());
 	int stampY = ion::maths::Clamp(cursorPosTl.y % object.stamp->GetHeight(), 0, object.stamp->GetHeight());
 	TileId tileId = object.stamp->GetTile(stampX, stampY);
 
-	TerrainTileId terrainTileId = object.stamp->GetTerrainTile(stampX, stampY);
-	u16 collisionFlags = object.stamp->GetCollisionTileFlags(stampX, stampY);
-	u8 terrainAngleByte = 0;
-	ion::Vector2 terrainNormal;
-	if (const TerrainTile* terrainTile = GetProject().GetTerrainTileset().GetTerrainTile(terrainTileId))
+	TerrainTileId terrainTileId0 = object.stamp->GetTerrainTile(stampX, stampY, 0);
+	TerrainTileId terrainTileId1 = object.stamp->GetTerrainTile(stampX, stampY, 1);
+	u16 collisionFlags0 = object.stamp->GetCollisionTileFlags(stampX, stampY, 0);
+	u16 collisionFlags1 = object.stamp->GetCollisionTileFlags(stampX, stampY, 1);
+	u8 terrainAngleByte0 = 0;
+	u8 terrainAngleByte1 = 0;
+	ion::Vector2 terrainNormal0;
+	ion::Vector2 terrainNormal1;
+
+	if (const TerrainTile* terrainTile0 = GetProject().GetTerrainTileset().GetTerrainTile(terrainTileId0))
 	{
-		terrainAngleByte = terrainTile->GetAngleByte();
-		terrainNormal = terrainTile->GetNormal();
+		terrainAngleByte0 = terrainTile0->GetAngleByte();
+		terrainNormal0 = terrainTile0->GetNormal();
+	}
+
+	if (const TerrainTile* terrainTile1 = GetProject().GetTerrainTileset().GetTerrainTile(terrainTileId1))
+	{
+		terrainAngleByte1 = terrainTile1->GetAngleByte();
+		terrainNormal1 = terrainTile1->GetNormal();
 	}
 
 	std::stringstream tipStr;
 
-	tipStr << "Cursor: 0x" << SSTREAM_HEX4(cursorPosTl.x) << ", 0x" << SSTREAM_HEX4(cursorPosTl.y) << " (" << cursorPosTl.x << ", " << cursorPosTl.y << ")" << std::endl;
+	tipStr << "Cursor (px): 0x" << SSTREAM_HEX4(cursorPosPx.x) << ", 0x" << SSTREAM_HEX4(cursorPosPx.y) << " (" << cursorPosPx.x << ", " << cursorPosPx.y << ")" << std::endl;
+	tipStr << "Cursor (tl): 0x" << SSTREAM_HEX4(cursorPosTl.x) << ", 0x" << SSTREAM_HEX4(cursorPosTl.y) << " (" << cursorPosTl.x << ", " << cursorPosTl.y << ")" << std::endl;
 	tipStr << "Stamp: 0x" << SSTREAM_HEX4(object.stampId) << " (" << object.stampId << ")" << std::endl;
 	tipStr << "Tile: 0x" << SSTREAM_HEX4(tileId) << " (" << tileId << ")" << std::endl;
-	tipStr << "Terrain: 0x" << SSTREAM_HEX4(terrainTileId) << " (" << terrainTileId << ")" << " collisionFlags: 0x" << SSTREAM_HEX2(collisionFlags) << " angleByte: 0x" << SSTREAM_HEX2(terrainAngleByte) << " normal: " << terrainNormal.x << "," << terrainNormal.y << std::endl;
+	tipStr << "Terrain 0: 0x" << SSTREAM_HEX4(terrainTileId0) << " (" << terrainTileId0 << ")" << " collisionFlags: 0x" << SSTREAM_HEX2(collisionFlags0) << " angleByte: 0x" << SSTREAM_HEX2(terrainAngleByte0) << " normal: " << terrainNormal0.x << "," << terrainNormal0.y << std::endl;
+	tipStr << "Terrain 1: 0x" << SSTREAM_HEX4(terrainTileId1) << " (" << terrainTileId1 << ")" << " collisionFlags: 0x" << SSTREAM_HEX2(collisionFlags1) << " angleByte: 0x" << SSTREAM_HEX2(terrainAngleByte1) << " normal: " << terrainNormal1.x << "," << terrainNormal1.y << std::endl;
 	tipStr << "Stamp pos: 0x" << SSTREAM_HEX4(object.stampPos.x) << ", 0x" << SSTREAM_HEX4(object.stampPos.y) << " (" << object.stampPos.x << ", " << object.stampPos.y << ")" << std::endl;
 	tipStr << "Size: " << object.stamp->GetWidth() << ", " << object.stamp->GetHeight() << std::endl;
 	tipStr << "Addr: 0x" << SSTREAM_HEX8(object.stampId * tileSize.x * tileSize.y * 4) << std::endl;

@@ -122,6 +122,8 @@ void PropertyPanel::Refresh(bool eraseBackground, const wxRect *rect)
 			m_labelName->SetLabel(editingName);
 
 			//Built-in properties
+			m_propertyGrid->Append(new wxPropertyCategory("Entity"));
+
 			wxStringProperty* nameProp = new wxStringProperty("Name");
 			nameProp->SetAttribute("isScript", false);
 			nameProp->SetValue(name);
@@ -177,6 +179,8 @@ void PropertyPanel::Refresh(bool eraseBackground, const wxRect *rect)
 			}
 
 			//Add all properties from all components
+			m_propertyGrid->Append(new wxPropertyCategory(editingObjectType->GetName()));
+
 			int componentIdx = -1;
 
 #if 0
@@ -236,14 +240,11 @@ GameObjectVariable* PropertyPanel::PrepareVarForEditing(const char* variableName
 	GameObjectType* editingObjectType = GetEditingType();
 
 	// Find on object
-	GameObjectVariable* instanceVariable = editingObject->FindVariable(variableName, componentIdx);
+	GameObjectVariable* variable = editingObject->FindVariable(variableName, componentIdx);
 
 	// Find on object type
 	GameObjectVariable* typeVariable = editingObjectType->FindVariable(variableName, componentIdx);
 	ion::debug::Assert(typeVariable, "PropertyPanel::OnPropertyChanged() - Variable \'%s\' does not exist on type \'%s\'", variableName, editingObjectType->GetName().c_str());
-
-	// Prefer instance variable
-	GameObjectVariable* variable = instanceVariable ? instanceVariable : typeVariable;
 
 	if (!variable)
 	{
@@ -354,8 +355,7 @@ void PropertyPanel::OnPropertyChanged(wxPropertyGridEvent& event)
 
 					if (variable)
 					{
-						variable->m_value = value.c_str().AsChar();
-						SetObjectProperty(variable, editingObject);
+						SetObjectProperty(variable, value.c_str().AsChar(), editingObject);
 					}
 				}
 
@@ -368,7 +368,7 @@ void PropertyPanel::OnPropertyChanged(wxPropertyGridEvent& event)
 	}
 }
 
-void PropertyPanel::SetObjectProperty(GameObjectVariable* variable, GameObjectBase* gameObject)
+void PropertyPanel::SetObjectProperty(GameObjectVariable* variable, const std::string& value, GameObjectBase* gameObject)
 {
 	if (gameObject)
 	{
@@ -377,6 +377,26 @@ void PropertyPanel::SetObjectProperty(GameObjectVariable* variable, GameObjectBa
 			ActorId actorId = m_project.FindActorId(variable->m_value);
 			if (actorId != InvalidActorId)
 				gameObject->SetSpriteActorId(actorId);
+			variable->m_value = value;
+		}
+		else if (variable->HasTag("ENTITY_ID"))
+		{
+			for (TGameObjectPosMap::const_iterator it = m_project.GetEditingMap().GetGameObjects().begin(), end = m_project.GetEditingMap().GetGameObjects().end(); it != end; ++it)
+			{
+				for (const auto& gameObj : it->second)
+				{
+					std::string name = FindGameObjectName(m_project, &gameObj.m_gameObject);
+					if (name == value)
+					{
+						variable->m_value = std::to_string(FindGameObjectId(m_project, &gameObj.m_gameObject));
+						break;
+					}
+				}
+			}
+		}
+		else
+		{
+			variable->m_value = value;
 		}
 	}
 }
@@ -676,6 +696,25 @@ void PropertyPanel::AddProperty(const GameObjectBase* gameObject, const GameObje
 			selectionValid = false;
 		}
 	}
+	else if (variable.HasTag("ENTITY_ID"))
+	{
+		wxArrayString* list = new wxArrayString();
+		int selection = PopulateGameObjectList(*list, variable.m_value);
+		wxEnumProperty* choiceProp = new wxEnumProperty(variable.m_name, propName, *list);
+		property = choiceProp;
+
+		if (selection >= 0)
+		{
+			choiceProp->SetChoiceSelection(selection);
+		}
+		else
+		{
+			//Add a blank entry
+			choiceProp->AddChoice("[none]");
+			choiceProp->SetChoiceSelection(choiceProp->GetChoices().GetCount() - 1);
+			selectionValid = false;
+		}
+		}
 	else if (variable.HasTag("ENTITY_ARCHETYPE"))
 	{
 		//Find entity type in this component first
@@ -775,6 +814,31 @@ int PropertyPanel::PopulateSpriteAnimList(wxArrayString& list, const Actor& acto
 
 			if (it->second.GetName() == selectedValue)
 				selection = index;
+		}
+	}
+
+	return selection;
+}
+
+int PropertyPanel::PopulateGameObjectList(wxArrayString& list, const std::string& selectedValue)
+{
+	int selection = -1;
+	int index = 0;
+
+	int entityId = (GameObjectId)std::atoi(selectedValue.c_str());
+
+	for (TGameObjectPosMap::const_iterator it = m_project.GetEditingMap().GetGameObjects().begin(), end = m_project.GetEditingMap().GetGameObjects().end(); it != end; ++it)
+	{
+		for (const auto& gameObj : it->second)
+		{
+			std::string name = FindGameObjectName(m_project, &gameObj.m_gameObject);
+
+			list.Add(name);
+
+			if (gameObj.m_gameObject.GetId() == entityId)
+				selection = index;
+
+			++index;
 		}
 	}
 

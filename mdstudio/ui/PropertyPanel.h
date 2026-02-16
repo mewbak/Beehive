@@ -58,7 +58,7 @@ private:
 	std::string GetEditingName();
 	GameObjectVariable* PrepareVarForEditing(const char* variableName, int componentIdx);
 
-	void SetObjectProperty(GameObjectVariable* variable, GameObjectBase* gameObject);
+	void SetObjectProperty(GameObjectVariable* variable, const std::string& value, GameObjectBase* gameObject);
 
 	void OnContextMenuClick(wxCommandEvent& event);
 
@@ -67,6 +67,7 @@ private:
 	int PopulateSpriteSheetList(wxArrayString& list, const Actor& actor, const std::string& selectedValue);
 	int PopulateSpriteAnimList(wxArrayString& list, const Actor& actor, SpriteSheetId spriteSheetId, const std::string& selectedValue);
 	int PopulateGameObjectTypeList(wxArrayString& list, const std::string& selectedValue);
+	int PopulateGameObjectList(wxArrayString& list, const std::string& selectedValue);
 	int PopulateArchetypeList(wxArrayString& list, GameObjectTypeId gameObjectTypeId, const std::string& selectedValue);
 
 	Project& m_project;

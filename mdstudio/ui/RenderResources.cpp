@@ -898,6 +898,8 @@ void RenderResources::SpriteSheetRenderResources::Load(const SpriteSheet& sprite
 
 		const Palette& palette = spriteSheet.GetPalette();
 
+		static int resourceIdx = 0;
+
 		for (int i = 0; i < spriteSheet.GetNumFrames(); i++)
 		{
 			//Get spriteSheet frame
@@ -907,7 +909,7 @@ void RenderResources::SpriteSheetRenderResources::Load(const SpriteSheet& sprite
 			Frame renderFrame;
 
 			//Create tileset texture for frame
-			std::string name = "SpriteSheet_" + spriteSheet.GetName() + "_frame_" + std::to_string(i);
+			std::string name = "SpriteSheet_" + spriteSheet.GetName() + "_frame_" + std::to_string(i) + "_" + std::to_string(resourceIdx++);
 			renderFrame.texture = resourceManager.CreateResource(name, ion::render::Texture::Create());
 
 			u8* data = new u8[textureSize];

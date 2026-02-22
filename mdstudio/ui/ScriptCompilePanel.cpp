@@ -199,31 +199,41 @@ void ScriptCompilePanel::AppendText(const wxString& text)
 
 void ScriptCompilePanel::OnProcessFinished(int pid, int status)
 {
-	if (m_state == State::Compiling)
+	if (status == 0)
 	{
-		AppendText("Script compiler with process ID " + std::to_string(pid) + " exited with status " + std::to_string(status) + "\n");
-		if (!BeginObjCopy(m_currentFilename, m_currentOutname))
+		if (m_state == State::Compiling)
 		{
-			m_state = State::Idle;
+			AppendText("Script compiler with process ID " + std::to_string(pid) + " exited with status " + std::to_string(status) + "\n");
+			if (!BeginObjCopy(m_currentFilename, m_currentOutname))
+			{
+				m_state = State::Idle;
+			}
 		}
-	}
-	else if(m_state == State::Copying)
-	{
-		AppendText("Object copier with process ID " + std::to_string(pid) + " exited with status " + std::to_string(status) + "\n");
-		if(!BeginSymbolRead(m_currentFilename, m_currentOutname))
+		else if (m_state == State::Copying)
 		{
-			m_state = State::Idle;
+			AppendText("Object copier with process ID " + std::to_string(pid) + " exited with status " + std::to_string(status) + "\n");
+			if (!BeginSymbolRead(m_currentFilename, m_currentOutname))
+			{
+				m_state = State::Idle;
+			}
 		}
-	}
-	else if (m_state == State::ReadingSymbols)
-	{
-		AppendText("Symbol reader with process ID " + std::to_string(pid) + " exited with status " + std::to_string(status) + "\n");
-		m_state = State::Idle;
+		else if (m_state == State::ReadingSymbols)
+		{
+			AppendText("Symbol reader with process ID " + std::to_string(pid) + " exited with status " + std::to_string(status) + "\n");
+			m_state = State::Idle;
 
-		if (m_onFinished)
-		{
-			m_onFinished(m_symbolOutput);
+			if (m_onFinished)
+			{
+				m_onFinished(m_symbolOutput);
+			}
+
+			AppendText("SUCCESS");
 		}
+	}
+	else
+	{
+		AppendText("Process ID " + std::to_string(pid) + " exited with status " + std::to_string(status) + "\n");
+		AppendText("FAILED");
 	}
 }
 

@@ -145,6 +145,9 @@ public:
 	void ScanProject(const std::string& engineDir, const std::string& projectDir);
 	void ScanStamps(const std::string& stampsDir);
 
+	//Generate script boilerplate
+	void GenerateScriptBoilerplate(luminary::ScriptTranspiler& scriptTranspiler, std::vector<const GameObjectType*>& objTypesWithScripts, std::vector<luminary::Entity>& entitiesWithScripts, std::vector<luminary::Component>& components, luminary::ScriptAddressMap& scriptAddresses);
+
 	void OnPostInit();
 
 protected:

@@ -29,10 +29,11 @@
 
 static const std::string s_defaultVarName = "[ DEFAULT_VALUE ]";
 
-PropertyPanel::PropertyPanel(MainWindow* mainWindow, Project& project, wxWindow *parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style, const wxString& name)
+PropertyPanel::PropertyPanel(MainWindow* mainWindow, Project& project, RenderResources& renderResources, wxWindow *parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style, const wxString& name)
 	: PropertyPanelBase(parent, id, pos, size, style)
 	, m_project(project)
 	, m_mainWindow(mainWindow)
+	, m_renderResources(renderResources)
 {
 	m_gameObjectId = InvalidGameObjectId;
 	m_prefabChildId = InvalidGameObjectId;
@@ -99,8 +100,10 @@ void PropertyPanel::Refresh(bool eraseBackground, const wxRect *rect)
 		GameObjectType* editingObjectType = GetEditingType();
 		ActorId actorId;
 		SpriteSheetId spriteSheetId;
+		SpriteSheetId previewSpriteSheetId;
 		Actor* actor = FindGameObjectActor(m_project, editingObject, actorId);
 		SpriteSheet* spriteSheet = FindGameObjectSpriteSheet(m_project, actor, editingObject, spriteSheetId, false);
+		const SpriteSheet* previewSpriteSheet = FindGameObjectPreviewSpriteSheet(m_project, editingObject, previewSpriteSheetId);
 		std::string name = GetEditingName();
 		std::vector<GameObjectVariable> variables;
 		GameObjectDimensionsSource dimensionsSource;
@@ -129,6 +132,13 @@ void PropertyPanel::Refresh(bool eraseBackground, const wxRect *rect)
 			nameProp->SetValue(name);
 			nameProp->SetAttribute("builtInProp", (long)BuiltInProperties::Name);
 
+			wxFileProperty* previewProp = new wxFileProperty("Preview");
+			previewProp->SetAttribute(wxPG_FILE_WILDCARD, "PNG files (*.png)|*.png|BMP files (*.bmp)|*.bmp");
+			previewProp->SetAttribute("isScript", false);
+			if(previewSpriteSheet)
+				previewProp->SetValue(previewSpriteSheet->GetName());
+			previewProp->SetAttribute("builtInProp", (long)BuiltInProperties::PreviewSprite);
+
 			wxBoolProperty* sizeFromSpriteProp = new wxBoolProperty("Size from Sprite");
 			sizeFromSpriteProp->SetEditor(new wxPGCheckBoxEditor);
 			sizeFromSpriteProp->SetAttribute("isScript", false);
@@ -152,6 +162,7 @@ void PropertyPanel::Refresh(bool eraseBackground, const wxRect *rect)
 #endif
 
 			m_propertyGrid->Append(nameProp);
+			m_propertyGrid->Append(previewProp);
 			wxPGProperty* addedsizeFromSpriteProp = m_propertyGrid->Append(sizeFromSpriteProp);
 			wxPGProperty* addedWidthProp = m_propertyGrid->Append(widthProp);
 			wxPGProperty* addedHeightProp = m_propertyGrid->Append(heightProp);
@@ -221,7 +232,10 @@ void PropertyPanel::Refresh(bool eraseBackground, const wxRect *rect)
 				{
 					if (componentIdx != variable.m_componentIdx)
 					{
-						m_propertyGrid->Append(new wxPropertyCategory(variable.m_componentName));
+						std::string name = variable.m_componentTypeName;
+						if (!variable.m_componentName.empty())
+							name = variable.m_componentTypeName + " : " + variable.m_componentName;
+						m_propertyGrid->Append(new wxPropertyCategory(name));
 						componentIdx = variable.m_componentIdx;
 					}
 
@@ -284,6 +298,18 @@ void PropertyPanel::OnPropertyChanged(wxPropertyGridEvent& event)
 				// Can't set type name, it comes from codebase scan
 				if (editingObject != editingObjectType)
 					editingObject->SetName(value.c_str().AsChar());
+				break;
+			}
+
+			case (int)BuiltInProperties::PreviewSprite:
+			{
+				wxFileProperty* fileProp = (wxFileProperty*)property;
+				if (editingObject->LoadPreviewSprite(fileProp->GetFileName().GetFullPath().c_str().AsChar()))
+				{
+					m_renderResources.DeleteSpriteSheetRenderResources(editingObject->GetPreviewSpriteSheetId());
+					m_renderResources.CreateSpriteSheetResources(editingObject->GetPreviewSpriteSheetId(), editingObject->GetPreviewSpriteSheet());
+					m_mainWindow->RefreshPanel(MainWindow::ePanelMap);
+				}
 				break;
 			}
 
@@ -588,7 +614,11 @@ void PropertyPanel::AddProperty(const GameObjectBase* gameObject, const GameObje
 	wxPGProperty* property = nullptr;
 	bool selectionValid = true;
 
-	std::string propName = componentIdx == -1 ? gameObject->GetName() : variable.m_componentName;
+	std::string name = variable.m_componentTypeName;
+	if (!variable.m_componentName.empty())
+		name = variable.m_componentTypeName + " : " + variable.m_componentName;
+
+	std::string propName = componentIdx == -1 ? gameObject->GetName() : name;
 	propName += "_" + variable.m_name + "_" + std::to_string(componentIdx);
 
 #if defined BEEHIVE_PLUGIN_LUMINARY

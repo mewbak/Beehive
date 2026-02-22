@@ -24,7 +24,7 @@ class MainWindow;
 class PropertyPanel : public PropertyPanelBase
 {
 public:
-	PropertyPanel(MainWindow* mainWindow, Project& project, wxWindow *parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL | wxNO_BORDER, const wxString& name = wxPanelNameStr);
+	PropertyPanel(MainWindow* mainWindow, Project& project, RenderResources& renderResources, wxWindow *parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL | wxNO_BORDER, const wxString& name = wxPanelNameStr);
 
 	virtual void Refresh(bool eraseBackground = true, const wxRect *rect = NULL);
 	virtual void OnPropertyChanged(wxPropertyGridEvent& event);
@@ -48,6 +48,7 @@ private:
 	enum class BuiltInProperties
 	{
 		Name,
+		PreviewSprite,
 		SizeFromSprite,
 		Width,
 		Height
@@ -72,6 +73,7 @@ private:
 
 	Project& m_project;
 	MainWindow* m_mainWindow;
+	RenderResources& m_renderResources;
 	GameObjectId m_gameObjectId;
 	GameObjectId m_prefabChildId;
 	GameObjectTypeId m_gameObjectTypeId;

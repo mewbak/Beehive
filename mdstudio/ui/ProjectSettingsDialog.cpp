@@ -69,20 +69,20 @@ void ProjectSettingsDialog::OnBtnOK(wxCommandEvent& event)
 	std::string engineDir = m_dirPickerEngine->GetPath().c_str().AsChar();
 	std::string referenceFile = m_filePickerReference->GetPath().c_str().AsChar();
 
+	m_project.m_settings.Set("assembler", m_filePickerAssembler->GetPath().c_str().AsChar());
+	m_project.m_settings.Set("assemblyFile", m_filePickerAssemblyFile->GetPath().c_str().AsChar());
+	m_project.m_settings.Set("emulator", m_filePickerEmulator->GetPath().c_str().AsChar());
+
 	if (projectDir != m_project.m_settings.Get("projectRootDir") || engineDir != m_project.m_settings.Get("engineRootDir"))
 	{
+		m_project.m_settings.Set("projectRootDir", projectDir);
+		m_project.m_settings.Set("engineRootDir", engineDir);
+
 		if (wxMessageBox("Engine or project directory has changed, would you like to re-scan for entity types?", "Scan for entities", wxOK | wxCANCEL) == wxOK)
 		{
 			m_mainWindow.ScanProject(engineDir, projectDir);
 		}
-
-		m_project.m_settings.Set("projectRootDir", projectDir);
-		m_project.m_settings.Set("engineRootDir", engineDir);
 	}
-
-	m_project.m_settings.Set("assembler", m_filePickerAssembler->GetPath().c_str().AsChar());
-	m_project.m_settings.Set("assemblyFile", m_filePickerAssemblyFile->GetPath().c_str().AsChar());
-	m_project.m_settings.Set("emulator", m_filePickerEmulator->GetPath().c_str().AsChar());
 
 	if (referenceFile.size() > 0)
 	{

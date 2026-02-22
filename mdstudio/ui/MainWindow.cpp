@@ -394,8 +394,8 @@ void MainWindow::ScanProject(const std::string& engineDir, const std::string& pr
 
 				for (int j = 0; j < entities[i].components.size(); j++)
 				{
-					numConfigurableVariables += entities[i].components[j].spawnData.params.size();
-					numScriptVariables += entities[i].components[j].params.size();
+					numConfigurableVariables += entities[i].components[j].first.spawnData.params.size();
+					numScriptVariables += entities[i].components[j].first.params.size();
 				}
 			}
 
@@ -505,14 +505,15 @@ void MainWindow::ScanProject(const std::string& engineDir, const std::string& pr
 			for (int j = 0; j < entities[i].components.size(); j++)
 			{
 				//Add component script variables
-				for (int k = 0; k < entities[i].components[j].params.size(); k++, scriptVarIdx++)
+				for (int k = 0; k < entities[i].components[j].first.params.size(); k++, scriptVarIdx++)
 				{
-					scriptVariables[scriptVarIdx].m_name = entities[i].components[j].params[k].name;
+					scriptVariables[scriptVarIdx].m_name = entities[i].components[j].first.params[k].name;
 					scriptVariables[scriptVarIdx].m_componentIdx = j;
-					scriptVariables[scriptVarIdx].m_componentName = entities[i].components[j].name;
-					scriptVariables[scriptVarIdx].m_tags = entities[i].components[j].params[k].tags;
+					scriptVariables[scriptVarIdx].m_componentTypeName = entities[i].components[j].first.typeName;
+					scriptVariables[scriptVarIdx].m_componentName = entities[i].components[j].second;
+					scriptVariables[scriptVarIdx].m_tags = entities[i].components[j].first.params[k].tags;
 
-					switch (entities[i].components[j].params[k].size)
+					switch (entities[i].components[j].first.params[k].size)
 					{
 					case luminary::ParamSize::Byte:
 						scriptVariables[scriptVarIdx].m_size = eSizeByte;
@@ -527,14 +528,14 @@ void MainWindow::ScanProject(const std::string& engineDir, const std::string& pr
 				}
 
 				//Add component script functions
-				for (int k = 0; k < entities[i].components[j].scriptFuncs.size(); k++)
+				for (int k = 0; k < entities[i].components[j].first.scriptFuncs.size(); k++)
 				{
 					GameObjectScriptFunc scriptFunc;
 					scriptFunc.componentIdx = j;
-					scriptFunc.name = entities[i].components[j].scriptFuncs[k].name;
-					scriptFunc.params = entities[i].components[j].scriptFuncs[k].params;
-					scriptFunc.returnType = entities[i].components[j].scriptFuncs[k].returnType;
-					scriptFunc.routine = entities[i].components[j].scriptFuncs[k].routine;
+					scriptFunc.name = entities[i].components[j].first.scriptFuncs[k].name;
+					scriptFunc.params = entities[i].components[j].first.scriptFuncs[k].params;
+					scriptFunc.returnType = entities[i].components[j].first.scriptFuncs[k].returnType;
+					scriptFunc.routine = entities[i].components[j].first.scriptFuncs[k].routine;
 
 					if (std::find_if(gameObjectType->GetScriptFunctions().begin(), gameObjectType->GetScriptFunctions().end(),
 						[&](const GameObjectScriptFunc& lhs) { return lhs == scriptFunc; }) == gameObjectType->GetScriptFunctions().end())
@@ -547,22 +548,23 @@ void MainWindow::ScanProject(const std::string& engineDir, const std::string& pr
 			//Add component spawn data variables
 			for (int j = 0; j < entities[i].components.size(); j++)
 			{
-				for (int k = 0; k < entities[i].components[j].spawnData.params.size(); k++, configurableVarIdx++, scriptVarIdx++)
+				for (int k = 0; k < entities[i].components[j].first.spawnData.params.size(); k++, configurableVarIdx++, scriptVarIdx++)
 				{
-					if (GameObjectVariable* variable = gameObjectType->FindVariable(entities[i].components[j].spawnData.params[k].name))
+					if (GameObjectVariable* variable = gameObjectType->FindVariable(entities[i].components[j].first.spawnData.params[k].name))
 					{
 						configurableVariables[configurableVarIdx] = *variable;
 					}
 					else
 					{
-						configurableVariables[configurableVarIdx].m_name = entities[i].components[j].spawnData.params[k].name;
+						configurableVariables[configurableVarIdx].m_name = entities[i].components[j].first.spawnData.params[k].name;
 					}
 
 					configurableVariables[configurableVarIdx].m_componentIdx = j;
-					configurableVariables[configurableVarIdx].m_componentName = entities[i].components[j].name;
-					configurableVariables[configurableVarIdx].m_tags = entities[i].components[j].spawnData.params[k].tags;
+					configurableVariables[configurableVarIdx].m_componentTypeName = entities[i].components[j].first.typeName;
+					configurableVariables[configurableVarIdx].m_componentName = entities[i].components[j].second;
+					configurableVariables[configurableVarIdx].m_tags = entities[i].components[j].first.spawnData.params[k].tags;
 
-					switch (entities[i].components[j].spawnData.params[k].size)
+					switch (entities[i].components[j].first.spawnData.params[k].size)
 					{
 					case luminary::ParamSize::Byte:
 						configurableVariables[configurableVarIdx].m_size = eSizeByte;
@@ -590,6 +592,14 @@ void MainWindow::ScanProject(const std::string& engineDir, const std::string& pr
 				gameObjectType->AddVariable() = configurableVariables[j];
 			}
 		}
+
+		//Generate script boilerplate
+		luminary::ScriptTranspiler scriptTranspiler;
+		std::vector<const GameObjectType*> objTypesWithScripts;
+		std::vector<luminary::Entity> entitiesWithScripts;
+		std::vector<luminary::Component> components;
+		luminary::ScriptAddressMap scriptAddresses;
+		GenerateScriptBoilerplate(scriptTranspiler, objTypesWithScripts, entitiesWithScripts, components, scriptAddresses);
 	}
 #endif
 }
@@ -907,7 +917,7 @@ void MainWindow::ShowPanelProperties()
 			paneInfo.Caption("Properties");
 			paneInfo.CaptionVisible(true);
 
-			m_propertyPanel = new PropertyPanel(this, *m_project, m_dockArea, NewControlId());
+			m_propertyPanel = new PropertyPanel(this, *m_project, *m_renderResources, m_dockArea, NewControlId());
 			m_auiManager.AddPane(m_propertyPanel, paneInfo);
 			paneInfo.Show();
 		}
@@ -2145,6 +2155,51 @@ void MainWindow::OnBtnBuildRun(wxCommandEvent& event)
 	Build(true, true, true);
 }
 
+void MainWindow::GenerateScriptBoilerplate(luminary::ScriptTranspiler& scriptTranspiler, std::vector<const GameObjectType*>& objTypesWithScripts, std::vector<luminary::Entity>& entitiesWithScripts, std::vector<luminary::Component>& components, luminary::ScriptAddressMap& scriptAddresses)
+{
+	const std::string projectRootDir = m_project->m_settings.Get("projectRootDir");
+	const std::string scriptsSourceDir = projectRootDir + "\\SCRIPTS\\";
+
+	for (TGameObjectTypeMap::const_iterator typeIt = m_project->GetGameObjectTypes().begin(), typeEnd = m_project->GetGameObjectTypes().end(); typeIt != typeEnd; ++typeIt)
+	{
+		//Convert to luminary entity
+		luminary::Entity entity;
+		luminary::beehive::ConvertEntityType(*m_project, typeIt->second, entity);
+
+		//Add all components with script params
+		for (auto component : entity.components)
+		{
+			if (component.first.params.size() > 0)
+			{
+				if (std::find_if(components.begin(), components.end(), [&](const luminary::Component& lhs) { return lhs.typeName == component.first.typeName; }) == components.end())
+				{
+					components.push_back(component.first);
+				}
+			}
+		}
+
+		//If entity has a script, mark for script compile
+		bool hasScript = false;
+		for (auto variable : typeIt->second.GetVariables())
+		{
+			if (variable.HasTag("SCRIPT_DATA"))
+			{
+				entitiesWithScripts.push_back(entity);
+				objTypesWithScripts.push_back(&typeIt->second);
+				break;
+			}
+		}
+	}
+
+	//Generate script boilerplate
+	scriptTranspiler.GenerateComponentCppHeader(components, scriptsSourceDir);
+
+	for (auto entity : entitiesWithScripts)
+	{
+		scriptTranspiler.GenerateEntityCppHeader(entity, scriptsSourceDir);
+	}
+}
+
 void MainWindow::Build(bool exportProj, bool assemble, bool run)
 {
 	if(m_project.get())
@@ -2197,42 +2252,7 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 			std::vector<luminary::Entity> entitiesWithScripts;
 			std::vector<luminary::Component> components;
 			luminary::ScriptAddressMap scriptAddresses;
-
-			for (TGameObjectTypeMap::const_iterator typeIt = m_project->GetGameObjectTypes().begin(), typeEnd = m_project->GetGameObjectTypes().end(); typeIt != typeEnd; ++typeIt)
-			{
-				//Convert to luminary entity
-				luminary::Entity entity;
-				luminary::beehive::ConvertEntityType(*m_project, typeIt->second, entity);
-
-				//Add all components
-				for (auto component : entity.components)
-				{
-					if (std::find_if(components.begin(), components.end(), [&](const luminary::Component& lhs) { return lhs.name == component.name; }) == components.end())
-					{
-						components.push_back(component);
-					}
-				}
-
-				//If entity has a script, mark for script compile
-				bool hasScript = false;
-				for (auto variable : typeIt->second.GetVariables())
-				{
-					if (variable.HasTag("SCRIPT_DATA"))
-					{
-						entitiesWithScripts.push_back(entity);
-						objTypesWithScripts.push_back(&typeIt->second);
-						break;
-					}
-				}
-			}
-
-			//Generate script boilerplate
-			scriptTranspiler.GenerateComponentCppHeader(components, scriptsSourceDir);
-
-			for (auto entity : entitiesWithScripts)
-			{
-				scriptTranspiler.GenerateEntityCppHeader(entity, scriptsSourceDir);
-			}
+			GenerateScriptBoilerplate(scriptTranspiler, objTypesWithScripts, entitiesWithScripts, components, scriptAddresses);
 
 			//Generate global function call table
 			std::vector<luminary::ScriptFunc> globalOffsetsTable;

@@ -1069,12 +1069,11 @@ void MapPanel::OnContextMenuClick(wxCommandEvent& event)
 					{
 						if (const GameObject* gameObj = m_project.GetEditingMap().GetGameObject(gameObjId))
 						{
-							if (const GameObjectType* gameObjType = m_project.GetGameObjectType(gameObj->GetTypeId()))
-							{
-								ion::Vector2i position = gameObj->GetPosition();
-								bounds.AddPoint(position);
-								bounds.AddPoint(position + gameObjType->GetDimensions());
-							}
+							GameObjectDimensionsSource source;
+							ion::Vector2i dimensions = FindGameObjectDimensions(m_project, gameObj, source);
+							ion::Vector2i position = gameObj->GetPosition();
+							bounds.AddPoint(position - (dimensions / 2));
+							bounds.AddPoint(position + (dimensions / 2));
 						}
 					}
 
@@ -1374,11 +1373,10 @@ void MapPanel::OnMousePixelEvent(ion::Vector2i mousePos, ion::Vector2i mouseDelt
 				{
 					if (const GameObject* gameObject = m_project.GetEditingMap().GetGameObject(gameObjectId))
 					{
-						if (const GameObjectType* gameObjectType = m_project.GetGameObjectType(gameObject->GetTypeId()))
-						{
-							bounds.AddPoint(gameObject->GetPosition());
-							bounds.AddPoint(gameObject->GetPosition() + (gameObject->GetDimensions().x == 0 ? gameObjectType->GetDimensions() : gameObject->GetDimensions()));
-						}
+						GameObjectDimensionsSource source;
+						ion::Vector2i dimensions = FindGameObjectDimensions(m_project, gameObject, source);
+						bounds.AddPoint(gameObject->GetPosition() - (dimensions / 2.0f));
+						bounds.AddPoint(gameObject->GetPosition() + (dimensions / 2.0f));
 					}
 				}
 
@@ -1624,20 +1622,18 @@ GameObjectId MapPanel::FindGameObject(int x, int y, ion::Vector2i& topLeft) cons
 	{
 		for (std::vector<GameObjectMapEntry>::const_reverse_iterator itVec = itMap->second.rbegin(), endVec = itMap->second.rend(); itVec != endVec && !gameObjectId; ++itVec)
 		{
-			const int objWidth = (itVec->m_gameObject.GetDimensions().x > 0) ? itVec->m_gameObject.GetDimensions().x : itVec->m_size.x;
-			const int objHeight = (itVec->m_gameObject.GetDimensions().y > 0) ? itVec->m_gameObject.GetDimensions().y : itVec->m_size.y;
-
-			ion::Vector2i size(objWidth, objHeight);
+			GameObjectDimensionsSource source;
+			ion::Vector2i dimensions = FindGameObjectDimensions(m_project, &itVec->m_gameObject, source);
 
 #if BEEHIVE_GAMEOBJ_ORIGIN_CENTRE
-			topLeft.x = itVec->m_gameObject.GetPosition().x - (size.x / 2);
-			topLeft.y = itVec->m_gameObject.GetPosition().y - (size.y / 2);
+			topLeft.x = itVec->m_gameObject.GetPosition().x - (dimensions.x / 2);
+			topLeft.y = itVec->m_gameObject.GetPosition().y - (dimensions.y / 2);
 #else
 			topLeft.x = itVec->m_gameObject.GetPosition().x;
 			topLeft.y = itVec->m_gameObject.GetPosition().y;
 #endif
 
-			ion::Vector2i bottomRight = topLeft + size;
+			ion::Vector2i bottomRight = topLeft + dimensions;
 
 			if (x_px >= topLeft.x && y_px >= topLeft.y
 				&& x_px < bottomRight.x && y_px < bottomRight.y)
@@ -1651,10 +1647,10 @@ GameObjectId MapPanel::FindGameObject(int x, int y, ion::Vector2i& topLeft) cons
 	int smallestSize = ion::maths::S32_MAX;
 	for (int i = 0; i < foundObjects.size(); i++)
 	{
-		const int objWidth = (foundObjects[i]->m_gameObject.GetDimensions().x > 0) ? foundObjects[i]->m_gameObject.GetDimensions().x : foundObjects[i]->m_size.x;
-		const int objHeight = (foundObjects[i]->m_gameObject.GetDimensions().y > 0) ? foundObjects[i]->m_gameObject.GetDimensions().y : foundObjects[i]->m_size.y;
+		GameObjectDimensionsSource source;
+		ion::Vector2i dimensions = FindGameObjectDimensions(m_project, &foundObjects[i]->m_gameObject, source);
 
-		int size = objWidth * objHeight;
+		int size = dimensions.x * dimensions.y;
 		if (size < smallestSize)
 		{
 			smallestSize = size;
@@ -1679,14 +1675,14 @@ int MapPanel::FindGameObjects(int x, int y, int width, int height, std::vector<c
 		{
 			const GameObjectMapEntry& gameObject = gameObjectsOfType[i];
 
-			const int objWidth = (gameObject.m_gameObject.GetDimensions().x > 0) ? gameObject.m_gameObject.GetDimensions().x : gameObject.m_size.x;
-			const int objHeight = (gameObject.m_gameObject.GetDimensions().y > 0) ? gameObject.m_gameObject.GetDimensions().y : gameObject.m_size.y;
+			GameObjectDimensionsSource source;
+			ion::Vector2i dimensions = FindGameObjectDimensions(m_project, &gameObject.m_gameObject, source);
 
 #if BEEHIVE_GAMEOBJ_ORIGIN_CENTRE
-			ion::Vector2i position = gameObject.m_gameObject.GetPosition() - (ion::Vector2i(objWidth, objHeight) / 2);
-			if (ion::maths::BoxIntersectsBox(boundsMin, boundsMax, position, position + ion::Vector2i(objWidth, objHeight)))
+			ion::Vector2i position = gameObject.m_gameObject.GetPosition() - (dimensions / 2);
+			if (ion::maths::BoxIntersectsBox(boundsMin, boundsMax, position, position + dimensions))
 #else
-			if (ion::maths::BoxIntersectsBox(boundsMin, boundsMax, gameObject.m_gameObject.GetPosition(), gameObject.m_gameObject.GetPosition() + ion::Vector2i(objWidth, objHeight)))
+			if (ion::maths::BoxIntersectsBox(boundsMin, boundsMax, gameObject.m_gameObject.GetPosition(), gameObject.m_gameObject.GetPosition() + dimensions))
 #endif
 			{
 				gameObjects.push_back(&gameObject);

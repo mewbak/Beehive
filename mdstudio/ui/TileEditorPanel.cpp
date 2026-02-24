@@ -79,7 +79,7 @@ void TileEditorPanel::OnMouseTileEvent(ion::Vector2i mousePos, ion::Vector2i mou
 				if(x >= 0 && x < tileWidth && y >= 0 && y < tileHeight)
 				{
 					//Get palette
-					Palette* palette = m_project.GetPalette(tile->GetPaletteId());
+					Palette* palette = m_project.GetPalette(tile->GetScenePaletteIndex());
 
 					if(palette)
 					{

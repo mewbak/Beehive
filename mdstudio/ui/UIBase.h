@@ -36,6 +36,7 @@ class SpriteCanvas;
 #include <wx/bmpbuttn.h>
 #include <wx/textctrl.h>
 #include <wx/choice.h>
+#include "PaletteViewCtrl.h"
 #include <wx/toolbar.h>
 #include <wx/listctrl.h>
 #include <wx/listbox.h>
@@ -104,29 +105,30 @@ class SpriteCanvas;
 #define wxID_TOOL_COL_DELETETERRAINBEZIER 1049
 #define wxID_TOOL_COL_PAINTSOLID 1050
 #define wxID_TOOL_GENERATETERRAIN 1051
-#define wxID_TOOL_SELECTSTAMP 1052
-#define wxID_TOOL_STAMP 1053
-#define wxID_TOOL_MOVESTAMP 1054
-#define wxID_TOOL_STAMPPICKER 1055
-#define wxID_TOOL_CREATESTAMP 1056
-#define wxID_TOOL_REMOVESTAMP 1057
-#define wxID_TOOL_COL_PAINTTERRAIN 1058
-#define wxID_TOOL_COL_PAINTHOLE 1059
-#define wxID_TOOL_COL_DELETETERRTILE 1060
-#define wxID_TOOL_SELECTTILE 1061
-#define wxID_TOOL_PAINT 1062
-#define wxID_TOOL_TILEPICKER 1063
-#define wxID_TOOL_FLIPX 1064
-#define wxID_TOOL_FLIPY 1065
-#define wxID_TOOL_FILL 1066
-#define wxID_TOOL_CLONE 1067
-#define wxID_TOOL_CREATE_SCENE_ANIM 1068
-#define wxID_TOOL_COPY_TO_NEW_MAP 1069
-#define wxID_TOOL_SELECTGAMEOBJ 1070
-#define wxID_TOOL_PLACEGAMEOBJ 1071
-#define wxID_TOOL_ANIMATEGAMEOBJ 1072
-#define wxID_TOOL_REMOVEGAMEOBJ 1073
-#define wxID_TOOL_DRAWGAMEOBJ 1074
+#define wxID_MATCH 1052
+#define wxID_TOOL_SELECTSTAMP 1053
+#define wxID_TOOL_STAMP 1054
+#define wxID_TOOL_MOVESTAMP 1055
+#define wxID_TOOL_STAMPPICKER 1056
+#define wxID_TOOL_CREATESTAMP 1057
+#define wxID_TOOL_REMOVESTAMP 1058
+#define wxID_TOOL_COL_PAINTTERRAIN 1059
+#define wxID_TOOL_COL_PAINTHOLE 1060
+#define wxID_TOOL_COL_DELETETERRTILE 1061
+#define wxID_TOOL_SELECTTILE 1062
+#define wxID_TOOL_PAINT 1063
+#define wxID_TOOL_TILEPICKER 1064
+#define wxID_TOOL_FLIPX 1065
+#define wxID_TOOL_FLIPY 1066
+#define wxID_TOOL_FILL 1067
+#define wxID_TOOL_CLONE 1068
+#define wxID_TOOL_CREATE_SCENE_ANIM 1069
+#define wxID_TOOL_COPY_TO_NEW_MAP 1070
+#define wxID_TOOL_SELECTGAMEOBJ 1071
+#define wxID_TOOL_PLACEGAMEOBJ 1072
+#define wxID_TOOL_ANIMATEGAMEOBJ 1073
+#define wxID_TOOL_REMOVEGAMEOBJ 1074
+#define wxID_TOOL_DRAWGAMEOBJ 1075
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Class MainWindowBase
@@ -437,6 +439,60 @@ class DialogNewActor : public wxDialog
 		DialogNewActor( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("New Actor/Prop"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 261,99 ), long style = wxCAPTION|wxSTAY_ON_TOP );
 
 		~DialogNewActor();
+
+};
+
+///////////////////////////////////////////////////////////////////////////////
+/// Class DialogNewPalette
+///////////////////////////////////////////////////////////////////////////////
+class DialogNewPalette : public wxDialog
+{
+	private:
+
+	protected:
+		wxStaticText* m_text1;
+		wxStdDialogButtonSizer* m_sdbSizer4;
+		wxButton* m_sdbSizer4OK;
+		wxButton* m_sdbSizer4Cancel;
+
+	public:
+		wxTextCtrl* m_textName;
+		PaletteViewCtrl* m_paletteView;
+
+		DialogNewPalette( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("New Palette"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 505,154 ), long style = wxCAPTION|wxSTAY_ON_TOP );
+
+		~DialogNewPalette();
+
+};
+
+///////////////////////////////////////////////////////////////////////////////
+/// Class DialogMatchPalette
+///////////////////////////////////////////////////////////////////////////////
+class DialogMatchPalette : public wxDialog
+{
+	private:
+
+	protected:
+		wxStaticText* m_text1;
+		wxStaticText* m_staticText84;
+		wxStaticText* m_staticText85;
+		wxButton* m_btnMatch;
+		wxButton* m_btnNew;
+
+		// Virtual event handlers, override them in your derived class
+		virtual void OnChoicePalette( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnBtnMatch( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnBtnNew( wxCommandEvent& event ) { event.Skip(); }
+
+
+	public:
+		wxChoice* m_choicePalette;
+		PaletteViewCtrl* m_paletteViewOld;
+		PaletteViewCtrl* m_paletteViewNew;
+
+		DialogMatchPalette( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("Palette Matches"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 572,203 ), long style = wxCAPTION|wxSTAY_ON_TOP );
+
+		~DialogMatchPalette();
 
 };
 
@@ -912,8 +968,9 @@ class SpriteAnimEditorDialogBase : public wxDialog
 		wxButton* m_btnRenameActor;
 		wxButton* m_btnImportSpriteSheet;
 		wxButton* m_btnDeleteSprite;
-		wxButton* m_btnUsePalette;
+		wxButton* m_btnReplaceSpriteSheet;
 		wxButton* m_btnRenameSheet;
+		wxButton* m_btnSetPalette;
 		wxButton* m_btnNewAnim;
 		wxButton* m_btnDeleteAnim;
 		wxButton* m_btnRenameAnim;
@@ -942,8 +999,9 @@ class SpriteAnimEditorDialogBase : public wxDialog
 		virtual void OnBtnRenameActor( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnSpriteSheetImport( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnSpriteSheetDelete( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnBtnSpriteSheetUsePalette( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnBtnSpriteSheetReplace( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnRenameSheet( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnBtnSpriteSheetSetPalette( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnAnimNew( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnAnimDelete( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnRenameAnim( wxCommandEvent& event ) { event.Skip(); }

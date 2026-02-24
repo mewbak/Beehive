@@ -75,8 +75,9 @@ protected:
 	virtual void OnBtnImport(wxCommandEvent& event);
 	virtual void OnBtnExport(wxCommandEvent& event);
 	virtual void OnBtnSpriteSheetImport(wxCommandEvent& event);
+	virtual void OnBtnSpriteSheetReplace(wxCommandEvent& event);
 	virtual void OnBtnSpriteSheetDelete(wxCommandEvent& event);
-	virtual void OnBtnSpriteSheetUsePalette(wxCommandEvent& event);
+	virtual void OnBtnSpriteSheetSetPalette(wxCommandEvent& event);
 	virtual void OnBtnAnimNew(wxCommandEvent& event);
 	virtual void OnBtnAnimDelete(wxCommandEvent& event);
 	virtual void OnTimelineCellChange(wxGridEvent& event);
@@ -105,6 +106,8 @@ private:
 	void SelectAnimation(int index);
 
 	void FindAndDrawDropTarget(wxPoint mousePosDropSource, wxPoint mousePosDropTarget);
+
+	void ShowPaletteMatchDlg();
 
 	AnimEditMode m_animEditMode;
 	Project& m_project;

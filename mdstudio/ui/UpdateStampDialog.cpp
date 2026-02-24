@@ -45,7 +45,7 @@ void DialogUpdateStamp::OnFileBrowse(wxFileDirPickerEvent& event)
 	TileId firstTile = m_stampOld.GetTile(0, 0);
 	if(Tile* tile = m_project.GetTileset().GetTile(firstTile))
 	{
-		paletteIdx = (int)tile->GetPaletteId();
+		paletteIdx = (int)tile->GetScenePaletteIndex();
 	}
 
 	//Import bitmap to temp stamp

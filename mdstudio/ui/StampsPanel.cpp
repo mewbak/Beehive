@@ -316,7 +316,7 @@ void StampsPanel::OnContextMenuClick(wxCommandEvent& event)
 					TileId firstTile = stamp->GetTile(0, 0);
 					if(Tile* tile = m_project.GetTileset().GetTile(firstTile))
 					{
-						paletteIdx = (int)tile->GetPaletteId();
+						paletteIdx = (int)tile->GetScenePaletteIndex();
 					}
 
 					if(Palette* originalPalette = m_project.GetPalette(paletteIdx))

@@ -171,8 +171,8 @@ void RenderResources::CreateTilesetTexture()
 
 		if (tile.GetHash() != 0)
 		{
-			PaletteId paletteId = tile.GetPaletteId();
-			Palette* palette = m_project.GetPalette(paletteId);
+			u8 paletteId = tile.GetScenePaletteIndex();
+			Palette* palette = m_project.GetScenePalette(paletteId);
 
 			u32 x = i % m_tilesetSizeSq;
 			u32 y = i / m_tilesetSizeSq;
@@ -656,7 +656,7 @@ void RenderResources::SetTilesetTexPixel(TileId tileId, const ion::Vector2i& pix
 	{
 		if(Tile* tile = m_project.GetTileset().GetTile(tileId))
 		{
-			if(Palette* palette = m_project.GetPalette(tile->GetPaletteId()))
+			if(Palette* palette = m_project.GetScenePalette(tile->GetScenePaletteIndex()))
 			{
 				const int tileWidth = m_project.GetPlatformConfig().tileWidth;
 				const int tileHeight = m_project.GetPlatformConfig().tileHeight;
@@ -896,7 +896,8 @@ void RenderResources::SpriteSheetRenderResources::Load(const SpriteSheet& sprite
 		u32 bytesPerPixel = 4;
 		u32 textureSize = textureWidth * textureHeight * bytesPerPixel;
 
-		const Palette& palette = spriteSheet.GetPalette();
+		PaletteId paletteId = spriteSheet.GetPaletteId();
+		Palette palette = (paletteId == InvalidPaletteId) ? spriteSheet.GetImportedPalette() : *project->GetPalette(paletteId);
 
 		static int resourceIdx = 0;
 

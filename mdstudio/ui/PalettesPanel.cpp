@@ -61,6 +61,7 @@ void PalettesPanel::OnMouse(wxMouseEvent& event)
 
 	if(paletteId < 4)
 	{
+#if 0
 		if(event.Dragging() && (m_dragPalette == -1))
 		{
 			//Begin drag/drop
@@ -75,7 +76,7 @@ void PalettesPanel::OnMouse(wxMouseEvent& event)
 			//TODO: Fix for non-active palette
 			if(m_dragPalette == paletteId && m_dragColour != colourId)
 			{
-				if(Palette* palette = m_project.GetPalette(paletteId))
+				if(Palette* palette = m_project.GetScenePalette(paletteId))
 				{
 					if(palette->IsColourUsed(m_dragColour) && palette->IsColourUsed(colourId))
 					{
@@ -104,7 +105,7 @@ void PalettesPanel::OnMouse(wxMouseEvent& event)
 
 			if (m_mergePalette == paletteId && m_mergeColour != colourId)
 			{
-				if (Palette* palette = m_project.GetPalette(paletteId))
+				if (Palette* palette = m_project.GetScenePalette(paletteId))
 				{
 					if (palette->IsColourUsed(m_mergeColour) && palette->IsColourUsed(colourId))
 					{
@@ -181,9 +182,9 @@ void PalettesPanel::OnMouse(wxMouseEvent& event)
 			PopupMenu(&slotMenu, event.GetPosition());
 		}
 
-		if(paletteId < m_project.GetNumPalettes() && colourId < Palette::coloursPerPalette)
+		if(paletteId < m_project.GetNumScenePalettes() && colourId < Palette::coloursPerPalette)
 		{
-			if(Palette* palette = m_project.GetPalette((PaletteId)paletteId))
+			if(Palette* palette = m_project.GetScenePalette((u8)paletteId))
 			{
 				if(event.LeftDClick())
 				{
@@ -221,11 +222,13 @@ void PalettesPanel::OnMouse(wxMouseEvent& event)
 				}
 			}
 		}
+#endif
 	}
 
 	event.Skip();
 }
 
+#if 0
 void PalettesPanel::OnSlotsMenuClick(wxCommandEvent& event)
 {
 	int menuItemId = event.GetId();
@@ -237,7 +240,7 @@ void PalettesPanel::OnSlotsMenuClick(wxCommandEvent& event)
 		case eMenuNew:
 		{
 			//Backup palette to new slot
-			Palette* palette = m_project.GetPalette(paletteId);
+			Palette* palette = m_project.GetScenePalette(paletteId);
 			m_project.AddPaletteSlot(*palette);
 
 			break;
@@ -247,7 +250,7 @@ void PalettesPanel::OnSlotsMenuClick(wxCommandEvent& event)
 		{
 			//Backup palette to existing slot
 			int slotId = menuItemId & 0xFF;
-			Palette* palette = m_project.GetPalette(paletteId);
+			Palette* palette = m_project.GetScenePalette(paletteId);
 			Palette* slot = m_project.GetPaletteSlot(slotId);
 			*slot = *palette;
 
@@ -298,7 +301,7 @@ void PalettesPanel::OnSlotsMenuClick(wxCommandEvent& event)
 			{
 				std::string filename = dialogue.GetPath().c_str().AsChar();
 
-				if (Palette* palette = m_project.GetPalette(m_selectedPaletteId))
+				if (Palette* palette = m_project.GetScenePalette(m_selectedPaletteId))
 				{
 					ion::ImageFormatBMP writer;
 
@@ -360,7 +363,7 @@ void PalettesPanel::OnSlotsMenuClick(wxCommandEvent& event)
 								return;
 							}
 
-							Palette* currentPalette = m_project.GetPalette(m_selectedPaletteId);
+							Palette* currentPalette = m_project.GetScenePalette(m_selectedPaletteId);
 							Palette newPalette;
 
 							//Create remap from current palette to reference palette
@@ -415,7 +418,7 @@ void PalettesPanel::OnSlotsMenuClick(wxCommandEvent& event)
 		case eMenuSetAsBg:
 		{
 			//Swap colours in active palette
-			if (Palette* palette = m_project.GetPalette(m_selectedPaletteId))
+			if (Palette* palette = m_project.GetScenePalette(m_selectedPaletteId))
 			{
 				Colour originalColour = palette->GetColour(0);
 				Colour newColour = palette->GetColour(m_seletedColourId);
@@ -459,6 +462,7 @@ void PalettesPanel::OnSlotsMenuClick(wxCommandEvent& event)
 			break;
 	}
 }
+#endif
 
 void PalettesPanel::OnPaint(wxPaintEvent& event)
 {
@@ -478,9 +482,9 @@ void PalettesPanel::OnPaint(wxPaintEvent& event)
 
 	float colourRectSize = (m_orientation == eVertical) ? (clientSize.y / Palette::coloursPerPalette) : (clientSize.x / Palette::coloursPerPalette);
 
-	for(int i = 0; i < m_project.GetNumPalettes(); i++)
+	for(int i = 0; i < m_project.GetNumScenePalettes(); i++)
 	{
-		const Palette* palette = m_project.GetPalette(i);
+		const Palette* palette = m_project.GetScenePalette(i);
 
 		for(int j = 0; j < Palette::coloursPerPalette; j++)
 		{
@@ -524,7 +528,7 @@ void PalettesPanel::OnResize(wxSizeEvent& event)
 
 			//Limit height
 			int colourRectSize = (newSize.x / Palette::coloursPerPalette);
-			SetMinSize(wxSize(1, colourRectSize * m_project.GetNumPalettes()));
+			SetMinSize(wxSize(1, colourRectSize * m_project.GetNumScenePalettes()));
 		}
 		else
 		{
@@ -533,7 +537,7 @@ void PalettesPanel::OnResize(wxSizeEvent& event)
 
 			//Limit width
 			int colourRectSize = (newSize.y / Palette::coloursPerPalette);
-			SetMinSize(wxSize(colourRectSize * m_project.GetNumPalettes(), 1));
+			SetMinSize(wxSize(colourRectSize * m_project.GetNumScenePalettes(), 1));
 		}
 
 		Refresh();

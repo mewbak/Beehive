@@ -273,6 +273,46 @@ void SpriteAnimEditorDialog::OnBtnSpriteSheetImport(wxCommandEvent& event)
 	}
 }
 
+void SpriteAnimEditorDialog::OnBtnSpriteSheetReplace(wxCommandEvent& event)
+{
+	if (m_selectedSpriteSheet)
+	{
+		ImportDialogSpriteSheet dialog(this, m_project, m_renderer, m_glContext, m_renderResources);
+
+		dialog.m_textName->SetValue(m_selectedSpriteSheet->GetName());
+		dialog.m_textName->Disable();
+		dialog.m_radioIndividualSheets->Disable();
+
+		if (dialog.ShowModal() == wxID_OK)
+		{
+			const int widthFrames = dialog.m_spinWidthCells->GetValue();
+			const int heightFrames = dialog.m_spinHeightCells->GetValue();
+			const int tileWidth = m_project.GetPlatformConfig().tileWidth;
+			const int tileHeight = m_project.GetPlatformConfig().tileHeight;
+
+			SpriteSheetId spriteSheetId = m_selectedActor->FindSpriteSheetId(m_selectedSpriteSheet->GetName());
+
+			std::string name = m_selectedSpriteSheet->GetName();
+			int endFrame = dialog.m_spinCellCount->GetValue() - 1;
+
+			//Import bitmap
+			if (m_selectedSpriteSheet->ImportBitmap(dialog.m_filePicker->GetPath().GetData().AsChar(), name, tileWidth, tileHeight, widthFrames, heightFrames, 0, endFrame))
+			{
+				//Create render resources
+				m_renderResources.DeleteSpriteSheetRenderResources(spriteSheetId);
+				m_renderResources.CreateSpriteSheetResources(spriteSheetId, *m_selectedSpriteSheet);
+			}
+			else
+			{
+				//Failed
+				wxMessageBox("Error importing spriteSheet", "Error", wxOK);
+			}
+
+			Refresh();
+		}
+	}
+}
+
 void SpriteAnimEditorDialog::OnBtnSpriteSheetDelete(wxCommandEvent& event)
 {
 	if(m_selectedSpriteSheetId != InvalidSpriteSheetId)
@@ -303,12 +343,33 @@ void SpriteAnimEditorDialog::OnBtnSpriteSheetDelete(wxCommandEvent& event)
 	}
 }
 
-void SpriteAnimEditorDialog::OnBtnSpriteSheetUsePalette(wxCommandEvent& event)
+void SpriteAnimEditorDialog::ShowPaletteMatchDlg()
 {
-	if(m_selectedSpriteSheetId != InvalidSpriteSheetId && m_selectedActor)
+	if (m_selectedSpriteSheet)
 	{
-		m_selectedActor->SetMasterPalette(m_selectedSpriteSheetId);
+		// Display list
+		MatchPaletteDialog dialog(this, m_project, m_selectedSpriteSheet->GetImportedPalette());
+
+		int result = dialog.ShowModal();
+
+		if (result != wxID_CANCEL)
+		{
+			// Set new palette id
+			m_selectedSpriteSheet->SetPaletteId(dialog.m_selectedPaletteId);
+
+			// Redraw render resources
+			SpriteSheetId spriteSheetId = m_selectedActor->FindSpriteSheetId(m_selectedSpriteSheet->GetName());
+			m_renderResources.DeleteSpriteSheetRenderResources(spriteSheetId);
+			m_renderResources.CreateSpriteSheetResources(spriteSheetId, *m_selectedSpriteSheet);
+
+			Refresh();
+		}
 	}
+}
+
+void SpriteAnimEditorDialog::OnBtnSpriteSheetSetPalette(wxCommandEvent& event)
+{
+	ShowPaletteMatchDlg();
 }
 
 void SpriteAnimEditorDialog::OnBtnAnimNew(wxCommandEvent& event)

@@ -82,3 +82,20 @@ private:
 	Project& m_project;
 	RenderResources& m_renderResources;
 };
+
+class MatchPaletteDialog : public DialogMatchPalette
+{
+public:
+	MatchPaletteDialog(wxWindow* parent, Project& project, const Palette& paletteToMatch);
+
+	virtual void OnChoicePalette(wxCommandEvent& event);
+	virtual void OnBtnMatch(wxCommandEvent& event);
+	virtual void OnBtnNew(wxCommandEvent& event);
+
+	void Populate(PaletteId selected);
+
+	Project& m_project;
+	Palette m_paletteToMatch;
+	PaletteId m_selectedPaletteId;
+	std::vector<std::pair<PaletteId, Palette>> m_matches;
+};

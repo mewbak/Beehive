@@ -39,7 +39,10 @@ public:
 	void OnPaint(wxPaintEvent& event);
 	void OnErase(wxEraseEvent& event);
 	void OnResize(wxSizeEvent& event);
+
+#if 0
 	void OnSlotsMenuClick(wxCommandEvent& event);
+#endif
 
 private:
 	enum MenuItems

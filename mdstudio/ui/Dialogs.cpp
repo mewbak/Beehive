@@ -189,3 +189,75 @@ void ImportDialogSpriteSheet::OnSpinCellCount(wxSpinEvent& event)
 {
 	m_canvas->SetDrawPreview(true, m_spinCellCount->GetValue());
 }
+
+MatchPaletteDialog::MatchPaletteDialog(wxWindow* parent, Project& project, const Palette& paletteToMatch)
+	: DialogMatchPalette(parent)
+	, m_project(project)
+{
+	m_selectedPaletteId = InvalidPaletteId;
+	m_paletteToMatch = paletteToMatch;
+
+	Populate(InvalidPaletteId);
+
+	// Set original
+	m_paletteViewOld->SetPalette(paletteToMatch);
+}
+
+void MatchPaletteDialog::Populate(PaletteId selected)
+{
+	m_choicePalette->Clear();
+
+	// Build list of all matching palettes
+	m_matches = m_project.FindMatchingPalettes(m_paletteToMatch);
+	int selectedIdx = 0;
+
+	for(int i = 0; i < m_matches.size(); i++)
+	{
+		m_choicePalette->AppendString(m_matches[i].second.GetName());
+		if (m_matches[i].first == selected)
+			selectedIdx = i;
+	}
+
+	// Select
+	if (m_matches.size() > 0 && m_matches.size() > selectedIdx)
+	{
+		m_choicePalette->SetSelection(selectedIdx);
+		m_paletteViewNew->SetPalette(m_matches[selectedIdx].second);
+	}
+
+	Refresh();
+}
+
+void MatchPaletteDialog::OnChoicePalette(wxCommandEvent& event)
+{
+	int selection = m_choicePalette->GetSelection();
+
+	if (selection >= 0 && m_choicePalette->GetSelection() < m_matches.size())
+	{
+		m_paletteViewNew->SetPalette(m_matches[selection].second);
+	}
+}
+
+void MatchPaletteDialog::OnBtnMatch(wxCommandEvent& event)
+{
+	int selection = m_choicePalette->GetSelection();
+
+	if(selection >= 0 && m_choicePalette->GetSelection() < m_matches.size())
+		m_selectedPaletteId = m_matches[m_choicePalette->GetSelection()].first;
+
+	EndModal(wxID_MATCH);
+}
+
+void MatchPaletteDialog::OnBtnNew(wxCommandEvent& event)
+{
+	DialogNewPalette dlg(this);
+
+	dlg.m_paletteView->SetPalette(m_paletteToMatch);
+	
+	if (dlg.ShowModal() == wxID_OK)
+	{
+		m_paletteToMatch.SetName(dlg.m_textName->GetValue().c_str().AsChar());
+		m_selectedPaletteId = m_project.AddPalette(m_paletteToMatch);
+		Populate(m_selectedPaletteId);
+	}
+}

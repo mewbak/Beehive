@@ -190,14 +190,13 @@ void ImportDialogSpriteSheet::OnSpinCellCount(wxSpinEvent& event)
 	m_canvas->SetDrawPreview(true, m_spinCellCount->GetValue());
 }
 
-MatchPaletteDialog::MatchPaletteDialog(wxWindow* parent, Project& project, const Palette& paletteToMatch)
+MatchPaletteDialog::MatchPaletteDialog(wxWindow* parent, Project& project, const Palette& paletteToMatch, PaletteId currentPaletteId)
 	: DialogMatchPalette(parent)
 	, m_project(project)
 {
-	m_selectedPaletteId = InvalidPaletteId;
 	m_paletteToMatch = paletteToMatch;
 
-	Populate(InvalidPaletteId);
+	Populate(currentPaletteId);
 
 	// Set original
 	m_paletteViewOld->SetPalette(paletteToMatch);
@@ -224,6 +223,8 @@ void MatchPaletteDialog::Populate(PaletteId selected)
 		m_choicePalette->SetSelection(selectedIdx);
 		m_paletteViewNew->SetPalette(m_matches[selectedIdx].second);
 	}
+
+	m_selectedPaletteId = selected;
 
 	Refresh();
 }

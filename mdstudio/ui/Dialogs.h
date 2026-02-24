@@ -86,7 +86,7 @@ private:
 class MatchPaletteDialog : public DialogMatchPalette
 {
 public:
-	MatchPaletteDialog(wxWindow* parent, Project& project, const Palette& paletteToMatch);
+	MatchPaletteDialog(wxWindow* parent, Project& project, const Palette& paletteToMatch, PaletteId currentPaletteId);
 
 	virtual void OnChoicePalette(wxCommandEvent& event);
 	virtual void OnBtnMatch(wxCommandEvent& event);

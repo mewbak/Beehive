@@ -348,7 +348,7 @@ void SpriteAnimEditorDialog::ShowPaletteMatchDlg()
 	if (m_selectedSpriteSheet)
 	{
 		// Display list
-		MatchPaletteDialog dialog(this, m_project, m_selectedSpriteSheet->GetImportedPalette());
+		MatchPaletteDialog dialog(this, m_project, m_selectedSpriteSheet->GetImportedPalette(), m_selectedSpriteSheet->GetPaletteId());
 
 		int result = dialog.ShowModal();
 

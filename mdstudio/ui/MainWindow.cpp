@@ -2438,15 +2438,16 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 			int numPalettes = 0;
 			std::string palettesLabel = std::string("palettes_") + m_project->GetName();
 			std::string palettesFilename = scenesExportDir + "\\" + "PALETTES.ASM";
-			if (m_project->GetNumScenePalettes() > 0)
+			if (m_project->GetNumPaletteSlots() > 0)
 			{
 				std::vector<Palette> palettes;
 
-				for (int i = 0; i < m_project->GetNumScenePalettes(); i++)
+				for (int i = 0; i < m_project->GetNumPaletteSlots(); i++)
 				{
-					if (m_project->GetScenePalette(i)->GetUsedColourMask() > 0)
+					const Palette* palette = m_project->GetPalette(m_project->GetPaletteFromSlot(i));
+					if (palette->GetUsedColourMask() > 0)
 					{
-						palettes.push_back(*m_project->GetScenePalette(i));
+						palettes.push_back(*palette);
 					}
 				}
 
@@ -3053,7 +3054,7 @@ void MainWindow::OnBtnStampsImport(wxCommandEvent& event)
 			//Clear palette if checked
 			if (dialog.m_chkClearPalettes->GetValue())
 			{
-				m_project->GetScenePalette(dialog.m_radioBoxPal->GetSelection())->Clear();
+				m_project->GetPalette(m_project->GetPaletteFromSlot(dialog.m_radioBoxPal->GetSelection()))->Clear();
 			}
 
 			wxArrayString filenames;
@@ -3180,6 +3181,12 @@ void MainWindow::OnBtnStampsCleanup(wxCommandEvent& event)
 			RefreshAll();
 		}
 	}
+}
+
+void MainWindow::OnBtnPaletteManager(wxCommandEvent& event)
+{
+	DialogPaletteManagement dlg(this, *m_project);
+	dlg.ShowModal();
 }
 
 void MainWindow::OnBtnTilesCreate(wxCommandEvent& event)

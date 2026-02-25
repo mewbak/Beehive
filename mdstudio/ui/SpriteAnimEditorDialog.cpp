@@ -243,6 +243,9 @@ void SpriteAnimEditorDialog::OnBtnSpriteSheetImport(wxCommandEvent& event)
 				//Import bitmap
 				if (spriteSheet->ImportBitmap(dialog.m_filePicker->GetPath().GetData().AsChar(), name, tileWidth, tileHeight, widthFrames, heightFrames, i, endFrame))
 				{
+					//Show palette match dialog
+					ShowPaletteMatchDlg();
+
 					//Create render resources
 					m_renderResources.CreateSpriteSheetResources(spriteSheetId, *spriteSheet);
 
@@ -298,6 +301,9 @@ void SpriteAnimEditorDialog::OnBtnSpriteSheetReplace(wxCommandEvent& event)
 			//Import bitmap
 			if (m_selectedSpriteSheet->ImportBitmap(dialog.m_filePicker->GetPath().GetData().AsChar(), name, tileWidth, tileHeight, widthFrames, heightFrames, 0, endFrame))
 			{
+				//Show palette match dialog
+				ShowPaletteMatchDlg();
+
 				//Create render resources
 				m_renderResources.DeleteSpriteSheetRenderResources(spriteSheetId);
 				m_renderResources.CreateSpriteSheetResources(spriteSheetId, *m_selectedSpriteSheet);

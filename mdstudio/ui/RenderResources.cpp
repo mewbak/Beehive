@@ -172,7 +172,7 @@ void RenderResources::CreateTilesetTexture()
 		if (tile.GetHash() != 0)
 		{
 			u8 paletteId = tile.GetScenePaletteIndex();
-			Palette* palette = m_project.GetScenePalette(paletteId);
+			Palette* palette = m_project.GetPalette(m_project.GetPaletteFromSlot(paletteId));
 
 			u32 x = i % m_tilesetSizeSq;
 			u32 y = i / m_tilesetSizeSq;
@@ -656,7 +656,7 @@ void RenderResources::SetTilesetTexPixel(TileId tileId, const ion::Vector2i& pix
 	{
 		if(Tile* tile = m_project.GetTileset().GetTile(tileId))
 		{
-			if(Palette* palette = m_project.GetScenePalette(tile->GetScenePaletteIndex()))
+			if(Palette* palette = m_project.GetPalette(m_project.GetPaletteFromSlot(tile->GetScenePaletteIndex())))
 			{
 				const int tileWidth = m_project.GetPlatformConfig().tileWidth;
 				const int tileHeight = m_project.GetPlatformConfig().tileHeight;

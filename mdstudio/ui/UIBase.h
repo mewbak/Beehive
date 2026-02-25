@@ -50,6 +50,7 @@ class SpriteCanvas;
 #include <wx/treectrl.h>
 #include <wx/propgrid/propgrid.h>
 #include <wx/propgrid/advprops.h>
+#include <wx/statbox.h>
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -92,10 +93,10 @@ class SpriteCanvas;
 #define wxID_BTN_STAMPS_UPDATE 1036
 #define wxID_BTN_STAMPS_EXPORT_BMP 1037
 #define wxID_BTN_STAMPS_CLEANUP 1038
-#define wxID_BTN_COL_GEN_BEZIER 1039
-#define wxID_BTN_COL_TILES_CLEANUP 1040
-#define wxID_BTN_COL_MAP_CLEAR 1041
-#define wxID_BTN_GAME_OBJ_TYPES 1042
+#define wxID_BTN_PALETTES_MANAGEMENT 1039
+#define wxID_BTN_COL_GEN_BEZIER 1040
+#define wxID_BTN_COL_TILES_CLEANUP 1041
+#define wxID_BTN_COL_MAP_CLEAR 1042
 #define wxID_MENU_ANIMATION_IMPORT 1043
 #define wxID_MENU_ANIMATION_EXPORT 1044
 #define wxID_MENU_ANIMATION_CONVERT_RELATIVE 1045
@@ -150,8 +151,8 @@ class MainWindowBase : public wxFrame
 		wxMenu* m_menuTiles;
 		wxMenu* m_menuSprites;
 		wxMenu* m_menuStamps;
+		wxMenu* m_menuPalettes;
 		wxMenu* m_menuCollision;
-		wxMenu* m_menuEntities;
 		wxMenu* m_menuAnimations;
 		wxPanel* m_dockArea;
 		wxStatusBar* m_statusBar;
@@ -195,10 +196,10 @@ class MainWindowBase : public wxFrame
 		virtual void OnBtnStampsUpdate( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnStampsExportBMPs( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnStampsCleanup( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnBtnPaletteManager( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnColGenTerrainBezier( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnColTilesCleanup( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnColMapClear( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnBtnGameObjTypes( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnMenuAnimationImport( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnMenuAnimationExport( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnMenuAnimationConvertToRelativeCoords( wxCommandEvent& event ) { event.Skip(); }
@@ -1365,6 +1366,63 @@ class ScriptCompilePanelBase : public wxPanel
 		ScriptCompilePanelBase( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 500,300 ), long style = wxTAB_TRAVERSAL, const wxString& name = wxEmptyString );
 
 		~ScriptCompilePanelBase();
+
+};
+
+///////////////////////////////////////////////////////////////////////////////
+/// Class DialogPaletteManagementBase
+///////////////////////////////////////////////////////////////////////////////
+class DialogPaletteManagementBase : public wxDialog
+{
+	private:
+
+	protected:
+		wxListBox* m_listPalettes;
+		wxButton* m_btnImport;
+		wxButton* m_btnExport;
+		wxButton* m_btnRename;
+		wxButton* m_btnDelete;
+		wxStaticText* m_staticText88;
+		wxStaticText* m_txtName;
+		wxStaticText* m_staticText90;
+		wxStaticText* m_txtId;
+		wxStaticText* m_staticText92;
+		wxStaticText* m_txtActiveSlot;
+		wxStaticText* m_staticText94;
+		wxStaticText* m_txtNumSprites;
+		wxStaticText* m_staticText96;
+		wxStaticText* m_txtNumStamps;
+		wxStaticText* m_staticText98;
+		wxChoice* m_choiceSlot0;
+		wxStaticText* m_staticText102;
+		wxChoice* m_choiceSlot1;
+		wxStaticText* m_staticText103;
+		wxChoice* m_choiceSlot2;
+		wxStaticText* m_staticText104;
+		wxChoice* m_choiceSlot3;
+
+		// Virtual event handlers, override them in your derived class
+		virtual void OnListPalette( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnBtnImport( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnBtnExport( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnBtnRename( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnBtnDelete( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnListSlot0( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnListSlot1( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnListSlot2( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnListSlot3( wxCommandEvent& event ) { event.Skip(); }
+
+
+	public:
+		PaletteViewCtrl* m_paletteViewSelected;
+		PaletteViewCtrl* m_paletteViewSlot0;
+		PaletteViewCtrl* m_paletteViewSlot1;
+		PaletteViewCtrl* m_paletteViewSlot2;
+		PaletteViewCtrl* m_paletteViewSlot3;
+
+		DialogPaletteManagementBase( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("Palette Management"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 981,658 ), long style = wxDEFAULT_DIALOG_STYLE );
+
+		~DialogPaletteManagementBase();
 
 };
 

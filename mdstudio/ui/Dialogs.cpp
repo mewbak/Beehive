@@ -262,3 +262,179 @@ void MatchPaletteDialog::OnBtnNew(wxCommandEvent& event)
 		Populate(m_selectedPaletteId);
 	}
 }
+
+DialogPaletteManagement::DialogPaletteManagement(wxWindow* parent, Project& project)
+	: DialogPaletteManagementBase(parent)
+	, m_project(project)
+{
+	Populate();
+	SelectPalette(0);
+}
+
+void DialogPaletteManagement::Populate()
+{
+	m_populatedPalettes.clear();
+	m_listPalettes->Clear();
+
+	const auto palettes = m_project.GetPalettes();
+
+	for (const auto palette : palettes)
+	{
+		m_listPalettes->Append(palette.second.GetName());
+		m_populatedPalettes.push_back(std::make_pair(palette.first, palette.second));
+	}
+
+	PaletteViewCtrl* views[4] = { m_paletteViewSlot0, m_paletteViewSlot1, m_paletteViewSlot2, m_paletteViewSlot3 };
+	wxChoice* lists[4] = { m_choiceSlot0, m_choiceSlot1, m_choiceSlot2, m_choiceSlot3 };
+
+	for (int i = 0; i < 4; i++)
+	{
+		lists[i]->Clear();
+
+		PaletteId id = m_project.GetPaletteFromSlot(i);
+		if (id == InvalidPaletteId)
+		{
+			views[i]->SetPalette(Palette());
+		}
+		else
+		{
+			const Palette* palette = m_project.GetPalette(id);
+			views[i]->SetPalette(*palette);
+		}
+
+		for (const auto palette : palettes)
+		{
+			lists[i]->Append(palette.second.GetName());
+			if (palette.first == id)
+				lists[i]->SetSelection(i);
+		}
+	}
+
+	Refresh();
+}
+
+void DialogPaletteManagement::SelectPalette(int index)
+{
+	if (index >= 0 && index < m_populatedPalettes.size())
+	{
+		PaletteId paletteId = m_populatedPalettes[index].first;
+		const Palette& palette = m_populatedPalettes[index].second;
+		m_paletteViewSelected->SetPalette(palette);
+		m_txtName->SetLabelText(palette.GetName());
+		m_txtId->SetLabelText(std::to_string(paletteId));
+
+		m_txtActiveSlot->SetLabelText("Unassigned");
+
+		for (int i = 0; i < m_project.GetNumPaletteSlots(); i++)
+		{
+			if (m_project.GetPaletteFromSlot(i) == paletteId)
+			{
+				m_txtActiveSlot->SetLabelText(std::to_string(i));
+				break;
+			}
+		}
+
+		m_txtNumSprites->SetLabelText("");
+		m_txtNumStamps->SetLabelText("");
+
+		Refresh();
+	}
+}
+
+void DialogPaletteManagement::AssignPalette(int index, int slotIndex)
+{
+	PaletteViewCtrl* views[4] = { m_paletteViewSlot0, m_paletteViewSlot1, m_paletteViewSlot2, m_paletteViewSlot3 };
+	PaletteId paletteId = m_populatedPalettes[index].first;
+	const Palette& palette = m_populatedPalettes[index].second;
+	views[slotIndex]->SetPalette(palette);
+	m_project.AssignPaletteToSlot(paletteId, slotIndex);
+	Refresh();
+}
+
+void DialogPaletteManagement::OnListPalette(wxCommandEvent& event)
+{
+	SelectPalette(m_listPalettes->GetSelection());
+}
+
+void DialogPaletteManagement::OnBtnImport(wxCommandEvent& event)
+{
+	//Open BMP
+	wxFileDialog fileDlg(this, _("Open image files"), "", "", "PNG files (*.png)|*.png|BMP files (*.bmp)|*.bmp", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+	if (fileDlg.ShowModal() == wxID_OK)
+	{
+		//Read BMP
+		std::string filename = fileDlg.GetPath().c_str().AsChar();
+		std::string name = filename.substr(filename.find_last_of("/\\") + 1);
+		ion::ImageFormat* reader = ion::ImageFormat::CreateReader(ion::string::GetFileExtension(filename));
+		if (reader && reader->Read(filename))
+		{
+			//Import palette
+			Palette palette(name);
+			
+			for (int i = 0; i < reader->GetPaletteSize(); i++)
+			{
+				ion::ImageFormat::Colour colour = reader->GetPaletteEntry(i);
+				palette.AddColour(Colour(colour.r, colour.g, colour.b));
+			}
+
+			//Match with existing or create new
+			MatchPaletteDialog matchDlg(this, m_project, palette, InvalidPaletteId);
+			matchDlg.ShowModal();
+
+			Populate();
+			SelectPalette(m_populatedPalettes.size() - 1);
+		}
+	}
+}
+
+void DialogPaletteManagement::OnBtnExport(wxCommandEvent& event)
+{
+	wxMessageBox("Unimplemented, sorry", "Error");
+}
+
+void DialogPaletteManagement::OnBtnRename(wxCommandEvent& event)
+{
+	int index = m_listPalettes->GetSelection();
+	if (index >= 0 && index < m_populatedPalettes.size())
+	{
+		wxTextEntryDialog dlg(this, "Rename palette", "Rename palette", m_populatedPalettes[index].second.GetName());
+		if (dlg.ShowModal() == wxID_OK)
+		{
+			if (Palette* palette = m_project.GetPalette(m_populatedPalettes[index].first))
+			{
+				palette->SetName(dlg.GetValue().c_str().AsChar());
+				Populate();
+			}
+		}
+	}
+}
+
+void DialogPaletteManagement::OnBtnDelete(wxCommandEvent& event)
+{
+	int index = m_listPalettes->GetSelection();
+	if (index >= 0 && index < m_populatedPalettes.size())
+	{
+		m_project.DeletePalette(m_populatedPalettes[index].first);
+		Populate();
+	}
+}
+
+void DialogPaletteManagement::OnListSlot0(wxCommandEvent& event)
+{
+	AssignPalette(m_choiceSlot0->GetSelection(), 0);
+}
+
+void DialogPaletteManagement::OnListSlot1(wxCommandEvent& event)
+{
+	AssignPalette(m_choiceSlot1->GetSelection(), 1);
+}
+
+void DialogPaletteManagement::OnListSlot2(wxCommandEvent& event)
+{
+	AssignPalette(m_choiceSlot2->GetSelection(), 2);
+}
+
+void DialogPaletteManagement::OnListSlot3(wxCommandEvent& event)
+{
+	AssignPalette(m_choiceSlot3->GetSelection(), 3);
+}

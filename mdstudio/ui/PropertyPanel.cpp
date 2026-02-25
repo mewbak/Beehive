@@ -97,6 +97,10 @@ void PropertyPanel::Refresh(bool eraseBackground, const wxRect *rect)
 		m_propertyGrid->Clear();
 
 		GameObjectBase* editingObject = GetEditingObject();
+
+		if (!editingObject)
+			return;
+		
 		GameObjectType* editingObjectType = GetEditingType();
 		ActorId actorId;
 		SpriteSheetId spriteSheetId;

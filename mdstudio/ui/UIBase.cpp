@@ -254,6 +254,13 @@ MainWindowBase::MainWindowBase( wxWindow* parent, wxWindowID id, const wxString&
 
 	m_menubar1->Append( m_menuStamps, wxT("Stamps") );
 
+	m_menuPalettes = new wxMenu();
+	wxMenuItem* m_menuItemPaletteManagement;
+	m_menuItemPaletteManagement = new wxMenuItem( m_menuPalettes, wxID_BTN_PALETTES_MANAGEMENT, wxString( wxT("Palette Management") ) , wxEmptyString, wxITEM_NORMAL );
+	m_menuPalettes->Append( m_menuItemPaletteManagement );
+
+	m_menubar1->Append( m_menuPalettes, wxT("Palettes") );
+
 	m_menuCollision = new wxMenu();
 	wxMenuItem* m_menuItemCollisionGenerate;
 	m_menuItemCollisionGenerate = new wxMenuItem( m_menuCollision, wxID_BTN_COL_GEN_BEZIER, wxString( wxT("Generate from Beziers") ) , wxEmptyString, wxITEM_NORMAL );
@@ -268,13 +275,6 @@ MainWindowBase::MainWindowBase( wxWindow* parent, wxWindowID id, const wxString&
 	m_menuCollision->Append( m_menuItemCollisionClearMap );
 
 	m_menubar1->Append( m_menuCollision, wxT("Collision") );
-
-	m_menuEntities = new wxMenu();
-	wxMenuItem* m_menuItemEntitiesTypes;
-	m_menuItemEntitiesTypes = new wxMenuItem( m_menuEntities, wxID_BTN_GAME_OBJ_TYPES, wxString( wxT("Entity Types") ) , wxEmptyString, wxITEM_NORMAL );
-	m_menuEntities->Append( m_menuItemEntitiesTypes );
-
-	m_menubar1->Append( m_menuEntities, wxT("Entities") );
 
 	m_menuAnimations = new wxMenu();
 	wxMenuItem* m_menuItem2;
@@ -349,10 +349,10 @@ MainWindowBase::MainWindowBase( wxWindow* parent, wxWindowID id, const wxString&
 	m_menuStamps->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( MainWindowBase::OnBtnStampsUpdate ), this, m_menuItemStampsUpdate->GetId());
 	m_menuStamps->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( MainWindowBase::OnBtnStampsExportBMPs ), this, m_menuItemStampsExport->GetId());
 	m_menuStamps->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( MainWindowBase::OnBtnStampsCleanup ), this, m_menuItemStampsCleanup->GetId());
+	m_menuPalettes->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( MainWindowBase::OnBtnPaletteManager ), this, m_menuItemPaletteManagement->GetId());
 	m_menuCollision->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( MainWindowBase::OnBtnColGenTerrainBezier ), this, m_menuItemCollisionGenerate->GetId());
 	m_menuCollision->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( MainWindowBase::OnBtnColTilesCleanup ), this, m_menuItemCollisionCleanup->GetId());
 	m_menuCollision->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( MainWindowBase::OnBtnColMapClear ), this, m_menuItemCollisionClearMap->GetId());
-	m_menuEntities->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( MainWindowBase::OnBtnGameObjTypes ), this, m_menuItemEntitiesTypes->GetId());
 	m_menuAnimations->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( MainWindowBase::OnMenuAnimationImport ), this, m_menuItem2->GetId());
 	m_menuAnimations->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( MainWindowBase::OnMenuAnimationExport ), this, m_menuItem31->GetId());
 	m_menuAnimations->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( MainWindowBase::OnMenuAnimationConvertToRelativeCoords ), this, m_menuItem4->GetId());
@@ -1092,10 +1092,10 @@ DialogMatchPalette::DialogMatchPalette( wxWindow* parent, wxWindowID id, const w
 	bSizer74 = new wxBoxSizer( wxHORIZONTAL );
 
 	m_btnMatch = new wxButton( this, wxID_MATCH, wxT("Match"), wxDefaultPosition, wxDefaultSize, 0 );
-	bSizer74->Add( m_btnMatch, 0, wxALIGN_RIGHT|wxALL, 5 );
+	bSizer74->Add( m_btnMatch, 0, wxALL, 5 );
 
 	m_btnNew = new wxButton( this, wxID_NEW, wxT("New..."), wxDefaultPosition, wxDefaultSize, 0 );
-	bSizer74->Add( m_btnNew, 0, wxALIGN_RIGHT|wxALL, 5 );
+	bSizer74->Add( m_btnNew, 0, wxALL, 5 );
 
 
 	bSizer2->Add( bSizer74, 1, wxALIGN_RIGHT, 5 );
@@ -3851,4 +3851,246 @@ ScriptCompilePanelBase::ScriptCompilePanelBase( wxWindow* parent, wxWindowID id,
 
 ScriptCompilePanelBase::~ScriptCompilePanelBase()
 {
+}
+
+DialogPaletteManagementBase::DialogPaletteManagementBase( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxDialog( parent, id, title, pos, size, style )
+{
+	this->SetSizeHints( wxDefaultSize, wxDefaultSize );
+
+	wxFlexGridSizer* fgSizer71;
+	fgSizer71 = new wxFlexGridSizer( 2, 1, 0, 0 );
+	fgSizer71->AddGrowableCol( 0 );
+	fgSizer71->SetFlexibleDirection( wxBOTH );
+	fgSizer71->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+
+	wxFlexGridSizer* fgSizer72;
+	fgSizer72 = new wxFlexGridSizer( 0, 2, 0, 0 );
+	fgSizer72->AddGrowableCol( 1 );
+	fgSizer72->SetFlexibleDirection( wxBOTH );
+	fgSizer72->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+
+	m_listPalettes = new wxListBox( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
+	m_listPalettes->SetMinSize( wxSize( 230,400 ) );
+
+	fgSizer72->Add( m_listPalettes, 0, wxALL|wxEXPAND, 5 );
+
+	wxFlexGridSizer* fgSizer73;
+	fgSizer73 = new wxFlexGridSizer( 2, 1, 0, 0 );
+	fgSizer73->AddGrowableCol( 0 );
+	fgSizer73->SetFlexibleDirection( wxBOTH );
+	fgSizer73->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+
+	m_paletteViewSelected = new PaletteViewCtrl( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0 );
+	m_paletteViewSelected->SetMinSize( wxSize( 32,32 ) );
+
+	fgSizer73->Add( m_paletteViewSelected, 0, wxALL|wxEXPAND, 5 );
+
+	wxFlexGridSizer* fgSizer74;
+	fgSizer74 = new wxFlexGridSizer( 1, 2, 0, 0 );
+	fgSizer74->SetFlexibleDirection( wxBOTH );
+	fgSizer74->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+
+	wxStaticBoxSizer* sbSizer3;
+	sbSizer3 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Manage") ), wxVERTICAL );
+
+	wxFlexGridSizer* fgSizer75;
+	fgSizer75 = new wxFlexGridSizer( 2, 2, 0, 0 );
+	fgSizer75->SetFlexibleDirection( wxBOTH );
+	fgSizer75->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+
+	m_btnImport = new wxButton( sbSizer3->GetStaticBox(), wxID_ANY, wxT("Import"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizer75->Add( m_btnImport, 0, wxALL, 5 );
+
+	m_btnExport = new wxButton( sbSizer3->GetStaticBox(), wxID_ANY, wxT("Export"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizer75->Add( m_btnExport, 0, wxALL, 5 );
+
+	m_btnRename = new wxButton( sbSizer3->GetStaticBox(), wxID_ANY, wxT("Rename"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizer75->Add( m_btnRename, 0, wxALL, 5 );
+
+	m_btnDelete = new wxButton( sbSizer3->GetStaticBox(), wxID_ANY, wxT("Delete"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizer75->Add( m_btnDelete, 0, wxALL, 5 );
+
+
+	sbSizer3->Add( fgSizer75, 1, wxEXPAND, 5 );
+
+
+	fgSizer74->Add( sbSizer3, 1, wxALL, 5 );
+
+	wxStaticBoxSizer* sbSizer2;
+	sbSizer2 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Details") ), wxVERTICAL );
+
+	wxFlexGridSizer* fgSizer76;
+	fgSizer76 = new wxFlexGridSizer( 0, 2, 0, 0 );
+	fgSizer76->SetFlexibleDirection( wxBOTH );
+	fgSizer76->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+
+	m_staticText88 = new wxStaticText( sbSizer2->GetStaticBox(), wxID_ANY, wxT("Name:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText88->Wrap( -1 );
+	fgSizer76->Add( m_staticText88, 0, wxALL, 5 );
+
+	m_txtName = new wxStaticText( sbSizer2->GetStaticBox(), wxID_ANY, wxT("MyLabel"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_txtName->Wrap( -1 );
+	m_txtName->SetMinSize( wxSize( 200,-1 ) );
+
+	fgSizer76->Add( m_txtName, 0, wxALL, 5 );
+
+	m_staticText90 = new wxStaticText( sbSizer2->GetStaticBox(), wxID_ANY, wxT("Id:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText90->Wrap( -1 );
+	fgSizer76->Add( m_staticText90, 0, wxALL, 5 );
+
+	m_txtId = new wxStaticText( sbSizer2->GetStaticBox(), wxID_ANY, wxT("MyLabel"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_txtId->Wrap( -1 );
+	fgSizer76->Add( m_txtId, 0, wxALL, 5 );
+
+	m_staticText92 = new wxStaticText( sbSizer2->GetStaticBox(), wxID_ANY, wxT("Active Slot:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText92->Wrap( -1 );
+	fgSizer76->Add( m_staticText92, 0, wxALL, 5 );
+
+	m_txtActiveSlot = new wxStaticText( sbSizer2->GetStaticBox(), wxID_ANY, wxT("MyLabel"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_txtActiveSlot->Wrap( -1 );
+	fgSizer76->Add( m_txtActiveSlot, 0, wxALL, 5 );
+
+	m_staticText94 = new wxStaticText( sbSizer2->GetStaticBox(), wxID_ANY, wxT("# sprites:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText94->Wrap( -1 );
+	fgSizer76->Add( m_staticText94, 0, wxALL, 5 );
+
+	m_txtNumSprites = new wxStaticText( sbSizer2->GetStaticBox(), wxID_ANY, wxT("MyLabel"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_txtNumSprites->Wrap( -1 );
+	fgSizer76->Add( m_txtNumSprites, 0, wxALL, 5 );
+
+	m_staticText96 = new wxStaticText( sbSizer2->GetStaticBox(), wxID_ANY, wxT("# stamps:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText96->Wrap( -1 );
+	fgSizer76->Add( m_staticText96, 0, wxALL, 5 );
+
+	m_txtNumStamps = new wxStaticText( sbSizer2->GetStaticBox(), wxID_ANY, wxT("MyLabel"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_txtNumStamps->Wrap( -1 );
+	m_txtNumStamps->SetMinSize( wxSize( 200,-1 ) );
+
+	fgSizer76->Add( m_txtNumStamps, 0, wxALL, 5 );
+
+
+	sbSizer2->Add( fgSizer76, 1, wxEXPAND, 5 );
+
+
+	fgSizer74->Add( sbSizer2, 1, wxALL|wxEXPAND, 5 );
+
+
+	fgSizer73->Add( fgSizer74, 1, wxEXPAND, 5 );
+
+
+	fgSizer72->Add( fgSizer73, 1, wxEXPAND, 5 );
+
+
+	fgSizer71->Add( fgSizer72, 1, wxEXPAND, 5 );
+
+	wxStaticBoxSizer* sbSizer1;
+	sbSizer1 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Active Slots") ), wxVERTICAL );
+
+	wxFlexGridSizer* fgSizer77;
+	fgSizer77 = new wxFlexGridSizer( 4, 3, 0, 0 );
+	fgSizer77->AddGrowableCol( 2 );
+	fgSizer77->SetFlexibleDirection( wxBOTH );
+	fgSizer77->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+
+	m_staticText98 = new wxStaticText( sbSizer1->GetStaticBox(), wxID_ANY, wxT("0:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText98->Wrap( -1 );
+	fgSizer77->Add( m_staticText98, 0, wxALL, 5 );
+
+	wxArrayString m_choiceSlot0Choices;
+	m_choiceSlot0 = new wxChoice( sbSizer1->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, m_choiceSlot0Choices, 0 );
+	m_choiceSlot0->SetSelection( 0 );
+	m_choiceSlot0->SetMinSize( wxSize( 200,-1 ) );
+
+	fgSizer77->Add( m_choiceSlot0, 0, wxALL, 5 );
+
+	m_paletteViewSlot0 = new PaletteViewCtrl( sbSizer1->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, 0 );
+	m_paletteViewSlot0->SetMinSize( wxSize( 32,32 ) );
+
+	fgSizer77->Add( m_paletteViewSlot0, 0, wxALL|wxEXPAND, 5 );
+
+	m_staticText102 = new wxStaticText( sbSizer1->GetStaticBox(), wxID_ANY, wxT("1:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText102->Wrap( -1 );
+	fgSizer77->Add( m_staticText102, 0, wxALL, 5 );
+
+	wxArrayString m_choiceSlot1Choices;
+	m_choiceSlot1 = new wxChoice( sbSizer1->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, m_choiceSlot1Choices, 0 );
+	m_choiceSlot1->SetSelection( 0 );
+	m_choiceSlot1->SetMinSize( wxSize( 200,-1 ) );
+
+	fgSizer77->Add( m_choiceSlot1, 0, wxALL, 5 );
+
+	m_paletteViewSlot1 = new PaletteViewCtrl( sbSizer1->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, 0 );
+	m_paletteViewSlot1->SetMinSize( wxSize( 32,32 ) );
+
+	fgSizer77->Add( m_paletteViewSlot1, 0, wxALL|wxEXPAND, 5 );
+
+	m_staticText103 = new wxStaticText( sbSizer1->GetStaticBox(), wxID_ANY, wxT("2:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText103->Wrap( -1 );
+	fgSizer77->Add( m_staticText103, 0, wxALL, 5 );
+
+	wxArrayString m_choiceSlot2Choices;
+	m_choiceSlot2 = new wxChoice( sbSizer1->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, m_choiceSlot2Choices, 0 );
+	m_choiceSlot2->SetSelection( 0 );
+	m_choiceSlot2->SetMinSize( wxSize( 200,-1 ) );
+
+	fgSizer77->Add( m_choiceSlot2, 0, wxALL, 5 );
+
+	m_paletteViewSlot2 = new PaletteViewCtrl( sbSizer1->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, 0 );
+	m_paletteViewSlot2->SetMinSize( wxSize( 32,32 ) );
+
+	fgSizer77->Add( m_paletteViewSlot2, 0, wxALL|wxEXPAND, 5 );
+
+	m_staticText104 = new wxStaticText( sbSizer1->GetStaticBox(), wxID_ANY, wxT("3:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText104->Wrap( -1 );
+	fgSizer77->Add( m_staticText104, 0, wxALL, 5 );
+
+	wxArrayString m_choiceSlot3Choices;
+	m_choiceSlot3 = new wxChoice( sbSizer1->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, m_choiceSlot3Choices, 0 );
+	m_choiceSlot3->SetSelection( 0 );
+	m_choiceSlot3->SetMinSize( wxSize( 200,-1 ) );
+
+	fgSizer77->Add( m_choiceSlot3, 0, wxALL, 5 );
+
+	m_paletteViewSlot3 = new PaletteViewCtrl( sbSizer1->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, 0 );
+	m_paletteViewSlot3->SetMinSize( wxSize( 32,32 ) );
+
+	fgSizer77->Add( m_paletteViewSlot3, 0, wxALL|wxEXPAND, 5 );
+
+
+	sbSizer1->Add( fgSizer77, 1, wxEXPAND, 5 );
+
+
+	fgSizer71->Add( sbSizer1, 1, wxALL|wxEXPAND, 5 );
+
+
+	this->SetSizer( fgSizer71 );
+	this->Layout();
+
+	this->Centre( wxBOTH );
+
+	// Connect Events
+	m_listPalettes->Connect( wxEVT_COMMAND_LISTBOX_SELECTED, wxCommandEventHandler( DialogPaletteManagementBase::OnListPalette ), NULL, this );
+	m_btnImport->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogPaletteManagementBase::OnBtnImport ), NULL, this );
+	m_btnExport->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogPaletteManagementBase::OnBtnExport ), NULL, this );
+	m_btnRename->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogPaletteManagementBase::OnBtnRename ), NULL, this );
+	m_btnDelete->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogPaletteManagementBase::OnBtnDelete ), NULL, this );
+	m_choiceSlot0->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DialogPaletteManagementBase::OnListSlot0 ), NULL, this );
+	m_choiceSlot1->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DialogPaletteManagementBase::OnListSlot1 ), NULL, this );
+	m_choiceSlot2->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DialogPaletteManagementBase::OnListSlot2 ), NULL, this );
+	m_choiceSlot3->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DialogPaletteManagementBase::OnListSlot3 ), NULL, this );
+}
+
+DialogPaletteManagementBase::~DialogPaletteManagementBase()
+{
+	// Disconnect Events
+	m_listPalettes->Disconnect( wxEVT_COMMAND_LISTBOX_SELECTED, wxCommandEventHandler( DialogPaletteManagementBase::OnListPalette ), NULL, this );
+	m_btnImport->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogPaletteManagementBase::OnBtnImport ), NULL, this );
+	m_btnExport->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogPaletteManagementBase::OnBtnExport ), NULL, this );
+	m_btnRename->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogPaletteManagementBase::OnBtnRename ), NULL, this );
+	m_btnDelete->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogPaletteManagementBase::OnBtnDelete ), NULL, this );
+	m_choiceSlot0->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DialogPaletteManagementBase::OnListSlot0 ), NULL, this );
+	m_choiceSlot1->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DialogPaletteManagementBase::OnListSlot1 ), NULL, this );
+	m_choiceSlot2->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DialogPaletteManagementBase::OnListSlot2 ), NULL, this );
+	m_choiceSlot3->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DialogPaletteManagementBase::OnListSlot3 ), NULL, this );
+
 }

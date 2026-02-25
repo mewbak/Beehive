@@ -482,18 +482,19 @@ void PalettesPanel::OnPaint(wxPaintEvent& event)
 
 	float colourRectSize = (m_orientation == eVertical) ? (clientSize.y / Palette::coloursPerPalette) : (clientSize.x / Palette::coloursPerPalette);
 
-	for(int i = 0; i < m_project.GetNumScenePalettes(); i++)
+	for(int i = 0; i < m_project.GetNumPaletteSlots(); i++)
 	{
-		const Palette* palette = m_project.GetScenePalette(i);
+		PaletteId paletteId = m_project.GetPaletteFromSlot(i);
+		const Palette* palette = (m_project.GetPaletteFromSlot(i) != InvalidPaletteId) ? m_project.GetPalette(m_project.GetPaletteFromSlot(i)) : nullptr;
 
-		for(int j = 0; j < Palette::coloursPerPalette; j++)
+		for (int j = 0; j < Palette::coloursPerPalette; j++)
 		{
 			int x = (m_orientation == eVertical) ? i : j;
 			int y = (m_orientation == eVertical) ? j : i;
 
 			wxBrush brush;
 
-			if(palette->IsColourUsed(j))
+			if (palette && palette->IsColourUsed(j))
 			{
 				const Colour& colour = palette->GetColour(j);
 				brush.SetColour(wxColour(colour.GetRed(), colour.GetGreen(), colour.GetBlue()));
@@ -528,7 +529,7 @@ void PalettesPanel::OnResize(wxSizeEvent& event)
 
 			//Limit height
 			int colourRectSize = (newSize.x / Palette::coloursPerPalette);
-			SetMinSize(wxSize(1, colourRectSize * m_project.GetNumScenePalettes()));
+			SetMinSize(wxSize(1, colourRectSize * m_project.GetNumPaletteSlots()));
 		}
 		else
 		{
@@ -537,7 +538,7 @@ void PalettesPanel::OnResize(wxSizeEvent& event)
 
 			//Limit width
 			int colourRectSize = (newSize.y / Palette::coloursPerPalette);
-			SetMinSize(wxSize(colourRectSize * m_project.GetNumScenePalettes(), 1));
+			SetMinSize(wxSize(colourRectSize * m_project.GetNumPaletteSlots(), 1));
 		}
 
 		Refresh();

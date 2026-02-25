@@ -99,3 +99,27 @@ public:
 	PaletteId m_selectedPaletteId;
 	std::vector<std::pair<PaletteId, Palette>> m_matches;
 };
+
+class DialogPaletteManagement : public DialogPaletteManagementBase
+{
+public:
+	DialogPaletteManagement(wxWindow* parent, Project& project);
+
+	virtual void OnListPalette(wxCommandEvent& event);
+	virtual void OnBtnImport(wxCommandEvent& event);
+	virtual void OnBtnExport(wxCommandEvent& event);
+	virtual void OnBtnRename(wxCommandEvent& event);
+	virtual void OnBtnDelete(wxCommandEvent& event);
+	virtual void OnListSlot0(wxCommandEvent& event);
+	virtual void OnListSlot1(wxCommandEvent& event);
+	virtual void OnListSlot2(wxCommandEvent& event);
+	virtual void OnListSlot3(wxCommandEvent& event);
+
+private:
+	void Populate();
+	void SelectPalette(int index);
+	void AssignPalette(int index, int slotIndex);
+
+	Project& m_project;
+	std::vector<std::pair<PaletteId, Palette>> m_populatedPalettes;
+};

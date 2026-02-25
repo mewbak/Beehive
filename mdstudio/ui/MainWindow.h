@@ -173,6 +173,7 @@ protected:
 	virtual void OnBtnStampsUpdate(wxCommandEvent& event);
 	virtual void OnBtnStampsExportBMPs(wxCommandEvent& event);
 	virtual void OnBtnStampsCleanup(wxCommandEvent& event);
+	virtual void OnBtnPaletteManager(wxCommandEvent& event);
 	virtual void OnBtnColMapClear(wxCommandEvent& event);
 	virtual void OnBtnColGenTerrainBezier(wxCommandEvent& event);
 	virtual void OnBtnColTilesCreate(wxCommandEvent& event);

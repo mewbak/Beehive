@@ -481,7 +481,7 @@ void PropertyPanel::OnContextMenuClick(wxCommandEvent& event)
 				if (variable)
 				{
 					//TODO: Do this in Beehive-side script compiler
-					const std::string engineRootDir = m_project.m_settings.Get("engineootDir");
+					const std::string engineRootDir = m_project.m_settings.Get("engineRootDir");
 					const std::string projectRootDir = m_project.m_settings.Get("projectRootDir");
 
 					const std::string scriptsSourceDir = projectRootDir + "\\SCRIPTS\\";
@@ -710,6 +710,79 @@ void PropertyPanel::AddProperty(const GameObjectBase* gameObject, const GameObje
 			choiceProp->SetChoiceSelection(choiceProp->GetChoices().GetCount() - 1);
 			selectionValid = false;
 		}
+	}
+	else if (variable.HasTag("PALETTE_SLOT"))
+	{
+		wxArrayString* list = new wxArrayString();
+		int selection = -1;
+		int paletteSlotIdx = -1;
+
+		// Find the actor and sprite sheet var in this component to fetch the palette from
+		const GameObjectVariable* spriteActorVar = FindGameObjectVariableByTag(m_project, gameObject, "SPRITE_ACTOR", componentIdx);
+		const GameObjectVariable* spriteSheetVar = FindGameObjectVariableByTag(m_project, gameObject, "SPRITE_SHEET", componentIdx);
+		if (spriteActorVar && spriteSheetVar)
+		{
+			const Actor* actor = m_project.FindActor(spriteActorVar->m_value);
+			if (actor)
+			{
+				SpriteSheetId spriteSheetId = actor->FindSpriteSheetId(spriteSheetVar->m_value);
+				const SpriteSheet* spriteSheet = actor->GetSpriteSheet(spriteSheetId);
+				if (spriteSheet)
+				{
+					PaletteId paletteId = spriteSheet->GetPaletteId();
+
+					const auto palettes = m_project.GetPalettes();
+
+					for (const auto palette : palettes)
+					{
+						int slotIdx = -1;
+						for (int i = 0; i < m_project.GetNumPaletteSlots(); i++)
+						{
+							if (m_project.GetPaletteFromSlot(i) == palette.first)
+							{
+								slotIdx = i;
+								break;
+							}
+						}
+
+						std::string label = (slotIdx >= 0) ? std::to_string(slotIdx) : "?";
+						label += ": " + palette.second.GetName();
+						list->Add(label);
+						if (palette.first == paletteId)
+						{
+							selection = list->Count() - 1;
+							paletteSlotIdx = slotIdx;
+						}
+					}
+				}
+			}
+		}
+
+		wxEnumProperty* choiceProp = new wxEnumProperty(variable.m_name, propName, *list);
+		property = choiceProp;
+
+		if (selection >= 0)
+		{
+			choiceProp->SetChoiceSelection(selection);
+		}
+		else
+		{
+			//Add a blank entry
+			choiceProp->AddChoice("[none]");
+			choiceProp->SetChoiceSelection(choiceProp->GetChoices().GetCount() - 1);
+			selectionValid = false;
+		}
+
+		// If not assigned to an active slot, warn about it
+		if (paletteSlotIdx == -1)
+		{
+			property->SetHelpString("Palette not in active scene slot");
+			selectionValid = false;
+		}
+
+		// Can't edit, set on sprite sheet not object
+		// TODO: should be able to override on object
+		choiceProp->Enable(false);
 	}
 	else if (variable.HasTag("ENTITY_DESC"))
 	{

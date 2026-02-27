@@ -267,6 +267,8 @@ DialogPaletteManagement::DialogPaletteManagement(wxWindow* parent, Project& proj
 	: DialogPaletteManagementBase(parent)
 	, m_project(project)
 {
+	const Map& editingMap = project.GetEditingMap();
+	m_sizerSlots->GetStaticBox()->SetLabel("Active Slots (Map \'" + editingMap.GetName() + "\')");
 	Populate();
 	SelectPalette(0);
 }
@@ -291,7 +293,7 @@ void DialogPaletteManagement::Populate()
 	{
 		lists[i]->Clear();
 
-		PaletteId id = m_project.GetPaletteFromSlot(i);
+		PaletteId id = m_project.GetEditingMap().GetPaletteFromSlot(i);
 		if (id == InvalidPaletteId)
 		{
 			views[i]->SetPalette(Palette());
@@ -325,9 +327,9 @@ void DialogPaletteManagement::SelectPalette(int index)
 
 		m_txtActiveSlot->SetLabelText("Unassigned");
 
-		for (int i = 0; i < m_project.GetNumPaletteSlots(); i++)
+		for (int i = 0; i < m_project.GetEditingMap().GetNumPaletteSlots(); i++)
 		{
-			if (m_project.GetPaletteFromSlot(i) == paletteId)
+			if (m_project.GetEditingMap().GetPaletteFromSlot(i) == paletteId)
 			{
 				m_txtActiveSlot->SetLabelText(std::to_string(i));
 				break;
@@ -347,7 +349,7 @@ void DialogPaletteManagement::AssignPalette(int index, int slotIndex)
 	PaletteId paletteId = m_populatedPalettes[index].first;
 	const Palette& palette = m_populatedPalettes[index].second;
 	views[slotIndex]->SetPalette(palette);
-	m_project.AssignPaletteToSlot(paletteId, slotIndex);
+	m_project.GetEditingMap().AssignPaletteToSlot(paletteId, slotIndex);
 	Refresh();
 }
 

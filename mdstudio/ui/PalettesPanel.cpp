@@ -482,10 +482,12 @@ void PalettesPanel::OnPaint(wxPaintEvent& event)
 
 	float colourRectSize = (m_orientation == eVertical) ? (clientSize.y / Palette::coloursPerPalette) : (clientSize.x / Palette::coloursPerPalette);
 
-	for(int i = 0; i < m_project.GetNumPaletteSlots(); i++)
+	const Map& editingMap = m_project.GetEditingMap();
+
+	for(int i = 0; i < editingMap.GetNumPaletteSlots(); i++)
 	{
-		PaletteId paletteId = m_project.GetPaletteFromSlot(i);
-		const Palette* palette = (m_project.GetPaletteFromSlot(i) != InvalidPaletteId) ? m_project.GetPalette(m_project.GetPaletteFromSlot(i)) : nullptr;
+		PaletteId paletteId = editingMap.GetPaletteFromSlot(i);
+		const Palette* palette = (editingMap.GetPaletteFromSlot(i) != InvalidPaletteId) ? m_project.GetPalette(editingMap.GetPaletteFromSlot(i)) : nullptr;
 
 		for (int j = 0; j < Palette::coloursPerPalette; j++)
 		{
@@ -529,7 +531,7 @@ void PalettesPanel::OnResize(wxSizeEvent& event)
 
 			//Limit height
 			int colourRectSize = (newSize.x / Palette::coloursPerPalette);
-			SetMinSize(wxSize(1, colourRectSize * m_project.GetNumPaletteSlots()));
+			SetMinSize(wxSize(1, colourRectSize * m_project.GetEditingMap().GetNumPaletteSlots()));
 		}
 		else
 		{
@@ -538,7 +540,7 @@ void PalettesPanel::OnResize(wxSizeEvent& event)
 
 			//Limit width
 			int colourRectSize = (newSize.y / Palette::coloursPerPalette);
-			SetMinSize(wxSize(colourRectSize * m_project.GetNumPaletteSlots(), 1));
+			SetMinSize(wxSize(colourRectSize * m_project.GetEditingMap().GetNumPaletteSlots(), 1));
 		}
 
 		Refresh();

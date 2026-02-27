@@ -1392,6 +1392,7 @@ class DialogPaletteManagementBase : public wxDialog
 		wxStaticText* m_txtNumSprites;
 		wxStaticText* m_staticText96;
 		wxStaticText* m_txtNumStamps;
+		wxStaticBoxSizer* m_sizerSlots;
 		wxStaticText* m_staticText98;
 		wxChoice* m_choiceSlot0;
 		wxStaticText* m_staticText102;

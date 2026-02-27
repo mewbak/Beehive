@@ -1092,6 +1092,8 @@ DialogMatchPalette::DialogMatchPalette( wxWindow* parent, wxWindowID id, const w
 	bSizer74 = new wxBoxSizer( wxHORIZONTAL );
 
 	m_btnMatch = new wxButton( this, wxID_MATCH, wxT("Match"), wxDefaultPosition, wxDefaultSize, 0 );
+
+	m_btnMatch->SetDefault();
 	bSizer74->Add( m_btnMatch, 0, wxALL, 5 );
 
 	m_btnNew = new wxButton( this, wxID_NEW, wxT("New..."), wxDefaultPosition, wxDefaultSize, 0 );
@@ -3983,8 +3985,7 @@ DialogPaletteManagementBase::DialogPaletteManagementBase( wxWindow* parent, wxWi
 
 	fgSizer71->Add( fgSizer72, 1, wxEXPAND, 5 );
 
-	wxStaticBoxSizer* sbSizer1;
-	sbSizer1 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Active Slots") ), wxVERTICAL );
+	m_sizerSlots = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Active Slots") ), wxVERTICAL );
 
 	wxFlexGridSizer* fgSizer77;
 	fgSizer77 = new wxFlexGridSizer( 4, 3, 0, 0 );
@@ -3992,75 +3993,75 @@ DialogPaletteManagementBase::DialogPaletteManagementBase( wxWindow* parent, wxWi
 	fgSizer77->SetFlexibleDirection( wxBOTH );
 	fgSizer77->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 
-	m_staticText98 = new wxStaticText( sbSizer1->GetStaticBox(), wxID_ANY, wxT("0:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText98 = new wxStaticText( m_sizerSlots->GetStaticBox(), wxID_ANY, wxT("0:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText98->Wrap( -1 );
 	fgSizer77->Add( m_staticText98, 0, wxALL, 5 );
 
 	wxArrayString m_choiceSlot0Choices;
-	m_choiceSlot0 = new wxChoice( sbSizer1->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, m_choiceSlot0Choices, 0 );
+	m_choiceSlot0 = new wxChoice( m_sizerSlots->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, m_choiceSlot0Choices, 0 );
 	m_choiceSlot0->SetSelection( 0 );
 	m_choiceSlot0->SetMinSize( wxSize( 200,-1 ) );
 
 	fgSizer77->Add( m_choiceSlot0, 0, wxALL, 5 );
 
-	m_paletteViewSlot0 = new PaletteViewCtrl( sbSizer1->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, 0 );
+	m_paletteViewSlot0 = new PaletteViewCtrl( m_sizerSlots->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, 0 );
 	m_paletteViewSlot0->SetMinSize( wxSize( 32,32 ) );
 
 	fgSizer77->Add( m_paletteViewSlot0, 0, wxALL|wxEXPAND, 5 );
 
-	m_staticText102 = new wxStaticText( sbSizer1->GetStaticBox(), wxID_ANY, wxT("1:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText102 = new wxStaticText( m_sizerSlots->GetStaticBox(), wxID_ANY, wxT("1:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText102->Wrap( -1 );
 	fgSizer77->Add( m_staticText102, 0, wxALL, 5 );
 
 	wxArrayString m_choiceSlot1Choices;
-	m_choiceSlot1 = new wxChoice( sbSizer1->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, m_choiceSlot1Choices, 0 );
+	m_choiceSlot1 = new wxChoice( m_sizerSlots->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, m_choiceSlot1Choices, 0 );
 	m_choiceSlot1->SetSelection( 0 );
 	m_choiceSlot1->SetMinSize( wxSize( 200,-1 ) );
 
 	fgSizer77->Add( m_choiceSlot1, 0, wxALL, 5 );
 
-	m_paletteViewSlot1 = new PaletteViewCtrl( sbSizer1->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, 0 );
+	m_paletteViewSlot1 = new PaletteViewCtrl( m_sizerSlots->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, 0 );
 	m_paletteViewSlot1->SetMinSize( wxSize( 32,32 ) );
 
 	fgSizer77->Add( m_paletteViewSlot1, 0, wxALL|wxEXPAND, 5 );
 
-	m_staticText103 = new wxStaticText( sbSizer1->GetStaticBox(), wxID_ANY, wxT("2:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText103 = new wxStaticText( m_sizerSlots->GetStaticBox(), wxID_ANY, wxT("2:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText103->Wrap( -1 );
 	fgSizer77->Add( m_staticText103, 0, wxALL, 5 );
 
 	wxArrayString m_choiceSlot2Choices;
-	m_choiceSlot2 = new wxChoice( sbSizer1->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, m_choiceSlot2Choices, 0 );
+	m_choiceSlot2 = new wxChoice( m_sizerSlots->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, m_choiceSlot2Choices, 0 );
 	m_choiceSlot2->SetSelection( 0 );
 	m_choiceSlot2->SetMinSize( wxSize( 200,-1 ) );
 
 	fgSizer77->Add( m_choiceSlot2, 0, wxALL, 5 );
 
-	m_paletteViewSlot2 = new PaletteViewCtrl( sbSizer1->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, 0 );
+	m_paletteViewSlot2 = new PaletteViewCtrl( m_sizerSlots->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, 0 );
 	m_paletteViewSlot2->SetMinSize( wxSize( 32,32 ) );
 
 	fgSizer77->Add( m_paletteViewSlot2, 0, wxALL|wxEXPAND, 5 );
 
-	m_staticText104 = new wxStaticText( sbSizer1->GetStaticBox(), wxID_ANY, wxT("3:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText104 = new wxStaticText( m_sizerSlots->GetStaticBox(), wxID_ANY, wxT("3:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText104->Wrap( -1 );
 	fgSizer77->Add( m_staticText104, 0, wxALL, 5 );
 
 	wxArrayString m_choiceSlot3Choices;
-	m_choiceSlot3 = new wxChoice( sbSizer1->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, m_choiceSlot3Choices, 0 );
+	m_choiceSlot3 = new wxChoice( m_sizerSlots->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, m_choiceSlot3Choices, 0 );
 	m_choiceSlot3->SetSelection( 0 );
 	m_choiceSlot3->SetMinSize( wxSize( 200,-1 ) );
 
 	fgSizer77->Add( m_choiceSlot3, 0, wxALL, 5 );
 
-	m_paletteViewSlot3 = new PaletteViewCtrl( sbSizer1->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, 0 );
+	m_paletteViewSlot3 = new PaletteViewCtrl( m_sizerSlots->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, 0 );
 	m_paletteViewSlot3->SetMinSize( wxSize( 32,32 ) );
 
 	fgSizer77->Add( m_paletteViewSlot3, 0, wxALL|wxEXPAND, 5 );
 
 
-	sbSizer1->Add( fgSizer77, 1, wxEXPAND, 5 );
+	m_sizerSlots->Add( fgSizer77, 1, wxEXPAND, 5 );
 
 
-	fgSizer71->Add( sbSizer1, 1, wxALL|wxEXPAND, 5 );
+	fgSizer71->Add( m_sizerSlots, 1, wxALL|wxEXPAND, 5 );
 
 
 	this->SetSizer( fgSizer71 );

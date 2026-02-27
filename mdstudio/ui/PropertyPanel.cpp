@@ -617,6 +617,7 @@ void PropertyPanel::AddProperty(const GameObjectBase* gameObject, const GameObje
 {
 	wxPGProperty* property = nullptr;
 	bool selectionValid = true;
+	const Map& editingMap = m_project.GetEditingMap();
 
 	std::string name = variable.m_componentTypeName;
 	if (!variable.m_componentName.empty())
@@ -741,9 +742,9 @@ void PropertyPanel::AddProperty(const GameObjectBase* gameObject, const GameObje
 					for (const auto palette : palettes)
 					{
 						int slotIdx = -1;
-						for (int i = 0; i < m_project.GetNumPaletteSlots(); i++)
+						for (int i = 0; i < editingMap.GetNumPaletteSlots(); i++)
 						{
-							if (m_project.GetPaletteFromSlot(i) == palette.first)
+							if (editingMap.GetPaletteFromSlot(i) == palette.first)
 							{
 								slotIdx = i;
 								break;

@@ -713,8 +713,13 @@ void PropertyPanel::AddProperty(const GameObjectBase* gameObject, const GameObje
 	}
 	else if (variable.HasTag("PALETTE_SLOT"))
 	{
+#if !PALETTE_SLOT_LIST // TODO: consider allowing palette to be overridden per object
+		wxString name = "[Unassigned]";
+#else
 		wxArrayString* list = new wxArrayString();
 		int selection = -1;
+#endif
+
 		int paletteSlotIdx = -1;
 
 		// Find the actor and sprite sheet var in this component to fetch the palette from
@@ -747,31 +752,46 @@ void PropertyPanel::AddProperty(const GameObjectBase* gameObject, const GameObje
 
 						std::string label = (slotIdx >= 0) ? std::to_string(slotIdx) : "?";
 						label += ": " + palette.second.GetName();
+#if !PALETTE_SLOT_LIST // TODO: consider allowing palette to be overridden per object
+						if (palette.first == paletteId)
+						{
+							paletteSlotIdx = slotIdx;
+							name = label;
+							break;
+						}
+#else
 						list->Add(label);
 						if (palette.first == paletteId)
 						{
 							selection = list->Count() - 1;
 							paletteSlotIdx = slotIdx;
 						}
+#endif
 					}
 				}
 			}
 		}
 
-		wxEnumProperty* choiceProp = new wxEnumProperty(variable.m_name, propName, *list);
-		property = choiceProp;
+#if !PALETTE_SLOT_LIST // TODO: consider allowing palette to be overridden per object
+#else
+		wxEnumProperty* paletteProp = new wxEnumProperty(variable.m_name, propName, *list);
+		property = paletteProp;
 
 		if (selection >= 0)
 		{
-			choiceProp->SetChoiceSelection(selection);
+			paletteProp->SetChoiceSelection(selection);
 		}
 		else
 		{
 			//Add a blank entry
-			choiceProp->AddChoice("[none]");
-			choiceProp->SetChoiceSelection(choiceProp->GetChoices().GetCount() - 1);
+			paletteProp->AddChoice("[none]");
+			paletteProp->SetChoiceSelection(paletteProp->GetChoices().GetCount() - 1);
 			selectionValid = false;
 		}
+#endif
+
+		wxStringProperty* paletteProp = new wxStringProperty(variable.m_name, propName, name);
+		property = paletteProp;
 
 		// If not assigned to an active slot, warn about it
 		if (paletteSlotIdx == -1)
@@ -782,7 +802,7 @@ void PropertyPanel::AddProperty(const GameObjectBase* gameObject, const GameObje
 
 		// Can't edit, set on sprite sheet not object
 		// TODO: should be able to override on object
-		choiceProp->Enable(false);
+		paletteProp->Enable(false);
 	}
 	else if (variable.HasTag("ENTITY_DESC"))
 	{

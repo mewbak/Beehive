@@ -59,10 +59,14 @@ void MapListPanel::OnMapSelected(wxListEvent& event)
 		m_project.SetEditingCollisionMap(m_mapIds[event.GetIndex()]);
 
 		m_project.InvalidateMap(true);
+		m_project.InvalidateStamps(true);
 		m_project.InvalidateCamera(true);
 		m_mainWindow->RefreshPanel(MainWindow::ePanelMap);
+		m_mainWindow->RefreshPanel(MainWindow::ePanelStamps);
 		m_mainWindow->RefreshPanel(MainWindow::ePanelSceneExplorer);
+#if !BEEHIVE_PLUGIN_LUMINARY
 		m_mainWindow->RedrawPanel(MainWindow::ePanelGameObjectTypes);
+#endif
 		m_project.InvalidateMap(false);
 		m_project.InvalidateCamera(false);
 	}
@@ -77,9 +81,20 @@ void MapListPanel::OnMapRightClick(wxListEvent& event)
 	//Right-click menu
 	wxMenu contextMenu;
 
-	wxMenuItem* item = contextMenu.Append(ContextMenu::BackgroundMap, "Background Map");
-	item->SetCheckable(true);
-	item->Check(map.IsBackgroundMap());
+	wxMenu* stampSetsMenu = new wxMenu();
+	wxMenuItem* stampsetItem = contextMenu.Append(ContextMenu::StampSet, "Stamp Set", stampSetsMenu);
+
+	m_stampSetIds.clear();
+
+	for (const auto stampSet : m_project.GetStampSets())
+	{
+		stampSetsMenu->Append(Flag_StampSet | (int)m_stampSetIds.size(), stampSet.second.GetName());
+		m_stampSetIds.push_back(stampSet.first);
+	}
+	
+	wxMenuItem* bgMapItem = contextMenu.Append(ContextMenu::BackgroundMap, "Background Map");
+	bgMapItem->SetCheckable(true);
+	bgMapItem->Check(map.IsBackgroundMap());
 
 	contextMenu.Connect(wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MapListPanel::OnContextMenuClick, NULL, this);
 	PopupMenu(&contextMenu);
@@ -87,7 +102,21 @@ void MapListPanel::OnMapRightClick(wxListEvent& event)
 
 void MapListPanel::OnContextMenuClick(wxCommandEvent& event)
 {
-	if (event.GetId() == ContextMenu::BackgroundMap)
+	if (event.GetId() & Flag_StampSet)
+	{
+		int stampSetIdx = event.GetId() & ~Flag_StampSet;
+		Map& map = m_project.GetMap(m_rightClickMap);
+		map.SetStampSetId(m_stampSetIds[stampSetIdx]);
+
+		m_project.InvalidateMap(true);
+		m_project.InvalidateStamps(true);
+		m_project.InvalidateTiles(true);
+
+		m_mainWindow->RefreshPanel(MainWindow::ePanelMap);
+		m_mainWindow->RefreshPanel(MainWindow::ePanelStamps);
+		m_mainWindow->RefreshPanel(MainWindow::ePanelTiles);
+	}
+	else if (event.GetId() == ContextMenu::BackgroundMap)
 	{
 		if (event.IsChecked())
 		{
@@ -107,7 +136,7 @@ void MapListPanel::OnToolAddMap(wxCommandEvent& event)
 {
 	DialogNewMap dialog(m_mainWindow);
 
-#if BEEHIVE_FIXED_STAMP_MODE
+#if BEEHIVE_PLUGIN_LUMINARY
 	dialog.m_spinCtrlWidth->SetValue(8);
 	dialog.m_spinCtrlHeight->SetValue(4);
 #endif
@@ -120,7 +149,7 @@ void MapListPanel::OnToolAddMap(wxCommandEvent& event)
 		CollisionMap& newCollisionMap = m_project.GetCollisionMap(collisionMapId);
 		newMap.SetName(dialog.m_textMapName->GetValue().GetData().AsChar());
 
-#if BEEHIVE_FIXED_STAMP_MODE
+#if BEEHIVE_PLUGIN_LUMINARY
 		const PlatformConfig& config = m_project.GetPlatformConfig();
 		newMap.Resize(dialog.m_spinCtrlWidth->GetValue() * config.stampWidth, dialog.m_spinCtrlHeight->GetValue() * config.stampHeight, false, false);
 		newCollisionMap.Resize(dialog.m_spinCtrlWidth->GetValue() * config.stampWidth, dialog.m_spinCtrlHeight->GetValue() * config.stampHeight, false, false);
@@ -155,6 +184,7 @@ void MapListPanel::OnToolRemoveMap(wxCommandEvent& event)
 	}
 }
 
+#if !BEEHIVE_PLUGIN_LUMINARY // TODO: needs a lot of work to support new palettes/stampset refactor
 void MapListPanel::OnToolImportMap(wxCommandEvent& event)
 {
 	wxFileDialog dialog(this, _("Open BEE file"), "", "", "BEE files (*.bee)|*.bee", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
@@ -318,6 +348,7 @@ void MapListPanel::OnToolImportMap(wxCommandEvent& event)
 		}
 	}
 }
+#endif
 
 void MapListPanel::OnToolRenameMap(wxCommandEvent& event)
 {

@@ -250,8 +250,8 @@ void SpriteCanvas::OnRender(ion::render::Renderer& renderer, const ion::Matrix4&
 	z += zOffset;
 
 	//Render tile frame
-	RenderTileFrame(renderer, cameraInverseMtx, projectionMtx, z);
-	z += zOffset;
+	//RenderTileFrame(renderer, cameraInverseMtx, projectionMtx, z);
+	//z += zOffset;
 
 	//Render grid
 	RenderGrid(renderer, cameraInverseMtx, projectionMtx, z);
@@ -289,7 +289,7 @@ void SpriteCanvas::RenderSpriteSheet(ion::render::Renderer& renderer, const ion:
 	}
 }
 
-void SpriteCanvas::RenderTileFrame(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z)
+void SpriteCanvas::RenderTileFrame(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z, TilesetId tilesetId)
 {
 	if(m_tileFramePrimitive)
 	{
@@ -298,7 +298,7 @@ void SpriteCanvas::RenderTileFrame(ion::render::Renderer& renderer, const ion::M
 
 		//Render spriteSheet
 		ion::render::Primitive* primitive = m_tileFramePrimitive;
-		ion::render::Material* material = m_renderResources->GetMaterial(RenderResources::eMaterialTileset);
+		ion::render::Material* material = m_renderResources->GetMaterial(tilesetId);
 		material->SetDiffuseColour(ion::Colour(1.0f, 1.0f, 1.0f, 1.0f));
 
 		ion::Matrix4 boxMtx;

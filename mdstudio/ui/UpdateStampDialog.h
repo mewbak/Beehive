@@ -16,6 +16,8 @@
 
 #include <wx/glcanvas.h>
 
+#if !BEEHIVE_PLUGIN_LUMINARY
+
 class DialogUpdateStamp : public DialogUpdateStampBase
 {
 public:
@@ -39,3 +41,5 @@ private:
 	RenderResources& m_renderResources;
 	wxGLContext& m_glContext;
 };
+
+#endif // #!BEEHIVE_PLUGIN_LUMINARY

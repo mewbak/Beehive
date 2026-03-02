@@ -13,6 +13,8 @@
 
 #include "ViewPanel.h"
 
+#if !BEEHIVE_PLUGIN_LUMINARY
+
 class BlocksPanel : public ViewPanel
 {
 public:
@@ -55,3 +57,5 @@ private:
 	ion::Vector2i m_hoverPos;
 	std::vector<const Map::Block*> m_blockCache;
 };
+
+#endif // !BEEHIVE_PLUGIN_LUMINARY

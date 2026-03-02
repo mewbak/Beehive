@@ -15,9 +15,10 @@
 #include "MainWindow.h"
 #include "RenderResources.h"
 
-DialogEditStampCollision::DialogEditStampCollision(MainWindow& mainWindow, Stamp& stamp, Project& project, ion::render::Renderer& renderer, wxGLContext& glContext, RenderResources& renderResources)
+DialogEditStampCollision::DialogEditStampCollision(MainWindow& mainWindow, StampSetId stampSetId, Stamp& stamp, Project& project, ion::render::Renderer& renderer, wxGLContext& glContext, RenderResources& renderResources)
 	: DialogEditStampCollisionBase(&mainWindow)
 	, m_mainWindow(mainWindow)
+	, m_stampSetId(stampSetId)
 	, m_stamp(stamp)
 	, m_project(project)
 	, m_renderer(renderer)
@@ -84,6 +85,6 @@ void DialogEditStampCollision::Draw()
 	m_canvas->CreateGrid(m_stamp.GetWidth() * tileWidth, m_stamp.GetHeight() * tileHeight, m_stamp.GetWidth(), m_stamp.GetHeight());
 	m_canvas->SetGridColour(ion::Colour(1.0f, 1.0f, 1.0f, 1.0f));
 	m_canvas->SetDrawGrid(true);
-	m_canvas->SetStamp(m_stamp, ion::Vector2i());
+	m_canvas->SetStamp(m_stampSetId, m_stamp, ion::Vector2i());
 	m_canvas->Refresh();
 }

@@ -26,7 +26,7 @@ enum ToolType
 {
 	eToolNone,
 
-#if !BEEHIVE_FIXED_STAMP_MODE //No tile/collision editing in fixed mode
+#if !BEEHIVE_PLUGIN_LUMINARY //No tile/collision editing in fixed mode
 	eToolPaintTile,
 	eToolPaintTerrainTile,
 	eToolPaintCollisionTerrain,

@@ -19,6 +19,8 @@ public:
 	TilesPanel(MainWindow* mainWindow, Project& project, ion::render::Renderer& renderer, wxGLContext* glContext, wxGLAttributes& glAttributes, RenderResources& renderResources, wxWindow *parent, wxWindowID winid = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL | wxNO_BORDER, const wxString& name = wxPanelNameStr);
 	virtual ~TilesPanel();
 
+	void SetStampSetId(StampSetId stampSetId);
+
 	//Events
 	virtual void OnMouse(wxMouseEvent& event, const ion::Vector2i& mouseDelta);
 	virtual void OnKeyboard(wxKeyEvent& event);
@@ -40,9 +42,14 @@ protected:
 private:
 	enum MenuItems
 	{
+#if !BEEHIVE_PLUGIN_LUMINARY
 		eMenuDeleteTile,
 		eMenuUseAsBgTile
+#endif
 	};
+
+	StampSetId GetStampSetId() const;
+	StampSet& GetStampSet();
 
 	//Calc canvas size
 	ion::Vector2i CalcCanvasSize();
@@ -72,4 +79,6 @@ private:
 
 	//Rendering primitives
 	ion::render::Quad* m_selectionPrimitive;
+
+	StampSetId m_stampSetId;
 };

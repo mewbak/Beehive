@@ -12,6 +12,8 @@
 #include "BlocksPanel.h"
 #include "MainWindow.h"
 
+#if !BEEHIVE_PLUGIN_LUMINARY
+
 BlocksPanel::BlocksPanel(MainWindow* mainWindow, Project& project, ion::render::Renderer& renderer, wxGLContext* glContext, wxGLAttributes& glAttributes, RenderResources& renderResources, wxWindow *parent, wxWindowID winid, const wxPoint& pos, const wxSize& size, long style, const wxString& name)
 	: ViewPanel(mainWindow, project, renderer, glContext, glAttributes, renderResources, parent, winid, pos, size, style, name)
 {
@@ -320,3 +322,5 @@ void BlocksPanel::ResetZoomPan()
 	m_camera.SetZoom(ion::Vector3(m_cameraZoom, m_cameraZoom, 1.0f));
 	m_camera.SetPosition(cameraPos);
 }
+
+#endif // !BEEHIVE_PLUGIN_LUMINARY

@@ -387,7 +387,10 @@ void SceneExplorerPanel::OnContextMenuClick(wxCommandEvent& event)
 
 					GameObjectId newObject = m_project.GetEditingMap().PlaceGameObject(original->GetPosition().x, original->GetPosition().y, *gameObjectType, *original, name);
 					m_mainWindow->RedrawPanel(MainWindow::ePanelMap);
+
+#if !BEEHIVE_PLUGIN_LUMINARY
 					m_mainWindow->RedrawPanel(MainWindow::ePanelGameObjectTypes);
+#endif
 					Refresh();
 				}
 			}

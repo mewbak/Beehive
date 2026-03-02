@@ -13,6 +13,8 @@
 #include "MainWindow.h"
 #include <ion/renderer/Texture.h>
 
+#if !BEEHIVE_PLUGIN_LUMINARY
+
 const float TerrainTileEditorPanel::s_defaultZoom = 3.0f;
 
 TerrainTileEditorPanel::TerrainTileEditorPanel(MainWindow* mainWindow, Project& project, ion::render::Renderer& renderer, wxGLContext* glContext, wxGLAttributes& glAttributes, RenderResources& renderResources, wxWindow *parent, wxWindowID winid, const wxPoint& pos, const wxSize& size, long style, const wxString& name)
@@ -68,7 +70,7 @@ void TerrainTileEditorPanel::OnMouseTileEvent(ion::Vector2i mousePos, ion::Vecto
 	const int tileWidth = m_project.GetPlatformConfig().tileWidth;
 	const int tileHeight = m_project.GetPlatformConfig().tileHeight;
 
-#if !BEEHIVE_FIXED_STAMP_MODE //No collision editing in fixed mode
+#if !BEEHIVE_PLUGIN_LUMINARY //No collision editing in fixed mode
 	if((buttonBits & eMouseLeft) || (buttonBits & eMouseRight))
 	{
 		TerrainTileId tileId = m_project.GetPaintTerrainTile();
@@ -143,10 +145,10 @@ void TerrainTileEditorPanel::Refresh(bool eraseBackground, const wxRect *rect)
 	}
 }
 
-void TerrainTileEditorPanel::RenderTile(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z)
+void TerrainTileEditorPanel::RenderTile(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z, StampSetId stampSetId)
 {
 	//Draw tile
-	ion::render::Material* material = m_renderResources.GetMaterial(RenderResources::eMaterialTileset);
+	ion::render::Material* material = m_renderResources.GetMaterial(stampSetId);
 	material->SetDiffuseColour(ion::Colour(1.0f, 1.0f, 1.0f, 1.0f));
 	renderer.BindMaterial(*material, ion::Matrix4(), cameraInverseMtx, projectionMtx);
 	renderer.DrawVertexBuffer(m_tilePrimitive->GetVertexBuffer(), m_tilePrimitive->GetIndexBuffer());
@@ -184,3 +186,5 @@ void TerrainTileEditorPanel::PaintCollision()
 	m_collisionPrimitive->SetTexCoords(texCoords);
 	m_primitiveDirty = true;
 }
+
+#endif // !BEEHIVE_PLUGIN_LUMINARY

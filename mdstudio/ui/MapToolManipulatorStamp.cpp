@@ -104,6 +104,9 @@ void MapToolManipulatorStamp::FindObjects(const Map& map, const std::vector<MapR
 	const ion::Vector2i tileSize(GetProject().GetPlatformConfig().tileWidth, GetProject().GetPlatformConfig().tileHeight);
 	const ion::Vector2i stampSize(GetProject().GetPlatformConfig().stampWidth, GetProject().GetPlatformConfig().stampHeight);
 
+	StampSetId stampSetId = m_project.GetEditingMap().GetStampSetId();
+	StampSet& stampSet = m_project.GetStampSet(stampSetId);
+
 	for (auto region : regions)
 	{
 		MapObjIdentifierStamp stamp;
@@ -117,10 +120,10 @@ void MapToolManipulatorStamp::FindObjects(const Map& map, const std::vector<MapR
 				stamp.stampPos /= stampSize;
 
 				//Resolve
-				stamp.stamp = GetProject().GetStamp(stamp.stampId);
-
-				if (stamp.stamp)
+				if(stamp.stampId != InvalidStampId)
 				{
+					stamp.stamp = &stampSet.GetStamp(stamp.stampId);
+
 					if (!ion::utils::stl::Find(selection, stamp))
 					{
 						selection.push_back(stamp);
@@ -187,6 +190,9 @@ void MapToolManipulatorStamp::RepaintStampArea(const ion::Vector2i& stampPos)
 	const ion::Vector2i stampSize(GetProject().GetPlatformConfig().stampWidth, GetProject().GetPlatformConfig().stampHeight);
 	const ion::Vector2i mapSizeTiles(map.GetWidth() * stampSize.x, map.GetHeight() * stampSize.y);
 
+	StampSetId stampSetId = m_project.GetEditingMap().GetStampSetId();
+	StampSet& stampSet = m_project.GetStampSet(stampSetId);
+
 	//Stamp map coords in tiles
 	ion::Vector2i stampPosTiles = stampPos * stampSize;
 
@@ -210,21 +216,19 @@ void MapToolManipulatorStamp::RepaintStampArea(const ion::Vector2i& stampPos)
 				//TODO: Very slow
 				StampId stampId = map.FindStamp(x, y, stampPos, flags, mapEntryIndex);
 
-				if (stampId)
+				if (stampId != InvalidStampId)
 				{
 					//Get from stamp
-					if (Stamp* stamp = m_project.GetStamp(stampId))
+					const Stamp& stamp = stampSet.GetStamp(stampId);
+					ion::Vector2i offset = ion::Vector2i(x, y) - stampPos;
+
+					int sourceX = (flags & Map::eFlipX) ? (stamp.GetWidth() - 1 - offset.x) : offset.x;
+					int sourceY = (flags & Map::eFlipY) ? (stamp.GetHeight() - 1 - offset.y) : offset.y;
+
+					if (sourceX >= 0 && sourceX < stamp.GetWidth() && sourceY >= 0 && sourceY < stamp.GetHeight())
 					{
-						ion::Vector2i offset = ion::Vector2i(x, y) - stampPos;
-
-						int sourceX = (flags & Map::eFlipX) ? (stamp->GetWidth() - 1 - offset.x) : offset.x;
-						int sourceY = (flags & Map::eFlipY) ? (stamp->GetHeight() - 1 - offset.y) : offset.y;
-
-						if (sourceX >= 0 && sourceX < stamp->GetWidth() && sourceY >= 0 && sourceY < stamp->GetHeight())
-						{
-							tileId = stamp->GetTile(sourceX, sourceY);
-							flags ^= stamp->GetTileFlags(sourceX, sourceY);
-						}
+						tileId = stamp.GetTile(sourceX, sourceY);
+						flags ^= stamp.GetTileFlags(sourceX, sourceY);
 					}
 				}
 				else
@@ -234,7 +238,7 @@ void MapToolManipulatorStamp::RepaintStampArea(const ion::Vector2i& stampPos)
 					flags = map.GetTileFlags(x, y);
 				}
 
-				m_mapPanel.PaintTile(tileId, x, y_inv, flags);
+				m_mapPanel.PaintTile(stampSet.GetTilesetId(), tileId, x, y_inv, flags);
 			}
 		}
 	}

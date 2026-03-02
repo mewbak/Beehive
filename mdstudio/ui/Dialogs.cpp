@@ -41,7 +41,7 @@ void DialogNewProject::PopulatePreset(int index)
 	m_spinCtrlStampWidth->SetValue(config.stampWidth);
 	m_spinCtrlStampHeight->SetValue(config.stampHeight);
 
-#if BEEHIVE_FIXED_STAMP_MODE
+#if BEEHIVE_PLUGIN_LUMINARY
 	m_spinCtrlMapWidth->SetValue(8);
 	m_spinCtrlMapHeight->SetValue(4);
 #else
@@ -263,17 +263,28 @@ void MatchPaletteDialog::OnBtnNew(wxCommandEvent& event)
 	}
 }
 
-DialogPaletteManagement::DialogPaletteManagement(wxWindow* parent, Project& project)
-	: DialogPaletteManagementBase(parent)
+DialogAssetManagement::DialogAssetManagement(MainWindow& mainWindow, Project& project, ion::render::Renderer& renderer, wxGLContext& glContext, RenderResources& renderResources)
+	: DialogAssetsBase((wxWindow*)&mainWindow)
 	, m_project(project)
 {
+	// Setup canvases
+	m_canvasStamps->SetProject(&project);
+	m_canvasStamps->SetMainWindow(&mainWindow);
+	m_canvasStamps->SetupRendering(&renderer, &glContext, &renderResources);
+
 	const Map& editingMap = project.GetEditingMap();
 	m_sizerSlots->GetStaticBox()->SetLabel("Active Slots (Map \'" + editingMap.GetName() + "\')");
 	Populate();
 	SelectPalette(0);
 }
 
-void DialogPaletteManagement::Populate()
+void DialogAssetManagement::Refresh(bool eraseBackground, const wxRect* rect)
+{
+	m_canvasStamps->Refresh(eraseBackground, rect);
+	DialogAssetsBase::Refresh(eraseBackground, rect);
+}
+
+void DialogAssetManagement::Populate()
 {
 	m_populatedPalettes.clear();
 	m_listPalettes->Clear();
@@ -315,35 +326,35 @@ void DialogPaletteManagement::Populate()
 	Refresh();
 }
 
-void DialogPaletteManagement::SelectPalette(int index)
+void DialogAssetManagement::SelectPalette(int index)
 {
 	if (index >= 0 && index < m_populatedPalettes.size())
 	{
 		PaletteId paletteId = m_populatedPalettes[index].first;
 		const Palette& palette = m_populatedPalettes[index].second;
 		m_paletteViewSelected->SetPalette(palette);
-		m_txtName->SetLabelText(palette.GetName());
-		m_txtId->SetLabelText(std::to_string(paletteId));
+		m_txtPaletteName->SetLabelText(palette.GetName());
+		m_txtPaletteId->SetLabelText(std::to_string(paletteId));
 
-		m_txtActiveSlot->SetLabelText("Unassigned");
+		m_txtPaletteActiveSlot->SetLabelText("Unassigned");
 
 		for (int i = 0; i < m_project.GetEditingMap().GetNumPaletteSlots(); i++)
 		{
 			if (m_project.GetEditingMap().GetPaletteFromSlot(i) == paletteId)
 			{
-				m_txtActiveSlot->SetLabelText(std::to_string(i));
+				m_txtPaletteActiveSlot->SetLabelText(std::to_string(i));
 				break;
 			}
 		}
 
-		m_txtNumSprites->SetLabelText("");
-		m_txtNumStamps->SetLabelText("");
+		m_txtPaletteNumSprites->SetLabelText("");
+		m_txtPaletteNumStamps->SetLabelText("");
 
 		Refresh();
 	}
 }
 
-void DialogPaletteManagement::AssignPalette(int index, int slotIndex)
+void DialogAssetManagement::AssignPalette(int index, int slotIndex)
 {
 	PaletteViewCtrl* views[4] = { m_paletteViewSlot0, m_paletteViewSlot1, m_paletteViewSlot2, m_paletteViewSlot3 };
 	PaletteId paletteId = m_populatedPalettes[index].first;
@@ -353,12 +364,17 @@ void DialogPaletteManagement::AssignPalette(int index, int slotIndex)
 	Refresh();
 }
 
-void DialogPaletteManagement::OnListPalette(wxCommandEvent& event)
+void DialogAssetManagement::OnTabChanged(wxNotebookEvent& event)
+{
+	m_canvasStamps->ForceRefresh();
+}
+
+void DialogAssetManagement::OnListPalette(wxCommandEvent& event)
 {
 	SelectPalette(m_listPalettes->GetSelection());
 }
 
-void DialogPaletteManagement::OnBtnImport(wxCommandEvent& event)
+void DialogAssetManagement::OnBtnImportPalette(wxCommandEvent& event)
 {
 	//Open BMP
 	wxFileDialog fileDlg(this, _("Open image files"), "", "", "PNG files (*.png)|*.png|BMP files (*.bmp)|*.bmp", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
@@ -389,12 +405,12 @@ void DialogPaletteManagement::OnBtnImport(wxCommandEvent& event)
 	}
 }
 
-void DialogPaletteManagement::OnBtnExport(wxCommandEvent& event)
+void DialogAssetManagement::OnBtnExportPalette(wxCommandEvent& event)
 {
 	wxMessageBox("Unimplemented, sorry", "Error");
 }
 
-void DialogPaletteManagement::OnBtnRename(wxCommandEvent& event)
+void DialogAssetManagement::OnBtnRenamePalette(wxCommandEvent& event)
 {
 	int index = m_listPalettes->GetSelection();
 	if (index >= 0 && index < m_populatedPalettes.size())
@@ -411,7 +427,7 @@ void DialogPaletteManagement::OnBtnRename(wxCommandEvent& event)
 	}
 }
 
-void DialogPaletteManagement::OnBtnDelete(wxCommandEvent& event)
+void DialogAssetManagement::OnBtnDeletePalette(wxCommandEvent& event)
 {
 	int index = m_listPalettes->GetSelection();
 	if (index >= 0 && index < m_populatedPalettes.size())
@@ -421,22 +437,22 @@ void DialogPaletteManagement::OnBtnDelete(wxCommandEvent& event)
 	}
 }
 
-void DialogPaletteManagement::OnListSlot0(wxCommandEvent& event)
+void DialogAssetManagement::OnListSlot0(wxCommandEvent& event)
 {
 	AssignPalette(m_choiceSlot0->GetSelection(), 0);
 }
 
-void DialogPaletteManagement::OnListSlot1(wxCommandEvent& event)
+void DialogAssetManagement::OnListSlot1(wxCommandEvent& event)
 {
 	AssignPalette(m_choiceSlot1->GetSelection(), 1);
 }
 
-void DialogPaletteManagement::OnListSlot2(wxCommandEvent& event)
+void DialogAssetManagement::OnListSlot2(wxCommandEvent& event)
 {
 	AssignPalette(m_choiceSlot2->GetSelection(), 2);
 }
 
-void DialogPaletteManagement::OnListSlot3(wxCommandEvent& event)
+void DialogAssetManagement::OnListSlot3(wxCommandEvent& event)
 {
 	AssignPalette(m_choiceSlot3->GetSelection(), 3);
 }

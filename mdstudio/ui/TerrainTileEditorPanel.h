@@ -13,6 +13,8 @@
 
 #include "ViewPanel.h"
 
+#if !BEEHIVE_PLUGIN_LUMINARY
+
 class TerrainTileEditorPanel : public ViewPanel
 {
 	static const float s_defaultZoom;
@@ -37,7 +39,7 @@ protected:
 	virtual void OnRender(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float& z, float zOffset);
 
 private:
-	void RenderTile(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z);
+	void RenderTile(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z, StampSetId stampSetId);
 	void RenderCollision(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z);
 
 	//Paint background tile
@@ -52,3 +54,5 @@ private:
 
 	bool m_primitiveDirty;
 };
+
+#endif // !BEEHIVE_PLUGIN_LUMINARY

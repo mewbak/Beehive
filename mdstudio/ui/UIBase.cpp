@@ -195,10 +195,6 @@ MainWindowBase::MainWindowBase( wxWindow* parent, wxWindowID id, const wxString&
 	m_menuItemMapNew = new wxMenuItem( m_menuMap, wxID_BTN_MAP_NEW, wxString( wxT("New") ) , wxEmptyString, wxITEM_NORMAL );
 	m_menuMap->Append( m_menuItemMapNew );
 
-	wxMenuItem* m_menuItemMapImport;
-	m_menuItemMapImport = new wxMenuItem( m_menuMap, wxID_BTN_MAP_IMPORT, wxString( wxT("Import") ) , wxEmptyString, wxITEM_NORMAL );
-	m_menuMap->Append( m_menuItemMapImport );
-
 	wxMenuItem* m_menuItemMapCopy;
 	m_menuItemMapCopy = new wxMenuItem( m_menuMap, wxID_ANYwxID_BTN_MAP_COPY, wxString( wxT("Copy") ) , wxEmptyString, wxITEM_NORMAL );
 	m_menuMap->Append( m_menuItemMapCopy );
@@ -337,7 +333,6 @@ MainWindowBase::MainWindowBase( wxWindow* parent, wxWindowID id, const wxString&
 	m_menuView->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( MainWindowBase::OnBtnShowDisplayFrame ), this, m_menuItemViewShowDisplayFrame->GetId());
 	m_menu1->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( MainWindowBase::OnMenuToolsTweaksGameObjCentreOrigin ), this, m_menuItem3->GetId());
 	m_menuMap->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( MainWindowBase::OnBtnMapNew ), this, m_menuItemMapNew->GetId());
-	m_menuMap->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( MainWindowBase::OnBtnMapImport ), this, m_menuItemMapImport->GetId());
 	m_menuMap->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( MainWindowBase::OnBtnMapCopy ), this, m_menuItemMapCopy->GetId());
 	m_menuMap->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( MainWindowBase::OnBtnMapDelete ), this, m_menuItemMapDelete->GetId());
 	m_menuMap->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( MainWindowBase::OnBtnMapRename ), this, m_menuItemMapRename->GetId());
@@ -3855,10 +3850,15 @@ ScriptCompilePanelBase::~ScriptCompilePanelBase()
 {
 }
 
-DialogPaletteManagementBase::DialogPaletteManagementBase( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxDialog( parent, id, title, pos, size, style )
+DialogAssetsBase::DialogAssetsBase( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxDialog( parent, id, title, pos, size, style )
 {
 	this->SetSizeHints( wxDefaultSize, wxDefaultSize );
 
+	wxBoxSizer* bSizer76;
+	bSizer76 = new wxBoxSizer( wxVERTICAL );
+
+	m_tabs = new wxNotebook( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0 );
+	m_tabPalettes = new wxPanel( m_tabs, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxFlexGridSizer* fgSizer71;
 	fgSizer71 = new wxFlexGridSizer( 2, 1, 0, 0 );
 	fgSizer71->AddGrowableCol( 0 );
@@ -3871,7 +3871,7 @@ DialogPaletteManagementBase::DialogPaletteManagementBase( wxWindow* parent, wxWi
 	fgSizer72->SetFlexibleDirection( wxBOTH );
 	fgSizer72->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 
-	m_listPalettes = new wxListBox( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
+	m_listPalettes = new wxListBox( m_tabPalettes, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
 	m_listPalettes->SetMinSize( wxSize( 230,400 ) );
 
 	fgSizer72->Add( m_listPalettes, 0, wxALL|wxEXPAND, 5 );
@@ -3882,7 +3882,7 @@ DialogPaletteManagementBase::DialogPaletteManagementBase( wxWindow* parent, wxWi
 	fgSizer73->SetFlexibleDirection( wxBOTH );
 	fgSizer73->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 
-	m_paletteViewSelected = new PaletteViewCtrl( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0 );
+	m_paletteViewSelected = new PaletteViewCtrl( m_tabPalettes, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0 );
 	m_paletteViewSelected->SetMinSize( wxSize( 32,32 ) );
 
 	fgSizer73->Add( m_paletteViewSelected, 0, wxALL|wxEXPAND, 5 );
@@ -3893,24 +3893,24 @@ DialogPaletteManagementBase::DialogPaletteManagementBase( wxWindow* parent, wxWi
 	fgSizer74->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 
 	wxStaticBoxSizer* sbSizer3;
-	sbSizer3 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Manage") ), wxVERTICAL );
+	sbSizer3 = new wxStaticBoxSizer( new wxStaticBox( m_tabPalettes, wxID_ANY, wxT("Manage") ), wxVERTICAL );
 
 	wxFlexGridSizer* fgSizer75;
 	fgSizer75 = new wxFlexGridSizer( 2, 2, 0, 0 );
 	fgSizer75->SetFlexibleDirection( wxBOTH );
 	fgSizer75->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 
-	m_btnImport = new wxButton( sbSizer3->GetStaticBox(), wxID_ANY, wxT("Import"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer75->Add( m_btnImport, 0, wxALL, 5 );
+	m_btnImportPalette = new wxButton( sbSizer3->GetStaticBox(), wxID_ANY, wxT("Import"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizer75->Add( m_btnImportPalette, 0, wxALL, 5 );
 
-	m_btnExport = new wxButton( sbSizer3->GetStaticBox(), wxID_ANY, wxT("Export"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer75->Add( m_btnExport, 0, wxALL, 5 );
+	m_btnExportPalette = new wxButton( sbSizer3->GetStaticBox(), wxID_ANY, wxT("Export"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizer75->Add( m_btnExportPalette, 0, wxALL, 5 );
 
-	m_btnRename = new wxButton( sbSizer3->GetStaticBox(), wxID_ANY, wxT("Rename"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer75->Add( m_btnRename, 0, wxALL, 5 );
+	m_btnRenamePalette = new wxButton( sbSizer3->GetStaticBox(), wxID_ANY, wxT("Rename"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizer75->Add( m_btnRenamePalette, 0, wxALL, 5 );
 
-	m_btnDelete = new wxButton( sbSizer3->GetStaticBox(), wxID_ANY, wxT("Delete"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer75->Add( m_btnDelete, 0, wxALL, 5 );
+	m_btnDeletePalette = new wxButton( sbSizer3->GetStaticBox(), wxID_ANY, wxT("Delete"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizer75->Add( m_btnDeletePalette, 0, wxALL, 5 );
 
 
 	sbSizer3->Add( fgSizer75, 1, wxEXPAND, 5 );
@@ -3919,7 +3919,7 @@ DialogPaletteManagementBase::DialogPaletteManagementBase( wxWindow* parent, wxWi
 	fgSizer74->Add( sbSizer3, 1, wxALL, 5 );
 
 	wxStaticBoxSizer* sbSizer2;
-	sbSizer2 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Details") ), wxVERTICAL );
+	sbSizer2 = new wxStaticBoxSizer( new wxStaticBox( m_tabPalettes, wxID_ANY, wxT("Details") ), wxVERTICAL );
 
 	wxFlexGridSizer* fgSizer76;
 	fgSizer76 = new wxFlexGridSizer( 0, 2, 0, 0 );
@@ -3930,45 +3930,45 @@ DialogPaletteManagementBase::DialogPaletteManagementBase( wxWindow* parent, wxWi
 	m_staticText88->Wrap( -1 );
 	fgSizer76->Add( m_staticText88, 0, wxALL, 5 );
 
-	m_txtName = new wxStaticText( sbSizer2->GetStaticBox(), wxID_ANY, wxT("MyLabel"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_txtName->Wrap( -1 );
-	m_txtName->SetMinSize( wxSize( 200,-1 ) );
+	m_txtPaletteName = new wxStaticText( sbSizer2->GetStaticBox(), wxID_ANY, wxT("MyLabel"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_txtPaletteName->Wrap( -1 );
+	m_txtPaletteName->SetMinSize( wxSize( 200,-1 ) );
 
-	fgSizer76->Add( m_txtName, 0, wxALL, 5 );
+	fgSizer76->Add( m_txtPaletteName, 0, wxALL, 5 );
 
 	m_staticText90 = new wxStaticText( sbSizer2->GetStaticBox(), wxID_ANY, wxT("Id:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText90->Wrap( -1 );
 	fgSizer76->Add( m_staticText90, 0, wxALL, 5 );
 
-	m_txtId = new wxStaticText( sbSizer2->GetStaticBox(), wxID_ANY, wxT("MyLabel"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_txtId->Wrap( -1 );
-	fgSizer76->Add( m_txtId, 0, wxALL, 5 );
+	m_txtPaletteId = new wxStaticText( sbSizer2->GetStaticBox(), wxID_ANY, wxT("MyLabel"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_txtPaletteId->Wrap( -1 );
+	fgSizer76->Add( m_txtPaletteId, 0, wxALL, 5 );
 
 	m_staticText92 = new wxStaticText( sbSizer2->GetStaticBox(), wxID_ANY, wxT("Active Slot:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText92->Wrap( -1 );
 	fgSizer76->Add( m_staticText92, 0, wxALL, 5 );
 
-	m_txtActiveSlot = new wxStaticText( sbSizer2->GetStaticBox(), wxID_ANY, wxT("MyLabel"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_txtActiveSlot->Wrap( -1 );
-	fgSizer76->Add( m_txtActiveSlot, 0, wxALL, 5 );
+	m_txtPaletteActiveSlot = new wxStaticText( sbSizer2->GetStaticBox(), wxID_ANY, wxT("MyLabel"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_txtPaletteActiveSlot->Wrap( -1 );
+	fgSizer76->Add( m_txtPaletteActiveSlot, 0, wxALL, 5 );
 
 	m_staticText94 = new wxStaticText( sbSizer2->GetStaticBox(), wxID_ANY, wxT("# sprites:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText94->Wrap( -1 );
 	fgSizer76->Add( m_staticText94, 0, wxALL, 5 );
 
-	m_txtNumSprites = new wxStaticText( sbSizer2->GetStaticBox(), wxID_ANY, wxT("MyLabel"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_txtNumSprites->Wrap( -1 );
-	fgSizer76->Add( m_txtNumSprites, 0, wxALL, 5 );
+	m_txtPaletteNumSprites = new wxStaticText( sbSizer2->GetStaticBox(), wxID_ANY, wxT("MyLabel"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_txtPaletteNumSprites->Wrap( -1 );
+	fgSizer76->Add( m_txtPaletteNumSprites, 0, wxALL, 5 );
 
 	m_staticText96 = new wxStaticText( sbSizer2->GetStaticBox(), wxID_ANY, wxT("# stamps:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText96->Wrap( -1 );
 	fgSizer76->Add( m_staticText96, 0, wxALL, 5 );
 
-	m_txtNumStamps = new wxStaticText( sbSizer2->GetStaticBox(), wxID_ANY, wxT("MyLabel"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_txtNumStamps->Wrap( -1 );
-	m_txtNumStamps->SetMinSize( wxSize( 200,-1 ) );
+	m_txtPaletteNumStamps = new wxStaticText( sbSizer2->GetStaticBox(), wxID_ANY, wxT("MyLabel"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_txtPaletteNumStamps->Wrap( -1 );
+	m_txtPaletteNumStamps->SetMinSize( wxSize( 200,-1 ) );
 
-	fgSizer76->Add( m_txtNumStamps, 0, wxALL, 5 );
+	fgSizer76->Add( m_txtPaletteNumStamps, 0, wxALL, 5 );
 
 
 	sbSizer2->Add( fgSizer76, 1, wxEXPAND, 5 );
@@ -3985,7 +3985,7 @@ DialogPaletteManagementBase::DialogPaletteManagementBase( wxWindow* parent, wxWi
 
 	fgSizer71->Add( fgSizer72, 1, wxEXPAND, 5 );
 
-	m_sizerSlots = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Active Slots") ), wxVERTICAL );
+	m_sizerSlots = new wxStaticBoxSizer( new wxStaticBox( m_tabPalettes, wxID_ANY, wxT("Active Slots") ), wxVERTICAL );
 
 	wxFlexGridSizer* fgSizer77;
 	fgSizer77 = new wxFlexGridSizer( 4, 3, 0, 0 );
@@ -4064,34 +4064,230 @@ DialogPaletteManagementBase::DialogPaletteManagementBase( wxWindow* parent, wxWi
 	fgSizer71->Add( m_sizerSlots, 1, wxALL|wxEXPAND, 5 );
 
 
-	this->SetSizer( fgSizer71 );
+	m_tabPalettes->SetSizer( fgSizer71 );
+	m_tabPalettes->Layout();
+	fgSizer71->Fit( m_tabPalettes );
+	m_tabs->AddPage( m_tabPalettes, wxT("Palettes"), false );
+	m_tabStamps = new wxPanel( m_tabs, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	wxFlexGridSizer* fgSizer711;
+	fgSizer711 = new wxFlexGridSizer( 2, 1, 0, 0 );
+	fgSizer711->AddGrowableCol( 0 );
+	fgSizer711->SetFlexibleDirection( wxBOTH );
+	fgSizer711->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+
+	wxFlexGridSizer* fgSizer721;
+	fgSizer721 = new wxFlexGridSizer( 0, 2, 0, 0 );
+	fgSizer721->AddGrowableCol( 1 );
+	fgSizer721->SetFlexibleDirection( wxBOTH );
+	fgSizer721->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+
+	wxFlexGridSizer* fgSizer90;
+	fgSizer90 = new wxFlexGridSizer( 2, 1, 0, 0 );
+	fgSizer90->AddGrowableRow( 1 );
+	fgSizer90->SetFlexibleDirection( wxBOTH );
+	fgSizer90->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+
+	m_staticText126 = new wxStaticText( m_tabStamps, wxID_ANY, wxT("Stamp sets:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText126->Wrap( -1 );
+	fgSizer90->Add( m_staticText126, 0, wxALL, 5 );
+
+	m_listStampSets = new wxListBox( m_tabStamps, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
+	m_listStampSets->SetMinSize( wxSize( 230,250 ) );
+
+	fgSizer90->Add( m_listStampSets, 0, wxALL|wxEXPAND, 5 );
+
+
+	fgSizer721->Add( fgSizer90, 1, wxEXPAND, 5 );
+
+	wxFlexGridSizer* fgSizer731;
+	fgSizer731 = new wxFlexGridSizer( 2, 1, 0, 0 );
+	fgSizer731->AddGrowableCol( 0 );
+	fgSizer731->SetFlexibleDirection( wxBOTH );
+	fgSizer731->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+
+	wxFlexGridSizer* fgSizer741;
+	fgSizer741 = new wxFlexGridSizer( 1, 2, 0, 0 );
+	fgSizer741->SetFlexibleDirection( wxBOTH );
+	fgSizer741->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+
+	wxStaticBoxSizer* sbSizer31;
+	sbSizer31 = new wxStaticBoxSizer( new wxStaticBox( m_tabStamps, wxID_ANY, wxT("Manage") ), wxVERTICAL );
+
+	wxFlexGridSizer* fgSizer751;
+	fgSizer751 = new wxFlexGridSizer( 2, 2, 0, 0 );
+	fgSizer751->SetFlexibleDirection( wxBOTH );
+	fgSizer751->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+
+	m_btnNewStampSet = new wxButton( sbSizer31->GetStaticBox(), wxID_ANY, wxT("New"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizer751->Add( m_btnNewStampSet, 0, wxALL, 5 );
+
+	m_btnDeleteStampSet = new wxButton( sbSizer31->GetStaticBox(), wxID_ANY, wxT("Delete"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizer751->Add( m_btnDeleteStampSet, 0, wxALL, 5 );
+
+	m_btnRenameStampSet = new wxButton( sbSizer31->GetStaticBox(), wxID_ANY, wxT("Rename"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizer751->Add( m_btnRenameStampSet, 0, wxALL, 5 );
+
+	m_btnScanStampSet = new wxButton( sbSizer31->GetStaticBox(), wxID_ANY, wxT("Re-scan"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizer751->Add( m_btnScanStampSet, 0, wxALL, 5 );
+
+
+	sbSizer31->Add( fgSizer751, 1, wxEXPAND, 5 );
+
+
+	fgSizer741->Add( sbSizer31, 1, wxALL, 5 );
+
+	wxStaticBoxSizer* sbSizer21;
+	sbSizer21 = new wxStaticBoxSizer( new wxStaticBox( m_tabStamps, wxID_ANY, wxT("Details") ), wxVERTICAL );
+
+	wxFlexGridSizer* fgSizer761;
+	fgSizer761 = new wxFlexGridSizer( 0, 2, 0, 0 );
+	fgSizer761->SetFlexibleDirection( wxBOTH );
+	fgSizer761->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+
+	m_staticText881 = new wxStaticText( sbSizer21->GetStaticBox(), wxID_ANY, wxT("Name:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText881->Wrap( -1 );
+	fgSizer761->Add( m_staticText881, 0, wxALL, 5 );
+
+	m_txtStampSetName = new wxStaticText( sbSizer21->GetStaticBox(), wxID_ANY, wxT("MyLabel"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_txtStampSetName->Wrap( -1 );
+	m_txtStampSetName->SetMinSize( wxSize( 200,-1 ) );
+
+	fgSizer761->Add( m_txtStampSetName, 0, wxALL, 5 );
+
+	m_staticText901 = new wxStaticText( sbSizer21->GetStaticBox(), wxID_ANY, wxT("Id:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText901->Wrap( -1 );
+	fgSizer761->Add( m_staticText901, 0, wxALL, 5 );
+
+	m_txtStampSetId = new wxStaticText( sbSizer21->GetStaticBox(), wxID_ANY, wxT("MyLabel"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_txtStampSetId->Wrap( -1 );
+	fgSizer761->Add( m_txtStampSetId, 0, wxALL, 5 );
+
+	m_staticText961 = new wxStaticText( sbSizer21->GetStaticBox(), wxID_ANY, wxT("Size:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText961->Wrap( -1 );
+	fgSizer761->Add( m_staticText961, 0, wxALL, 5 );
+
+	m_txtStampSetSize = new wxStaticText( sbSizer21->GetStaticBox(), wxID_ANY, wxT("MyLabel"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_txtStampSetSize->Wrap( -1 );
+	m_txtStampSetSize->SetMinSize( wxSize( 200,-1 ) );
+
+	fgSizer761->Add( m_txtStampSetSize, 0, wxALL, 5 );
+
+	m_staticText921 = new wxStaticText( sbSizer21->GetStaticBox(), wxID_ANY, wxT("Palette:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText921->Wrap( -1 );
+	fgSizer761->Add( m_staticText921, 0, wxALL, 5 );
+
+	m_txtStampSetPalette = new wxStaticText( sbSizer21->GetStaticBox(), wxID_ANY, wxT("MyLabel"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_txtStampSetPalette->Wrap( -1 );
+	fgSizer761->Add( m_txtStampSetPalette, 0, wxALL, 5 );
+
+	m_staticText941 = new wxStaticText( sbSizer21->GetStaticBox(), wxID_ANY, wxT("Tileset:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText941->Wrap( -1 );
+	fgSizer761->Add( m_staticText941, 0, wxALL, 5 );
+
+	m_txtStampSetTileset = new wxStaticText( sbSizer21->GetStaticBox(), wxID_ANY, wxT("MyLabel"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_txtStampSetTileset->Wrap( -1 );
+	fgSizer761->Add( m_txtStampSetTileset, 0, wxALL, 5 );
+
+
+	sbSizer21->Add( fgSizer761, 1, wxEXPAND, 5 );
+
+
+	fgSizer741->Add( sbSizer21, 1, wxALL|wxEXPAND, 5 );
+
+
+	fgSizer731->Add( fgSizer741, 1, wxEXPAND, 5 );
+
+	wxBoxSizer* bSizer75;
+	bSizer75 = new wxBoxSizer( wxVERTICAL );
+
+	wxFlexGridSizer* fgSizer91;
+	fgSizer91 = new wxFlexGridSizer( 0, 2, 0, 0 );
+	fgSizer91->AddGrowableCol( 1 );
+	fgSizer91->SetFlexibleDirection( wxBOTH );
+	fgSizer91->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+
+	m_staticText127 = new wxStaticText( m_tabStamps, wxID_ANY, wxT("Image Directory:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText127->Wrap( -1 );
+	fgSizer91->Add( m_staticText127, 0, wxALIGN_RIGHT|wxALL, 5 );
+
+	m_filePickerStampsImgDir = new wxFilePickerCtrl( m_tabStamps, wxID_ANY, wxEmptyString, wxT("Select a file"), wxT("*.bmp;*.png"), wxDefaultPosition, wxDefaultSize, wxFLP_DEFAULT_STYLE );
+	m_filePickerStampsImgDir->SetMinSize( wxSize( 360,-1 ) );
+
+	fgSizer91->Add( m_filePickerStampsImgDir, 0, wxALL, 5 );
+
+
+	bSizer75->Add( fgSizer91, 1, wxEXPAND, 5 );
+
+
+	fgSizer731->Add( bSizer75, 1, wxEXPAND, 5 );
+
+
+	fgSizer721->Add( fgSizer731, 1, wxEXPAND, 5 );
+
+
+	fgSizer711->Add( fgSizer721, 1, wxEXPAND, 5 );
+
+	m_sizerStamps = new wxStaticBoxSizer( new wxStaticBox( m_tabStamps, wxID_ANY, wxT("Stamps") ), wxVERTICAL );
+
+	m_canvasStamps = new StampsPanel( m_sizerStamps->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	m_canvasStamps->SetMinSize( wxSize( -1,400 ) );
+
+	m_sizerStamps->Add( m_canvasStamps, 1, wxALL|wxEXPAND, 5 );
+
+
+	fgSizer711->Add( m_sizerStamps, 1, wxALL|wxEXPAND, 5 );
+
+
+	m_tabStamps->SetSizer( fgSizer711 );
+	m_tabStamps->Layout();
+	fgSizer711->Fit( m_tabStamps );
+	m_tabs->AddPage( m_tabStamps, wxT("Stamps"), false );
+
+	bSizer76->Add( m_tabs, 1, wxEXPAND | wxALL, 5 );
+
+
+	this->SetSizer( bSizer76 );
 	this->Layout();
 
 	this->Centre( wxBOTH );
 
 	// Connect Events
-	m_listPalettes->Connect( wxEVT_COMMAND_LISTBOX_SELECTED, wxCommandEventHandler( DialogPaletteManagementBase::OnListPalette ), NULL, this );
-	m_btnImport->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogPaletteManagementBase::OnBtnImport ), NULL, this );
-	m_btnExport->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogPaletteManagementBase::OnBtnExport ), NULL, this );
-	m_btnRename->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogPaletteManagementBase::OnBtnRename ), NULL, this );
-	m_btnDelete->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogPaletteManagementBase::OnBtnDelete ), NULL, this );
-	m_choiceSlot0->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DialogPaletteManagementBase::OnListSlot0 ), NULL, this );
-	m_choiceSlot1->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DialogPaletteManagementBase::OnListSlot1 ), NULL, this );
-	m_choiceSlot2->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DialogPaletteManagementBase::OnListSlot2 ), NULL, this );
-	m_choiceSlot3->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DialogPaletteManagementBase::OnListSlot3 ), NULL, this );
+	m_tabs->Connect( wxEVT_COMMAND_NOTEBOOK_PAGE_CHANGED, wxNotebookEventHandler( DialogAssetsBase::OnTabChanged ), NULL, this );
+	m_listPalettes->Connect( wxEVT_COMMAND_LISTBOX_SELECTED, wxCommandEventHandler( DialogAssetsBase::OnListPalette ), NULL, this );
+	m_btnImportPalette->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnImport ), NULL, this );
+	m_btnExportPalette->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnExport ), NULL, this );
+	m_btnRenamePalette->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnRename ), NULL, this );
+	m_btnDeletePalette->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnDelete ), NULL, this );
+	m_choiceSlot0->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DialogAssetsBase::OnListSlot0 ), NULL, this );
+	m_choiceSlot1->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DialogAssetsBase::OnListSlot1 ), NULL, this );
+	m_choiceSlot2->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DialogAssetsBase::OnListSlot2 ), NULL, this );
+	m_choiceSlot3->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DialogAssetsBase::OnListSlot3 ), NULL, this );
+	m_listStampSets->Connect( wxEVT_COMMAND_LISTBOX_SELECTED, wxCommandEventHandler( DialogAssetsBase::OnListStampSet ), NULL, this );
+	m_btnNewStampSet->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnNewStampSet ), NULL, this );
+	m_btnDeleteStampSet->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnDeleteStampSet ), NULL, this );
+	m_btnRenameStampSet->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnRenameStampSet ), NULL, this );
+	m_btnScanStampSet->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnScanStampSet ), NULL, this );
+	m_filePickerStampsImgDir->Connect( wxEVT_COMMAND_FILEPICKER_CHANGED, wxFileDirPickerEventHandler( DialogAssetsBase::OnBrowseStampsImgDir ), NULL, this );
 }
 
-DialogPaletteManagementBase::~DialogPaletteManagementBase()
+DialogAssetsBase::~DialogAssetsBase()
 {
 	// Disconnect Events
-	m_listPalettes->Disconnect( wxEVT_COMMAND_LISTBOX_SELECTED, wxCommandEventHandler( DialogPaletteManagementBase::OnListPalette ), NULL, this );
-	m_btnImport->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogPaletteManagementBase::OnBtnImport ), NULL, this );
-	m_btnExport->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogPaletteManagementBase::OnBtnExport ), NULL, this );
-	m_btnRename->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogPaletteManagementBase::OnBtnRename ), NULL, this );
-	m_btnDelete->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogPaletteManagementBase::OnBtnDelete ), NULL, this );
-	m_choiceSlot0->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DialogPaletteManagementBase::OnListSlot0 ), NULL, this );
-	m_choiceSlot1->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DialogPaletteManagementBase::OnListSlot1 ), NULL, this );
-	m_choiceSlot2->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DialogPaletteManagementBase::OnListSlot2 ), NULL, this );
-	m_choiceSlot3->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DialogPaletteManagementBase::OnListSlot3 ), NULL, this );
+	m_tabs->Disconnect( wxEVT_COMMAND_NOTEBOOK_PAGE_CHANGED, wxNotebookEventHandler( DialogAssetsBase::OnTabChanged ), NULL, this );
+	m_listPalettes->Disconnect( wxEVT_COMMAND_LISTBOX_SELECTED, wxCommandEventHandler( DialogAssetsBase::OnListPalette ), NULL, this );
+	m_btnImportPalette->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnImport ), NULL, this );
+	m_btnExportPalette->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnExport ), NULL, this );
+	m_btnRenamePalette->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnRename ), NULL, this );
+	m_btnDeletePalette->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnDelete ), NULL, this );
+	m_choiceSlot0->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DialogAssetsBase::OnListSlot0 ), NULL, this );
+	m_choiceSlot1->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DialogAssetsBase::OnListSlot1 ), NULL, this );
+	m_choiceSlot2->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DialogAssetsBase::OnListSlot2 ), NULL, this );
+	m_choiceSlot3->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DialogAssetsBase::OnListSlot3 ), NULL, this );
+	m_listStampSets->Disconnect( wxEVT_COMMAND_LISTBOX_SELECTED, wxCommandEventHandler( DialogAssetsBase::OnListStampSet ), NULL, this );
+	m_btnNewStampSet->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnNewStampSet ), NULL, this );
+	m_btnDeleteStampSet->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnDeleteStampSet ), NULL, this );
+	m_btnRenameStampSet->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnRenameStampSet ), NULL, this );
+	m_btnScanStampSet->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnScanStampSet ), NULL, this );
+	m_filePickerStampsImgDir->Disconnect( wxEVT_COMMAND_FILEPICKER_CHANGED, wxFileDirPickerEventHandler( DialogAssetsBase::OnBrowseStampsImgDir ), NULL, this );
 
 }

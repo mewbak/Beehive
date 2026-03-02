@@ -66,7 +66,7 @@ private:
 	{
 		eContextMenuDeleteStamp,
 		eContextMenuEditStampCollision,
-#if !BEEHIVE_FIXED_STAMP_MODE //No tile/collision editing in fixed mode
+#if !BEEHIVE_PLUGIN_LUMINARY //No tile/collision editing in fixed mode
 		eContextMenuBakeStamp,
 		eContextMenuStampBringToFront,
 		eContextMenuStampSendToBack,
@@ -113,7 +113,7 @@ private:
 	void PaintTerrainBeziers(Project& project);
 
 	//Create stamp preview primitive
-	void CreateStampPreview(Stamp* stamp);
+	void CreateStampPreview(TilesetId tilesetId, Stamp* stamp);
 
 	//Bucket fill (recursive)
 	void BucketFill(Map& map, ion::Vector2i position, ion::Vector2i prevPosition, TileId originalTile, TileId newTile);

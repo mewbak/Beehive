@@ -13,6 +13,8 @@
 
 #include "ViewPanel.h"
 
+#if !BEEHIVE_PLUGIN_LUMINARY
+
 class TileEditorPanel : public ViewPanel
 {
 	static const float s_defaultZoom;
@@ -37,10 +39,12 @@ protected:
 	virtual void OnRender(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float& z, float zOffset);
 
 private:
-	void RenderTile(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z);
+	void RenderTile(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z, StampSetId stampSetId);
 
 	Project& m_project;
 
 	//Rendering primitive
 	ion::render::Quad* m_tilePrimitive;
 };
+
+#endif // !BEEHIVE_PLUGIN_LUMINARY

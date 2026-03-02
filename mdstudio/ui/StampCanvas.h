@@ -29,7 +29,7 @@ public:
 	virtual ~StampCanvas();
 
 	//Set current stamp
-	void SetStamp(Stamp& stamp, const ion::Vector2i& offset);
+	void SetStamp(StampSetId stampSetId, Stamp& stamp, const ion::Vector2i& offset);
 
 	//Set current tool
 	void SetTool(ToolType tool);
@@ -98,6 +98,8 @@ private:
 	ion::Vector2 m_currentBezierControlPos;
 
 	//Currently editing stamp
+	StampSetId m_stampSetId;
+	TilesetId m_tilesetId;
 	Stamp* m_stamp;
 
 	//Current tool

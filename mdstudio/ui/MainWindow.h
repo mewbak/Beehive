@@ -51,18 +51,24 @@ public:
 		ePanelMap,
 		ePanelMapList,
 		ePanelStamps,
-		ePanelBlocks,
 		ePanelTiles,
 		ePanelPalettes,
-		ePanelTileEditor,
 		ePanelTerrainTiles,
-		ePanelTerrainTileEditor,
-		ePanelGameObjectTypes,
-		ePanelGameObjectParams,
 		ePanelSceneExplorer,
 		ePanelProperties,
 		ePanelScriptCompile,
-		ePanelAnimation
+		ePanelAnimation,
+
+#if !BEEHIVE_PLUGIN_LUMINARY
+		ePanelBlocks,
+		ePanelTileEditor,
+		ePanelTerrainTileEditor,
+#endif
+
+#if !BEEHIVE_PLUGIN_LUMINARY
+		ePanelGameObjectTypes,
+		ePanelGameObjectParams,
+#endif
 	};
 
 	//OpenGL setup
@@ -79,15 +85,18 @@ public:
 	void ShowPanelPalettes();
 	void ShowPanelTiles();
 	void ShowPanelStamps();
-	void ShowPanelBlocks();
 	void ShowPanelMap();
 	void ShowPanelMapList();
-	void ShowPanelTileEditor();
 	void ShowPanelTerrainTiles();
 	void ShowPanelTerrainEditor();
+	void ShowPanelTimeline();
+
+#if !BEEHIVE_PLUGIN_LUMINARY
+	void ShowPanelBlocks();
 	void ShowPanelGameObjectTypes();
 	void ShowPanelGameObjectParams();
-	void ShowPanelTimeline();
+	void ShowPanelTileEditor();
+#endif
 
 	//Open toolbox
 	void ShowToolboxTiles();
@@ -169,27 +178,20 @@ protected:
 	virtual void OnBtnTilesDelete(wxCommandEvent& event);
 	virtual void OnBtnTilesCleanup(wxCommandEvent& event);
 	virtual void OnBtnSpriteEditor(wxCommandEvent& event);
-	virtual void OnBtnStampsImport(wxCommandEvent& event);
 	virtual void OnBtnStampsUpdate(wxCommandEvent& event);
 	virtual void OnBtnStampsExportBMPs(wxCommandEvent& event);
 	virtual void OnBtnStampsCleanup(wxCommandEvent& event);
 	virtual void OnBtnPaletteManager(wxCommandEvent& event);
 	virtual void OnBtnColMapClear(wxCommandEvent& event);
 	virtual void OnBtnColGenTerrainBezier(wxCommandEvent& event);
-	virtual void OnBtnColTilesCreate(wxCommandEvent& event);
-	virtual void OnBtnColTilesDelete(wxCommandEvent& event);
-	virtual void OnBtnColTilesCleanup(wxCommandEvent& event);
 	virtual void OnBtnToolsMapEdit(wxCommandEvent& event);
 	virtual void OnBtnToolsMapList(wxCommandEvent& event);
 	virtual void OnBtnToolsTiles(wxCommandEvent& event);
 	virtual void OnBtnToolsCollisionTiles(wxCommandEvent& event);
 	virtual void OnBtnToolsStamps(wxCommandEvent& event);
 	virtual void OnBtnToolsPalettes(wxCommandEvent& event);
-	virtual void OnBtnToolsGameObjs(wxCommandEvent& event);
-	virtual void OnBtnToolsGameObjParams(wxCommandEvent& event);
 	virtual void OnBtnToolsTimeline(wxCommandEvent& event);
 	virtual void OnBtnMapNew(wxCommandEvent& event);
-	virtual void OnBtnMapImport(wxCommandEvent& event);
 	virtual void OnBtnMapCopy(wxCommandEvent& event);
 	virtual void OnBtnMapDelete(wxCommandEvent& event);
 	virtual void OnBtnMapRename(wxCommandEvent& event);
@@ -202,8 +204,18 @@ protected:
 	virtual void OnBtnShowOutlines(wxCommandEvent& event);
 	virtual void OnBtnShowCollision(wxCommandEvent& event);
 	virtual void OnBtnShowDisplayFrame(wxCommandEvent& event);
+
+#if !BEEHIVE_PLUGIN_LUMINARY
+	virtual void OnBtnColTilesCreate(wxCommandEvent& event);
+	virtual void OnBtnColTilesDelete(wxCommandEvent& event);
+	virtual void OnBtnColTilesCleanup(wxCommandEvent& event);
+	virtual void OnBtnStampsImport(wxCommandEvent& event);
 	virtual void OnBtnTerrainTileEdit(wxCommandEvent& event);
+	virtual void OnBtnToolsGameObjs(wxCommandEvent& event);
+	virtual void OnBtnToolsGameObjParams(wxCommandEvent& event);
 	virtual void OnBtnGameObjTypes(wxCommandEvent& event);
+	virtual void OnBtnMapImport(wxCommandEvent& event);
+#endif
 
 	void OnBtnTool(wxCommandEvent& event);
 
@@ -253,13 +265,16 @@ private:
 	wxWeakRef<MapListPanel> m_mapListPanel;
 	wxWeakRef<TilesPanel> m_tilesPanel;
 	wxWeakRef<StampsPanel> m_stampsPanel;
-	wxWeakRef<BlocksPanel> m_blocksPanel;
-	wxWeakRef<TileEditorPanel> m_tileEditorPanel;
 	wxWeakRef<TerrainTilesPanel> m_terrainTilesPanel;
+	wxWeakRef<TimelinePanel> m_timelinePanel;
+
+#if !BEEHIVE_PLUGIN_LUMINARY
+	wxWeakRef<TileEditorPanel> m_tileEditorPanel;
 	wxWeakRef<TerrainTileEditorPanel> m_TerrainTileEditorPanel;
 	wxWeakRef<GameObjectTypesPanel> m_gameObjectTypePanel;
 	wxWeakRef<GameObjectParamsPanel> m_gameObjectParamsPanel;
-	wxWeakRef<TimelinePanel> m_timelinePanel;
+	wxWeakRef<BlocksPanel> m_blocksPanel;
+#endif
 
 	ProjectPtr m_project;
 

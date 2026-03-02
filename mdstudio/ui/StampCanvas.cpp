@@ -29,6 +29,7 @@ StampCanvas::StampCanvas(wxWindow *parent, wxWindowID id, const wxPoint& pos, co
 	m_stamp = NULL;
 	m_terrainPrimitiveDirty = true;
 	m_collisionPrimitiveDirty = true;
+	m_tilesetId = InvalidTilesetId;
 }
 
 StampCanvas::~StampCanvas()
@@ -83,7 +84,7 @@ void StampCanvas::Refresh(bool eraseBackground, const wxRect *rect)
 	SpriteCanvas::Refresh(eraseBackground, rect);
 }
 
-void StampCanvas::SetStamp(Stamp& stamp, const ion::Vector2i& offset)
+void StampCanvas::SetStamp(StampSetId stampSetId, Stamp& stamp, const ion::Vector2i& offset)
 {
 	m_drawOffset = offset;
 
@@ -93,6 +94,10 @@ void StampCanvas::SetStamp(Stamp& stamp, const ion::Vector2i& offset)
 		delete m_terrainCanvasPrimitive;
 	if (m_collisionCanvasPrimitive)
 		delete m_collisionCanvasPrimitive;
+
+	m_stamp = &stamp;
+	m_stampSetId = stampSetId;
+	m_tilesetId = m_project->GetStampSet(stampSetId).GetTilesetId();
 
 	const int tileWidth = m_project->GetPlatformConfig().tileWidth;
 	const int tileHeight = m_project->GetPlatformConfig().tileHeight;
@@ -116,14 +121,12 @@ void StampCanvas::SetStamp(Stamp& stamp, const ion::Vector2i& offset)
 
 			//Set texture coords for cell
 			ion::render::TexCoord coords[4];
-			m_renderResources->GetTileTexCoords(tileId, coords, tileFlags);
+			m_renderResources->GetTileTexCoords(m_tilesetId, tileId, coords, tileFlags);
 			m_tileFramePrimitive->SetTexCoords((y_inv * width) + x, coords);
 		}
 	}
 
 	m_tileFramePrimitive->GetVertexBuffer().CommitBuffer();
-
-	m_stamp = &stamp;
 
 	PaintTerrainBeziers(stamp);
 	PaintCollisionStamp(stamp);
@@ -568,7 +571,7 @@ void StampCanvas::OnRender(ion::render::Renderer& renderer, const ion::Matrix4& 
 	if (m_stamp)
 	{
 		//Render tile frame
-		RenderTileFrame(renderer, cameraInverseMtx, projectionMtx, z);
+		RenderTileFrame(renderer, cameraInverseMtx, projectionMtx, z, m_tilesetId);
 		z += zOffset;
 
 		//Render preview

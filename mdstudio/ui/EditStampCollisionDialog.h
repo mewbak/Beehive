@@ -25,7 +25,7 @@ class RenderResources;
 class DialogEditStampCollision : public DialogEditStampCollisionBase
 {
 public:
-	DialogEditStampCollision(MainWindow& mainWindow, Stamp& stamp, Project& project, ion::render::Renderer& renderer, wxGLContext& glContext, RenderResources& renderResources);
+	DialogEditStampCollision(MainWindow& mainWindow, StampSetId stampSetId, Stamp& stamp, Project& project, ion::render::Renderer& renderer, wxGLContext& glContext, RenderResources& renderResources);
 	virtual ~DialogEditStampCollision();
 
 	virtual void OnToolAddBezier(wxCommandEvent& event);
@@ -37,6 +37,7 @@ public:
 private:
 	void Draw();
 
+	StampSetId m_stampSetId;
 	Stamp& m_stamp;
 
 	MainWindow& m_mainWindow;

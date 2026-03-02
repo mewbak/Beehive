@@ -100,20 +100,23 @@ public:
 	std::vector<std::pair<PaletteId, Palette>> m_matches;
 };
 
-class DialogPaletteManagement : public DialogPaletteManagementBase
+class DialogAssetManagement : public DialogAssetsBase
 {
 public:
-	DialogPaletteManagement(wxWindow* parent, Project& project);
+	DialogAssetManagement(MainWindow& mainWindow, Project& project, ion::render::Renderer& renderer, wxGLContext& glContext, RenderResources& renderResources);
 
+	virtual void OnTabChanged(wxNotebookEvent& event);
 	virtual void OnListPalette(wxCommandEvent& event);
-	virtual void OnBtnImport(wxCommandEvent& event);
-	virtual void OnBtnExport(wxCommandEvent& event);
-	virtual void OnBtnRename(wxCommandEvent& event);
-	virtual void OnBtnDelete(wxCommandEvent& event);
+	virtual void OnBtnImportPalette(wxCommandEvent& event);
+	virtual void OnBtnExportPalette(wxCommandEvent& event);
+	virtual void OnBtnRenamePalette(wxCommandEvent& event);
+	virtual void OnBtnDeletePalette(wxCommandEvent& event);
 	virtual void OnListSlot0(wxCommandEvent& event);
 	virtual void OnListSlot1(wxCommandEvent& event);
 	virtual void OnListSlot2(wxCommandEvent& event);
 	virtual void OnListSlot3(wxCommandEvent& event);
+
+	virtual void Refresh(bool eraseBackground = true, const wxRect* rect = NULL);
 
 private:
 	void Populate();

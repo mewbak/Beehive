@@ -17,7 +17,10 @@ class StampsPanel : public ViewPanel
 {
 public:
 	StampsPanel(MainWindow* mainWindow, Project& project, ion::render::Renderer& renderer, wxGLContext* glContext, wxGLAttributes& glAttributes, RenderResources& renderResources, wxWindow *parent, wxWindowID winid = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL | wxNO_BORDER, const wxString& name = wxPanelNameStr);
+	StampsPanel(wxWindow* parent, wxWindowID winid = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL | wxNO_BORDER);
 	virtual ~StampsPanel();
+
+	void SetStampSetId(StampSetId stampSetId);
 
 	//Events
 	virtual void OnMouse(wxMouseEvent& event, const ion::Vector2i& mouseDelta);
@@ -41,18 +44,21 @@ private:
 
 	enum MenuItems
 	{
+#if !BEEHIVE_PLUGIN_LUMINARY // Stamps come from directory scan only
 		eMenuRenameStamp,
 		eMenuDeleteStamp,
 		eMenuUpdateStamp,
+#endif
+
 		eMenuEditCollision,
 		eMenuSetBackground,
 
-#if !BEEHIVE_FIXED_STAMP_MODE
+#if !BEEHIVE_PLUGIN_LUMINARY
 		eMenuSetStampLowDrawPrio,
 		eMenuSetStampHighDrawPrio,
 #endif
 
-#if !BEEHIVE_LEAN_UI
+#if !BEEHIVE_PLUGIN_LUMINARY
 		eMenuUpdatePalette,
 		eMenuSubstituteStamp,
 		eMenuSortTilesSequentially,
@@ -81,8 +87,14 @@ private:
 	//Reset zoom/pan
 	void ResetZoomPan();
 
+	StampSetId GetStampSetId() const;
+	StampSet& GetStampSet();
+
 	//Stamp position map
 	std::vector< std::pair<StampId, ion::Vector2i> > m_stampPosMap;
+
+	//Current stamp set
+	StampSetId m_stampSetId;
 
 	//Current/hover/substitute stamp
 	StampId m_selectedStamp;

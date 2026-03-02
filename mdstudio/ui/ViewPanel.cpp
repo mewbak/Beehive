@@ -3,11 +3,11 @@
 
 ViewPanel::ViewPanel(MainWindow* mainWindow, Project& project, ion::render::Renderer& renderer, wxGLContext* glContext, wxGLAttributes& glAttributes, RenderResources& renderResources, wxWindow *parent, wxWindowID winid, const wxPoint& pos, const wxSize& size, long style, const wxString& name)
 	: wxGLCanvas(parent, glAttributes, winid, pos, size, style, name, wxNullPalette)
-	, m_renderer(renderer)
-	, m_renderResources(renderResources)
+	, m_renderer(&renderer)
+	, m_renderResources(&renderResources)
 	, m_glContext(glContext)
 	, m_viewport(128, 128, ion::render::Viewport::PerspectiveMode::Ortho2DAbsolute)
-	, m_project(project)
+	, m_project(&project)
 {
 	SetCurrent(*glContext);
 
@@ -24,6 +24,7 @@ ViewPanel::ViewPanel(MainWindow* mainWindow, Project& project, ion::render::Rend
 	m_canvasPrimitiveDirty = true;
 	m_terrainCanvasDirty = false;
 	m_collisionCanvasDirty = false;
+	m_forceRefresh = false;
 
 	SetBackgroundStyle(wxBG_STYLE_PAINT);
 
@@ -56,6 +57,63 @@ ViewPanel::ViewPanel(MainWindow* mainWindow, Project& project, ion::render::Rend
 	Refresh();
 }
 
+ViewPanel::ViewPanel(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style, const wxString& name)
+	: wxGLCanvas(parent, MainWindow::GetGLAttributes(), id, pos, size, style, name)
+	, m_viewport(128, 128, ion::render::Viewport::PerspectiveMode::Ortho2DAbsolute)
+{
+	m_mainWindow = NULL;
+	m_canvasPrimitive = NULL;
+	m_terrainCanvasPrimitive = NULL;
+	m_collisionCanvasPrimitive = NULL;
+	m_gridPrimitive = NULL;
+	m_cameraZoom = 1.0f;
+	m_cameraPanSpeed = 1.0f;
+	m_prevMouseBits = 0;
+	m_enableZoom = true;
+	m_enablePan = true;
+	m_canvasPrimitiveDirty = true;
+	m_terrainCanvasDirty = false;
+	m_collisionCanvasDirty = false;
+	m_forceRefresh = false;
+
+	SetBackgroundStyle(wxBG_STYLE_PAINT);
+
+	//Set viewport clear colour
+	m_viewport.SetClearColour(ion::Colour(0.3f, 0.3f, 0.3f));
+
+	//Centre camera on canvas
+	CentreCamera();
+
+	//Reset zoom
+	SetCameraZoom(1.0f);
+}
+
+void ViewPanel::SetupRendering(ion::render::Renderer* renderer, wxGLContext* glContext, RenderResources* renderResources)
+{
+	m_renderer = renderer;
+	m_renderResources = renderResources;
+	SetCurrent(*glContext);
+	m_forceRefresh = true;
+
+	wxSize clientSize = GetSize();
+
+	if (clientSize.x != m_panelSize.x || clientSize.y != m_panelSize.y)
+	{
+		m_panelSize.x = clientSize.x;
+		m_panelSize.y = clientSize.y;
+
+		if (m_panelSize.x > 1 && m_panelSize.y > 1)
+		{
+			//Filter out superflous resize events (wx sends them if UI thread doesn't respond during saving/loading)
+			if (m_prevPanelSize.x != m_panelSize.x || m_prevPanelSize.y != m_panelSize.y)
+			{
+				m_prevPanelSize = m_panelSize;
+				m_viewport.Resize(m_panelSize.x, m_panelSize.y);
+			}
+		}
+	}
+}
+
 ViewPanel::~ViewPanel()
 {
 
@@ -86,23 +144,23 @@ void ViewPanel::EventHandlerPaint(wxPaintEvent& event)
 		SetCurrent(*m_glContext);
 
 		//Begin rendering to current viewport
-		m_renderer.BeginFrame(m_viewport, GetHDC());
-		m_renderer.ClearColour();
-		m_renderer.ClearDepth();
+		m_renderer->BeginFrame(m_viewport, GetHDC());
+		m_renderer->ClearColour();
+		m_renderer->ClearDepth();
 
 		ion::Matrix4 cameraInverseMtx = m_camera.GetTransform().GetInverse();
-		ion::Matrix4 projectionMtx = m_renderer.GetProjectionMatrix();
+		ion::Matrix4 projectionMtx = m_renderer->GetProjectionMatrix();
 
 		//Z order
 		const float zOffset = 0.0001f;
 		float z = 0.0f;
 
 		//Render callback
-		OnRender(m_renderer, cameraInverseMtx, projectionMtx, z, zOffset);
+		OnRender(*m_renderer, cameraInverseMtx, projectionMtx, z, zOffset);
 
 		//End rendering
-		m_renderer.SwapBuffers();
-		m_renderer.EndFrame();
+		m_renderer->SwapBuffers();
+		m_renderer->EndFrame();
 
 		event.Skip();
 	}
@@ -117,6 +175,12 @@ void ViewPanel::EventHandlerResize(wxSizeEvent& event)
 {
 	OnResize(event);
 	event.Skip();
+}
+
+void ViewPanel::ForceRefresh()
+{
+	m_forceRefresh = true;
+	Refresh();
 }
 
 void ViewPanel::Refresh(bool eraseBackground, const wxRect *rect)
@@ -142,6 +206,8 @@ void ViewPanel::Refresh(bool eraseBackground, const wxRect *rect)
 			m_collisionCanvasPrimitive->GetVertexBuffer().CommitBuffer();
 			m_collisionCanvasDirty = false;
 		}
+
+		m_forceRefresh = false;
 	}
 }
 
@@ -151,8 +217,8 @@ void ViewPanel::CreateCanvas(int width, int height)
 	if(m_canvasPrimitive)
 		delete m_canvasPrimitive;
 
-	const int tileWidth = m_project.GetPlatformConfig().tileWidth;
-	const int tileHeight = m_project.GetPlatformConfig().tileHeight;
+	const int tileWidth = m_project->GetPlatformConfig().tileWidth;
+	const int tileHeight = m_project->GetPlatformConfig().tileHeight;
 
 	m_canvasPrimitive = new ion::render::Chessboard(ion::render::Chessboard::Axis::xy, ion::Vector2((float)width * (tileWidth / 2.0f), (float)height * (tileHeight / 2.0f)), width, height, true);
 	m_canvasSize.x = width;
@@ -169,8 +235,8 @@ void ViewPanel::CreateCollisionCanvas(int width, int height)
 	if (m_collisionCanvasPrimitive)
 		delete m_collisionCanvasPrimitive;
 
-	const int tileWidth = m_project.GetPlatformConfig().tileWidth;
-	const int tileHeight = m_project.GetPlatformConfig().tileHeight;
+	const int tileWidth = m_project->GetPlatformConfig().tileWidth;
+	const int tileHeight = m_project->GetPlatformConfig().tileHeight;
 
 	m_terrainCanvasPrimitive = new ion::render::Chessboard(ion::render::Chessboard::Axis::xy, ion::Vector2((float)(width * tileWidth) / 2.0f, (float)(height * tileHeight) / 2.0f), width, height, true);
 	m_collisionCanvasPrimitive = new ion::render::Chessboard(ion::render::Chessboard::Axis::xy, ion::Vector2((float)(width * tileWidth) / 2.0f, (float)(height * tileHeight) / 2.0f), width, height, true);
@@ -184,17 +250,20 @@ void ViewPanel::CreateGrid(int width, int height, int cellsX, int cellsY)
 	if(m_gridPrimitive)
 		delete m_gridPrimitive;
 
-	const int tileWidth = m_project.GetPlatformConfig().tileWidth;
-	const int tileHeight = m_project.GetPlatformConfig().tileHeight;
+	const int tileWidth = m_project->GetPlatformConfig().tileWidth;
+	const int tileHeight = m_project->GetPlatformConfig().tileHeight;
 
 	m_gridPrimitive = new ion::render::Grid(ion::render::Grid::Axis::xy, ion::Vector2((float)width * (tileWidth / 2.0f), (float)height * (tileHeight / 2.0f)), cellsX, cellsY);
 }
 
-void ViewPanel::PaintTile(TileId tileId, int x, int y, u32 flipFlags)
+void ViewPanel::PaintTile(TilesetId tilesetId, TileId tileId, int x, int y, u32 flipFlags)
 {
+	if (tileId == InvalidTileId)
+		tileId = 0;
+
 	//Set texture coords for cell
 	ion::render::TexCoord coords[4];
-	m_renderResources.GetTileTexCoords(tileId, coords, flipFlags);
+	m_renderResources->GetTileTexCoords(tilesetId, tileId, coords, flipFlags);
 	m_canvasPrimitive->SetTexCoords((y * m_canvasSize.x) + x, coords);
 	m_canvasPrimitiveDirty = true;
 }
@@ -203,17 +272,17 @@ void ViewPanel::PaintCollisionTile(TerrainTileId terrainTileId, int x, int y, u1
 {
 	//Set texture coords for terrain cell
 	ion::render::TexCoord coords[4];
-	m_renderResources.GetTerrainTileTexCoords(terrainTileId, coords);
+	m_renderResources->GetTerrainTileTexCoords(terrainTileId, coords);
 	m_terrainCanvasPrimitive->SetTexCoords((y * m_canvasSize.x) + x, coords);
 	m_terrainCanvasDirty = true;
 
 	//Set texture coords for collision cell
-	m_renderResources.GetCollisionTypeTexCoords(collisionFlags, coords);
+	m_renderResources->GetCollisionTypeTexCoords(collisionFlags, coords);
 	m_collisionCanvasPrimitive->SetTexCoords((y * m_canvasSize.x) + x, coords);
 	m_collisionCanvasDirty = true;
 }
 
-void ViewPanel::PaintStamp(const Stamp& stamp, int x, int y, u32 flipFlags)
+void ViewPanel::PaintStamp(TilesetId tilesetId, const Stamp& stamp, int x, int y, u32 flipFlags)
 {
 	int width = stamp.GetWidth();
 	int height = stamp.GetHeight();
@@ -236,7 +305,7 @@ void ViewPanel::PaintStamp(const Stamp& stamp, int x, int y, u32 flipFlags)
 			if(canvasX >= 0 && canvasX < m_canvasSize.x && y_inv >= 0 && y_inv < m_canvasSize.y)
 			{
 				//Paint on canvas
-				PaintTile(tileId, canvasX, y_inv, tileFlags);
+				PaintTile(tilesetId, tileId, canvasX, y_inv, tileFlags);
 			}
 		}
 	}
@@ -271,7 +340,7 @@ void ViewPanel::PaintStampCollision(const Stamp& stamp, int x, int y, u32 flipFl
 	}
 }
 
-void ViewPanel::FillTiles(TileId tileId, const ion::Vector2i& boxCorner1, const ion::Vector2i& boxCorner2)
+void ViewPanel::FillTiles(TilesetId tilesetId, TileId tileId, const ion::Vector2i& boxCorner1, const ion::Vector2i& boxCorner2)
 {
 	//Sanitise ordering before looping
 	int top = ion::maths::Min(boxCorner1.y, boxCorner2.y);
@@ -287,12 +356,12 @@ void ViewPanel::FillTiles(TileId tileId, const ion::Vector2i& boxCorner1, const 
 			int y_inv = m_canvasSize.y - 1 - y;
 
 			//Paint tile to canvas
-			PaintTile(tileId, x, y_inv, 0);
+			PaintTile(tilesetId, tileId, x, y_inv, 0);
 		}
 	}
 }
 
-void ViewPanel::FillTiles(TileId tileId, const std::vector<ion::Vector2i>& selection)
+void ViewPanel::FillTiles(TilesetId tilesetId, TileId tileId, const std::vector<ion::Vector2i>& selection)
 {
 	for(int i = 0; i < selection.size(); i++)
 	{
@@ -303,7 +372,7 @@ void ViewPanel::FillTiles(TileId tileId, const std::vector<ion::Vector2i>& selec
 		int y_inv = m_canvasSize.y - 1 - y;
 
 		//Paint tile to canvas
-		PaintTile(tileId, x, y_inv, 0);
+		PaintTile(tilesetId, tileId, x, y_inv, 0);
 	}
 }
 
@@ -332,8 +401,8 @@ void ViewPanel::FindBounds(const std::vector<ion::Vector2i>& tiles, int& left, i
 
 void ViewPanel::OnMouse(wxMouseEvent& event, const ion::Vector2i& mouseDelta)
 {
-	const int tileWidth = m_project.GetPlatformConfig().tileWidth;
-	const int tileHeight = m_project.GetPlatformConfig().tileHeight;
+	const int tileWidth = m_project->GetPlatformConfig().tileWidth;
+	const int tileHeight = m_project->GetPlatformConfig().tileHeight;
 
 	//Get mouse position in panel space
 	wxClientDC clientDc(this);
@@ -456,14 +525,14 @@ void ViewPanel::OnKeyboard(wxKeyEvent& event)
 
 }
 
-void ViewPanel::RenderCanvas(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z)
+void ViewPanel::RenderCanvas(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z, TilesetId tilesetId)
 {
 	if(m_canvasPrimitive)
 	{
 		//No depth test (stops grid cells Z fighting)
 		renderer.SetDepthTest(ion::render::Renderer::DepthTest::Always);
 
-		ion::render::Material* material = m_renderResources.GetMaterial(RenderResources::eMaterialTileset);
+		ion::render::Material* material = m_renderResources->GetMaterial(tilesetId);
 
 		//Draw map
 		material->SetDiffuseColour(ion::Colour(1.0f, 1.0f, 1.0f, 1.0f));
@@ -478,12 +547,12 @@ void ViewPanel::RenderCanvas(ion::render::Renderer& renderer, const ion::Matrix4
 void ViewPanel::RenderGrid(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z)
 {
 	//Draw grid
-	ion::render::Material* material = m_renderResources.GetMaterial(RenderResources::eMaterialFlatColour);
-	const ion::Colour& colour = m_renderResources.GetColour(RenderResources::eColourGridTile);
+	ion::render::Material* material = m_renderResources->GetMaterial(RenderResources::eMaterialFlatColour);
+	const ion::Colour& colour = m_renderResources->GetColour(RenderResources::eColourGridTile);
 
 	ion::Matrix4 gridMtx;
 	gridMtx.SetTranslation(ion::Vector3(0.0f, 0.0f, z));
-	gridMtx.SetScale(ion::Vector3((float)m_project.GetGridSize(), (float)m_project.GetGridSize(), 1.0f));
+	gridMtx.SetScale(ion::Vector3((float)m_project->GetGridSize(), (float)m_project->GetGridSize(), 1.0f));
 	material->SetDiffuseColour(colour);
 	renderer.BindMaterial(*material, gridMtx, cameraInverseMtx, projectionMtx);
 	renderer.DrawVertexBuffer(m_gridPrimitive->GetVertexBuffer());

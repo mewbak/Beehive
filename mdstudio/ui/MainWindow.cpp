@@ -241,40 +241,42 @@ void MainWindow::SetProject(Project* project)
 			delete m_stampsPanel;
 		}
 
+#if !BEEHIVE_PLUGIN_LUMINARY
 		if(m_blocksPanel)
 		{
 			m_auiManager.DetachPane(m_blocksPanel);
 			delete m_blocksPanel;
 		}
 
-		if(m_tileEditorPanel)
+		if (m_tileEditorPanel)
 		{
 			m_auiManager.DetachPane(m_tileEditorPanel);
 			delete m_tileEditorPanel;
 		}
 
-		if(m_terrainTilesPanel)
-		{
-			m_auiManager.DetachPane(m_terrainTilesPanel);
-			delete m_terrainTilesPanel;
-		}
-
-		if(m_TerrainTileEditorPanel)
+		if (m_TerrainTileEditorPanel)
 		{
 			m_auiManager.DetachPane(m_TerrainTileEditorPanel);
 			delete m_TerrainTileEditorPanel;
 		}
 
-		if(m_gameObjectTypePanel)
+		if (m_gameObjectTypePanel)
 		{
 			m_auiManager.DetachPane(m_gameObjectTypePanel);
 			delete m_gameObjectTypePanel;
 		}
 
-		if(m_gameObjectParamsPanel)
+		if (m_gameObjectParamsPanel)
 		{
 			m_auiManager.DetachPane(m_gameObjectParamsPanel);
 			delete m_gameObjectParamsPanel;
+		}
+#endif
+
+		if(m_terrainTilesPanel)
+		{
+			m_auiManager.DetachPane(m_terrainTilesPanel);
+			delete m_terrainTilesPanel;
 		}
 
 		if(m_timelinePanel)
@@ -305,13 +307,13 @@ void MainWindow::SetProject(Project* project)
 			RefreshTerrainTileset();
 			RefreshSpriteSheets();
 
-#if !BEEHIVE_LEAN_UI
+#if !BEEHIVE_PLUGIN_LUMINARY
 			//Open bottom panels
 			ShowPanelPalettes();
 			ShowPanelMapList();
 #endif
 
-#if !BEEHIVE_FIXED_STAMP_MODE //No tile/collision editing in fixed mode
+#if !BEEHIVE_PLUGIN_LUMINARY //No tile/collision editing in fixed mode
 			ShowPanelTiles();
 			ShowPanelTerrainEditor();
 			ShowPanelTerrainTiles();
@@ -324,7 +326,7 @@ void MainWindow::SetProject(Project* project)
 			ShowToolboxStamps();
 			ShowToolboxObjects();
 
-#if !BEEHIVE_FIXED_STAMP_MODE //No tile/collision editing in fixed mode
+#if !BEEHIVE_PLUGIN_LUMINARY //No tile/collision editing in fixed mode
 			ShowToolboxTiles();
 			ShowToolboxCollision();
 #endif
@@ -616,103 +618,145 @@ void EnumerateDirectory(const wxString path, const wxString filespec, wxArrayStr
 	}
 }
 
+void EnumerateSubDirectories(const wxString path, wxArrayString& subdirs)
+{
+	wxDir dir(path);
+	wxString dirname;
+	bool next = dir.GetFirst(&dirname, wxEmptyString, wxDIR_DIRS | wxDIR_NO_FOLLOW);
+	while (next)
+	{
+		subdirs.Add(path + "\\" + dirname);
+		next = dir.GetNext(&dirname);
+	}
+}
+
 void MainWindow::ScanStamps(const std::string& stampsDir)
 {
 	SetStatusText("Importing stamps...");
 
-	//Importing from stamp(s)
-	u32 flags = Project::eTileImportToStamp | Project::eTileImportReplaceStamp;
-
-	//Only palette 0 supported for now
-	u32 palettes = 1;
-
-	std::vector<std::pair<std::string,std::string>> filenames;
-
-	//Enumerate all files in directory
-	wxString directoryPath = stampsDir;
-	wxArrayString dirList;
-	EnumerateDirectory(directoryPath, "*.bmp", dirList);
-	EnumerateDirectory(directoryPath, "*.png", dirList);
-
-	for (auto filename : dirList)
+	if (!stampsDir.empty())
 	{
-		//Get stamp name
-		std::string stampName = filename;
+		//Importing from stamp(s)
+		u32 flags = Project::eTileImportToStamp | Project::eTileImportReplaceStamp;
 
-		const size_t lastSlash = stampName.find_last_of('\\');
-		if (std::string::npos != lastSlash)
+		//Only palette 0 supported for now
+		u32 palettes = 1;
+
+		//Enumerate subdirs (one per stamp set)
+		wxString directoryPath = stampsDir;
+		wxArrayString dirList;
+		EnumerateSubDirectories(directoryPath, dirList);
+
+		for (auto subdir : dirList)
 		{
-			stampName.erase(0, lastSlash + 1);
-		}
+			//Enumerate all files in subdirectory
+			wxArrayString fileList;
+			EnumerateDirectory(subdir, "*.bmp", fileList);
+			EnumerateDirectory(subdir, "*.png", fileList);
 
-		// Remove extension if present.
-		const size_t period = stampName.rfind('.');
-		if (std::string::npos != period)
-		{
-			stampName.erase(period);
-		}
-
-		//If only to import existing, stamp by this name must already exist
-		if (!(flags & Project::eTileImportOnlyExistingStamps) || m_project->FindStamp(stampName))
-		{
-			filenames.push_back(std::make_pair(stampName, filename.c_str().AsChar()));
-		}
-	}
-
-	//Warn if any previously imported stamps are now missing
-	std::vector<std::string> missingFiles;
-	for (auto stamp : m_project->GetStamps())
-	{
-		if (std::find_if(filenames.begin(), filenames.end(), [&](const std::pair<std::string, std::string>& rhs) { return rhs.first == stamp.second.GetName(); }) == filenames.end())
-		{
-			missingFiles.push_back(stamp.second.GetName());
-		}
-	}
-
-	if (missingFiles.size())
-	{
-		std::string message = "The following stamps are missing from " + directoryPath + ":\n";
-
-		for (auto name : missingFiles)
-		{
-			message += name + "\n";
-		}
-
-		message += "\nDelete missing stamps?";
-
-		if (wxMessageBox(message, "Missing stamps", wxOK | wxCANCEL | wxICON_WARNING) == wxCANCEL)
-		{
-			return;
-		}
-
-		for (auto name : missingFiles)
-		{
-			if (Stamp* stamp = m_project->FindStamp(name))
+			if (fileList.size() > 0)
 			{
-				m_project->DeleteStamp(stamp->GetId());
+				std::string dirname = subdir.c_str().AsChar();
+				std::string name = dirname.substr(dirname.find_last_of("/\\") + 1);
+
+				//Find or create tileset
+				TilesetId tilsetId = m_project->FindTileset(name);
+				if (tilsetId == InvalidTilesetId)
+					tilsetId = m_project->CreateTileset(name, InvalidPaletteId);
+
+				//Find or create stamp set
+				StampSetId stampSetId = m_project->FindStampSet(name);
+				if (stampSetId == InvalidStampSetId)
+					stampSetId = m_project->CreateStampSet(name, tilsetId);
+
+				StampSet& stampSet = m_project->GetStampSet(stampSetId);
+
+				std::vector<std::pair<std::string, std::string>> filenames;
+
+				for (auto filename : fileList)
+				{
+					//Get stamp name
+					std::string stampName = filename;
+
+					const size_t lastSlash = stampName.find_last_of('\\');
+					if (std::string::npos != lastSlash)
+					{
+						stampName.erase(0, lastSlash + 1);
+					}
+
+					// Remove extension if present.
+					const size_t period = stampName.rfind('.');
+					if (std::string::npos != period)
+					{
+						stampName.erase(period);
+					}
+
+					//If only to import existing, stamp by this name must already exist
+					if (!(flags & Project::eTileImportOnlyExistingStamps) || stampSet.FindStamp(stampName))
+					{
+						filenames.push_back(std::make_pair(stampName, filename.c_str().AsChar()));
+					}
+				}
+
+				//Warn if any previously imported stamps are now missing
+				std::vector<std::string> missingFiles;
+				for (auto stamp : stampSet.GetStamps())
+				{
+					if (std::find_if(filenames.begin(), filenames.end(), [&](const std::pair<std::string, std::string>& rhs) { return rhs.first == stamp.second.GetName(); }) == filenames.end())
+					{
+						missingFiles.push_back(stamp.second.GetName());
+					}
+				}
+
+				if (missingFiles.size())
+				{
+					std::string message = "The following stamps are missing from " + subdir + ":\n";
+
+					for (auto name : missingFiles)
+					{
+						message += name + "\n";
+					}
+
+					message += "\nDelete missing stamps?";
+
+					if (wxMessageBox(message, "Missing stamps", wxOK | wxCANCEL | wxICON_WARNING) == wxCANCEL)
+					{
+						return;
+					}
+
+					for (auto name : missingFiles)
+					{
+						if (StampId stampId = stampSet.FindStamp(name))
+						{
+							m_project->DeleteStamp(stampSetId, stampId);
+						}
+					}
+				}
+
+				for (int i = 0; i < filenames.size(); i++)
+				{
+					std::string stampName = filenames[i].first;
+					std::string stampFile = filenames[i].second;
+
+					StampId stampIdToReplace = stampSet.FindStamp(stampName);
+					Stamp* stampToReplace = stampIdToReplace == InvalidStampId ? nullptr : &stampSet.GetStamp(stampIdToReplace);
+					Tileset& tileset = m_project->GetTileset(stampSet.GetTilesetId());
+
+					std::string filename = dirname + "\\" + stampFile;
+					m_project->ImportBitmap(filename, flags, palettes, &tileset, &stampSet, stampToReplace);
+				}
 			}
 		}
+
+		//Refresh tileset
+		RefreshTileset();
+
+		//Refresh collison tileset
+		RefreshTerrainTileset();
+
+		//Refresh whole application
+		RefreshAll();
 	}
-
-	for (int i = 0; i < filenames.size(); i++)
-	{
-		std::string stampName = filenames[i].first;
-		std::string stampFile = filenames[i].second;
-
-		Stamp* stampToReplace = m_project->FindStamp(stampName);
-
-		std::string filename = directoryPath + "\\" + stampFile;
-		m_project->ImportBitmap(filename, flags, palettes, stampToReplace);
-	}
-
-	//Refresh tileset
-	RefreshTileset();
-
-	//Refresh collison tileset
-	RefreshTerrainTileset();
-
-	//Refresh whole application
-	RefreshAll();
 
 	SetStatusText("Import complete");
 }
@@ -723,7 +767,10 @@ void MainWindow::SetPanelCaptions()
 	{
 		wxAuiPaneInfo& paneInfo = m_auiManager.GetPane(m_tilesPanel.get());
 		wxString caption;
-		caption << "Tileset " << "(" << m_project->GetTileset().GetCount() << ")";
+		StampSetId stampSetId = m_project->GetEditingMap().GetStampSetId();
+		const StampSet& stampSet = m_project->GetStampSet(stampSetId);
+		const Tileset& tileset = m_project->GetTileset(stampSet.GetTilesetId());
+		caption << "Tileset " << "(" << tileset.GetCount() << ")";
 		paneInfo.Caption(caption);
 		m_auiManager.Update();
 	}
@@ -737,6 +784,7 @@ void MainWindow::SetPanelCaptions()
 		m_auiManager.Update();
 	}
 
+#if !BEEHIVE_PLUGIN_LUMINARY
 	if(m_blocksPanel.get())
 	{
 		wxAuiPaneInfo& paneInfo = m_auiManager.GetPane(m_blocksPanel.get());
@@ -745,6 +793,7 @@ void MainWindow::SetPanelCaptions()
 		paneInfo.Caption(caption);
 		m_auiManager.Update();
 	}
+#endif
 }
 
 void MainWindow::SaveWindowLayout()
@@ -1097,6 +1146,7 @@ void MainWindow::ShowPanelStamps()
 	}
 }
 
+#if !BEEHIVE_PLUGIN_LUMINARY
 void MainWindow::ShowPanelBlocks()
 {
 	if(m_project.get())
@@ -1125,6 +1175,7 @@ void MainWindow::ShowPanelBlocks()
 		m_auiManager.Update();
 	}
 }
+#endif
 
 void MainWindow::ShowPanelMap()
 {
@@ -1158,7 +1209,7 @@ void MainWindow::ShowPanelMapList()
 {
 	if(m_project.get())
 	{
-		if (m_gameObjectTypePanel)
+		if (m_mapListPanel)
 		{
 			m_auiManager.GetPane("MapList").Show();
 		}
@@ -1213,7 +1264,7 @@ void MainWindow::ShowToolboxTiles()
 		Bind(wxEVT_COMMAND_BUTTON_CLICKED, &MainWindow::OnBtnTool, this, wxID_TOOL_CREATE_SCENE_ANIM);
 		
 
-#if !BEEHIVE_FIXED_STAMP_MODE //No tile/collision editing in fixed mode
+#if !BEEHIVE_PLUGIN_LUMINARY //No tile/collision editing in fixed mode
 		Bind(wxEVT_COMMAND_BUTTON_CLICKED, &MainWindow::OnBtnTool, this, wxID_TOOL_PAINT);
 		Bind(wxEVT_COMMAND_BUTTON_CLICKED, &MainWindow::OnBtnTool, this, wxID_TOOL_FLIPX);
 		Bind(wxEVT_COMMAND_BUTTON_CLICKED, &MainWindow::OnBtnTool, this, wxID_TOOL_FLIPY);
@@ -1222,7 +1273,7 @@ void MainWindow::ShowToolboxTiles()
 		Bind(wxEVT_COMMAND_BUTTON_CLICKED, &MainWindow::OnBtnTool, this, wxID_TOOL_COPY_TO_NEW_MAP);
 #endif
 
-#if BEEHIVE_FIXED_STAMP_MODE //No tile editing in fixed mode
+#if BEEHIVE_PLUGIN_LUMINARY //No tile editing in fixed mode
 		delete m_toolboxPanelTiles->m_toolPaint;
 		delete m_toolboxPanelTiles->m_toolFlipX;
 		delete m_toolboxPanelTiles->m_toolFlipY;
@@ -1270,7 +1321,7 @@ void MainWindow::ShowToolboxCollision()
 		m_auiManager.AddPane(m_toolboxPanelTerrain, paneInfo);
 		paneInfo.Show();
 
-#if !BEEHIVE_FIXED_STAMP_MODE //No tile/collision editing in fixed mode
+#if !BEEHIVE_PLUGIN_LUMINARY //No tile/collision editing in fixed mode
 		//Subscribe to toolbox buttons
 		Bind(wxEVT_COMMAND_BUTTON_CLICKED, &MainWindow::OnBtnTool, this, wxID_TOOL_COL_PAINTTERRAIN);
 		Bind(wxEVT_COMMAND_BUTTON_CLICKED, &MainWindow::OnBtnTool, this, wxID_TOOL_COL_PAINTSOLID);
@@ -1318,11 +1369,11 @@ void MainWindow::ShowToolboxStamps()
 		Bind(wxEVT_COMMAND_BUTTON_CLICKED, &MainWindow::OnBtnTool, this, wxID_TOOL_STAMPPICKER);
 		Bind(wxEVT_COMMAND_BUTTON_CLICKED, &MainWindow::OnBtnTool, this, wxID_TOOL_REMOVESTAMP);
 
-#if !BEEHIVE_FIXED_STAMP_MODE //No tile/collision editing in fixed mode
+#if !BEEHIVE_PLUGIN_LUMINARY //No tile/collision editing in fixed mode
 		Bind(wxEVT_COMMAND_BUTTON_CLICKED, &MainWindow::OnBtnTool, this, wxID_TOOL_CREATESTAMP);
 #endif
 
-#if BEEHIVE_FIXED_STAMP_MODE //No tile/collision editing in fixed mode
+#if BEEHIVE_PLUGIN_LUMINARY //No tile/collision editing in fixed mode
 		delete m_toolboxPanelStamps->m_toolCreateStamp;
 #else
 		//Hide unused
@@ -1352,7 +1403,7 @@ void MainWindow::ShowToolboxObjects()
 		paneInfo.Caption("Entity Tools");
 		paneInfo.CaptionVisible(true);
 
-#if BEEHIVE_FIXED_STAMP_MODE //No tile editing in fixed mode, fewer toolboxes
+#if BEEHIVE_PLUGIN_LUMINARY //No tile editing in fixed mode, fewer toolboxes
 		paneInfo.Row(0);
 #else
 		paneInfo.Row(2);
@@ -1377,6 +1428,7 @@ void MainWindow::ShowToolboxObjects()
 	m_auiManager.Update();
 }
 
+#if !BEEHIVE_PLUGIN_LUMINARY
 void MainWindow::ShowPanelTileEditor()
 {
 	if(m_project.get())
@@ -1500,6 +1552,7 @@ void MainWindow::ShowPanelGameObjectParams()
 		m_auiManager.Update();
 	}
 }
+#endif
 
 void MainWindow::ShowPanelTimeline()
 {
@@ -1567,10 +1620,12 @@ void MainWindow::SetMapTool(ToolType tool)
 
 void MainWindow::SetSelectedGameObject(GameObject* gameObject)
 {
+#if !BEEHIVE_PLUGIN_LUMINARY
 	if(m_gameObjectParamsPanel)
 	{
 		m_gameObjectParamsPanel->SetGameObject(gameObject);
 	}
+#endif
 
 	if (m_propertyPanel)
 	{
@@ -1716,20 +1771,22 @@ void MainWindow::RedrawAll()
 	if(m_stampsPanel)
 		m_stampsPanel->Refresh();
 
+#if !BEEHIVE_PLUGIN_LUMINARY
 	if(m_blocksPanel)
 		m_blocksPanel->Refresh();
 
-	if(m_tileEditorPanel)
+	if (m_tileEditorPanel)
 		m_tileEditorPanel->Refresh();
+
+	if (m_TerrainTileEditorPanel)
+		m_TerrainTileEditorPanel->Refresh();
+
+	if (m_gameObjectTypePanel)
+		m_gameObjectTypePanel->Refresh();
+#endif
 
 	if(m_terrainTilesPanel)
 		m_terrainTilesPanel->Refresh();
-
-	if(m_TerrainTileEditorPanel)
-		m_TerrainTileEditorPanel->Refresh();
-
-	if(m_gameObjectTypePanel)
-		m_gameObjectTypePanel->Refresh();
 }
 
 void MainWindow::RefreshTileset()
@@ -1739,7 +1796,7 @@ void MainWindow::RefreshTileset()
 		if(m_project.get())
 		{
 			//Recreate tileset texture
-			m_renderResources->CreateTilesetTexture();
+			m_renderResources->CreateTilesetTextures();
 		}
 	}
 }
@@ -1811,10 +1868,12 @@ void MainWindow::RedrawPanel(Panel panel)
 		if(m_stampsPanel)
 			m_stampsPanel->Refresh();
 		break;
+#if !BEEHIVE_PLUGIN_LUMINARY
 	case ePanelBlocks:
 		if(m_blocksPanel)
 			m_blocksPanel->Refresh();
 		break;
+#endif
 	case ePanelTiles:
 		if(m_tilesPanel)
 			m_tilesPanel->Refresh();
@@ -1827,6 +1886,7 @@ void MainWindow::RedrawPanel(Panel panel)
 		if(m_terrainTilesPanel)
 			m_terrainTilesPanel->Refresh();
 		break;
+#if !BEEHIVE_PLUGIN_LUMINARY
 	case ePanelTileEditor:
 		if(m_tileEditorPanel)
 			m_tileEditorPanel->Refresh();
@@ -1838,6 +1898,7 @@ void MainWindow::RedrawPanel(Panel panel)
 	case ePanelGameObjectTypes:
 		if(m_gameObjectTypePanel)
 			m_gameObjectTypePanel->Refresh();
+#endif
 	case ePanelSceneExplorer:
 		if (m_sceneExplorerPanel)
 			m_sceneExplorerPanel->Refresh();
@@ -2029,7 +2090,7 @@ void MainWindow::OnBtnProjNew(wxCommandEvent& event)
 			config.stampWidth = dialog.m_spinCtrlStampWidth->GetValue();
 			config.stampHeight = dialog.m_spinCtrlStampHeight->GetValue();
 
-#if BEEHIVE_FIXED_STAMP_MODE
+#if BEEHIVE_PLUGIN_LUMINARY
 			config.scrollPlaneWidthTiles = dialog.m_spinCtrlMapWidth->GetValue() * config.stampWidth;
 			config.scrollPlaneHeightTiles = dialog.m_spinCtrlMapHeight->GetValue() * config.stampHeight;
 #else
@@ -2052,8 +2113,12 @@ void MainWindow::OnBtnProjNew(wxCommandEvent& event)
 			//Show settings immediately
 			ProjectSettingsDialog settingsDlg(*this, *m_project, *m_renderResources);
 			settingsDlg.ShowModal();
+
+			RefreshPanel(ePanelProperties);
+#if !BEEHIVE_PLUGIN_LUMINARY
 			RefreshPanel(ePanelGameObjectTypes);
 			RefreshPanel(ePanelGameObjectParams);
+#endif
 		}
 	}
 }
@@ -2135,8 +2200,11 @@ void MainWindow::OnBtnProjSettings(wxCommandEvent& event)
 		ProjectSettingsDialog dialog(*this, *m_project, *m_renderResources);
 		dialog.ShowModal();
 
+		RefreshPanel(ePanelProperties);
+#if !BEEHIVE_PLUGIN_LUMINARY
 		RefreshPanel(ePanelGameObjectTypes);
 		RefreshPanel(ePanelGameObjectParams);
+#endif
 	}
 }
 
@@ -2459,45 +2527,6 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 				numPalettes = palettes.size();
 			}
 
-			//Export Luminary tileset
-			std::string tilesetLabel = std::string("tileset_") + m_project->GetName();
-			std::string tilesetFilename = scenesExportDir + "\\" + "GTILES.BIN";
-			if (tilesetExporter.ExportTileset(tilesetFilename, m_project->GetTileset()))
-			{
-				includeFilenames.push_back(Project::IncludeFile{ tilesetLabel, tilesetFilename, Project::IncludeExportFlags::None });
-			}
-
-			//Export Luminary stamp set
-			m_project->CompactStampIds();
-			std::vector<Stamp> stamps;
-			for (int i = 0; i < m_project->GetStampCount(); i++)
-			{
-				if (const Stamp* stamp = m_project->GetStamp(i))
-				{
-					stamps.push_back(*stamp);
-				}
-			}
-
-			std::string stampsetLabel = std::string("stampset_") + m_project->GetName();
-			std::string stampsetFilename = scenesExportDir + "\\" + "GSTAMPS.BIN";
-			if (tilesetExporter.ExportStamps(stampsetFilename, stamps, m_project->GetTileset(), m_project->GetBackgroundTile()))
-			{
-				includeFilenames.push_back(Project::IncludeFile{ stampsetLabel, stampsetFilename, Project::IncludeExportFlags::None });
-			}
-
-			//Export Luminary maps
-			for (TMapMap::iterator it = m_project->MapsBegin(), end = m_project->MapsEnd(); it != end; ++it)
-			{
-				const Map& map = m_project->GetMap(it->first);
-				std::string mapLabel = std::string("map_") + m_project->GetName() + "_" + map.GetName();
-				std::string mapFilename = scenesExportDir + "\\G" + ion::string::ToUpper(map.GetName()) + ".BIN";
-				StampId backgroundStamp = m_project->GetBackgroundStamp() == InvalidStampId ? 0 : m_project->GetBackgroundStamp();
-				if (mapExporter.ExportMap(mapFilename, map, m_project->GetPlatformConfig().stampWidth, m_project->GetPlatformConfig().stampHeight, backgroundStamp))
-				{
-					includeFilenames.push_back(Project::IncludeFile{ mapLabel, mapFilename, Project::IncludeExportFlags::None });
-				}
-			}
-
 			//Export Luminary terrain tileset
 			std::string terrainTilesetLabel = std::string("collision_tileset_") + m_project->GetName();
 			std::string terrainTilesetFilename = scenesExportDir + "\\" + "CTILES.BIN";
@@ -2506,12 +2535,65 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 				includeFilenames.push_back(Project::IncludeFile{ terrainTilesetLabel, terrainTilesetFilename, Project::IncludeExportFlags::None });
 			}
 
-			//Export Luminary terrain stamps
-			std::string terrainStampsetLabel = std::string("collision_stampset_") + m_project->GetName();
-			std::string terrainStampsetFilename = scenesExportDir + "\\" + "CSTAMPS.BIN";
-			if (terrainExporter.ExportTerrainStamps(terrainStampsetFilename, stamps, m_project->GetTerrainTileset(), m_project->GetDefaultTerrainTile()))
+			//Export Luminary tilesets
+			for (const auto tileset : m_project->GetTilesets())
 			{
-				includeFilenames.push_back(Project::IncludeFile{ terrainStampsetLabel, terrainStampsetFilename, Project::IncludeExportFlags::None });
+				std::string tileSetName = tileset.second.GetName();
+				std::string fnamePrefix = ion::string::ToUpper(scenesExportDir + "\\" + tileset.second.GetName());
+
+				std::string tilesetLabel = "tileset_" + tileset.second.GetName();
+				std::string tilesetFilename = fnamePrefix + "_GTILES.BIN";
+				if (tilesetExporter.ExportTileset(tilesetFilename, tileset.second))
+				{
+					includeFilenames.push_back(Project::IncludeFile{ tilesetLabel, tilesetFilename, Project::IncludeExportFlags::None });
+				}
+			}
+
+			for (const auto stampSet : m_project->GetStampSets())
+			{
+				std::string stampSetName = stampSet.second.GetName();
+				std::string fnamePrefix = ion::string::ToUpper(scenesExportDir + "\\" + stampSet.second.GetName());
+
+				//Export Luminary stamp sets
+				std::vector<Stamp> stamps;
+				for(const auto stamp : stampSet.second.GetStamps())
+				{
+					stamps.push_back(stamp.second);
+				}
+
+				// TODO: export stamps for each different palette slot id that they're used with (baked into tile data)
+				// and generate unique labels for map data.
+				// Probably want to warn when this happens, or error and prevent export entirely?
+				std::string stampsetLabel = "stampset_" + stampSetName;
+				std::string stampsetFilename = fnamePrefix + "_GSTAMPS.BIN";
+				const Tileset& tileset = m_project->GetTileset(stampSet.second.GetTilesetId());
+				int paletteSlotIdx = m_project->GetEditingMap().GetPaletteFromSlot(tileset.GetPaletteId());
+				if (tilesetExporter.ExportStamps(stampsetFilename, stamps, paletteSlotIdx))
+				{
+					includeFilenames.push_back(Project::IncludeFile{ stampsetLabel, stampsetFilename, Project::IncludeExportFlags::None });
+				}
+
+				//Export Luminary terrain stamps
+				std::string terrainStampsetLabel = "collision_stampset_" + stampSetName;
+				std::string terrainStampsetFilename = fnamePrefix + "_CSTAMPS.BIN";
+				if (terrainExporter.ExportTerrainStamps(terrainStampsetFilename, stamps, m_project->GetTerrainTileset(), m_project->GetDefaultTerrainTile()))
+				{
+					includeFilenames.push_back(Project::IncludeFile{ terrainStampsetLabel, terrainStampsetFilename, Project::IncludeExportFlags::None });
+				}
+			}
+
+			//Export Luminary maps
+			for (TMapMap::iterator it = m_project->MapsBegin(), end = m_project->MapsEnd(); it != end; ++it)
+			{
+				const Map& map = m_project->GetMap(it->first);
+				const StampSet& stampSet = m_project->GetStampSet(map.GetStampSetId());
+				std::string mapLabel = std::string("map_") + m_project->GetName() + "_" + map.GetName();
+				std::string mapFilename = scenesExportDir + "\\G" + ion::string::ToUpper(map.GetName()) + ".BIN";
+				StampId backgroundStamp = stampSet.GetBackgroundStamp() == InvalidStampId ? 0 : stampSet.GetBackgroundStamp();
+				if (mapExporter.ExportMap(mapFilename, map, m_project->GetPlatformConfig().stampWidth, m_project->GetPlatformConfig().stampHeight, backgroundStamp))
+				{
+					includeFilenames.push_back(Project::IncludeFile{ mapLabel, mapFilename, Project::IncludeExportFlags::None });
+				}
 			}
 
 			//Export Luminary terrain maps
@@ -2540,6 +2622,14 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 			//Export Luminary scenes
 			for (TMapMap::iterator it = m_project->MapsBegin(), end = m_project->MapsEnd(); it != end; ++it)
 			{
+				const Map& map = m_project->GetMap(it->first);
+				const StampSet& stampSet = m_project->GetStampSet(map.GetStampSetId());
+				const Tileset& tileSet = m_project->GetTileset(stampSet.GetTilesetId());
+
+				std::string stampsetLabel = "stampset_" + stampSet.GetName();
+				std::string tilesetLabel = "tileset_" + stampSet.GetName();
+				std::string terrainStampsetLabel = "collision_stampset_" + stampSet.GetName();
+
 				//Ignore background map
 				if (it->first != backgroundMapId)
 				{
@@ -2589,8 +2679,8 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 					sceneData.collisionStampsetLabel = terrainStampsetLabel;
 					sceneData.collisionTilesetLabel = terrainTilesetLabel;
 
-					sceneData.numTiles = m_project->GetTileset().GetCount();
-					sceneData.numStamps = m_project->GetStampCount();
+					sceneData.numTiles = tileSet.GetCount();
+					sceneData.numStamps = stampSet.GetStampCount();
 					sceneData.mapFgWidthStamps = mapFg.GetWidth() / m_project->GetPlatformConfig().stampWidth;
 					sceneData.mapFgHeightStamps = mapFg.GetHeight() / m_project->GetPlatformConfig().stampHeight;
 					sceneData.mapBgWidthStamps = mapBg ? (mapBg->GetWidth() / m_project->GetPlatformConfig().stampWidth) : 0;
@@ -2879,7 +2969,7 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 
 void MainWindow::OnBtnTilesImport(wxCommandEvent& event)
 {
-#if !BEEHIVE_FIXED_STAMP_MODE //No tile/collision editing in fixed mode
+#if !BEEHIVE_PLUGIN_LUMINARY //No tile/collision editing in fixed mode
 	if(m_project.get())
 	{
 		ImportDialog dialog(this);
@@ -3014,6 +3104,7 @@ void MainWindow::OnBtnTilesImport(wxCommandEvent& event)
 #endif
 }
 
+#if !BEEHIVE_PLUGIN_LUMINARY
 void MainWindow::OnBtnStampsImport(wxCommandEvent& event)
 {
 	if (m_project.get())
@@ -3145,6 +3236,7 @@ void MainWindow::OnBtnStampsImport(wxCommandEvent& event)
 		}
 	}
 }
+#endif // !BEEHIVE_PLUGIN_LUMINARY
 
 void MainWindow::OnBtnStampsUpdate(wxCommandEvent& event)
 {
@@ -3185,13 +3277,13 @@ void MainWindow::OnBtnStampsCleanup(wxCommandEvent& event)
 
 void MainWindow::OnBtnPaletteManager(wxCommandEvent& event)
 {
-	DialogPaletteManagement dlg(this, *m_project);
+	DialogAssetManagement dlg(*this, *m_project, *m_renderer, *m_context, *m_renderResources);
 	dlg.ShowModal();
 }
 
 void MainWindow::OnBtnTilesCreate(wxCommandEvent& event)
 {
-#if !BEEHIVE_FIXED_STAMP_MODE //No tile/collision editing in fixed mode
+#if !BEEHIVE_PLUGIN_LUMINARY //No tile/collision editing in fixed mode
 	if(m_project.get())
 	{
 		//Add new tile
@@ -3215,7 +3307,7 @@ void MainWindow::OnBtnTilesCreate(wxCommandEvent& event)
 
 void MainWindow::OnBtnTilesDelete(wxCommandEvent& event)
 {
-#if !BEEHIVE_FIXED_STAMP_MODE //No tile/collision editing in fixed mode
+#if !BEEHIVE_PLUGIN_LUMINARY //No tile/collision editing in fixed mode
 	if(m_project.get())
 	{
 		TileId tileId = m_project->GetPaintTile();
@@ -3250,7 +3342,7 @@ void MainWindow::OnBtnTilesCleanup(wxCommandEvent& event)
 
 void MainWindow::OnBtnColMapClear(wxCommandEvent& event)
 {
-#if !BEEHIVE_FIXED_STAMP_MODE //No tile/collision editing in fixed mode
+#if !BEEHIVE_PLUGIN_LUMINARY //No tile/collision editing in fixed mode
 	if(m_project.get())
 	{
 		m_project->GetEditingCollisionMap().Clear();
@@ -3285,9 +3377,10 @@ void MainWindow::OnBtnColGenTerrainBezier(wxCommandEvent& event)
 #endif
 }
 
+#if !BEEHIVE_PLUGIN_LUMINARY
 void MainWindow::OnBtnColTilesCleanup(wxCommandEvent& event)
 {
-#if !BEEHIVE_FIXED_STAMP_MODE //No tile/collision editing in fixed mode
+#if !BEEHIVE_PLUGIN_LUMINARY //No tile/collision editing in fixed mode
 	if(m_project.get())
 	{
 		if(m_project->CleanupTerrainTiles(true))
@@ -3300,7 +3393,7 @@ void MainWindow::OnBtnColTilesCleanup(wxCommandEvent& event)
 
 void MainWindow::OnBtnColTilesCreate(wxCommandEvent& event)
 {
-#if !BEEHIVE_FIXED_STAMP_MODE //No tile/collision editing in fixed mode
+#if !BEEHIVE_PLUGIN_LUMINARY //No tile/collision editing in fixed mode
 	if(m_project.get())
 	{
 		//Add new collision tile
@@ -3331,7 +3424,7 @@ void MainWindow::OnBtnColTilesCreate(wxCommandEvent& event)
 
 void MainWindow::OnBtnColTilesDelete(wxCommandEvent& event)
 {
-#if !BEEHIVE_FIXED_STAMP_MODE //No tile/collision editing in fixed mode
+#if !BEEHIVE_PLUGIN_LUMINARY //No tile/collision editing in fixed mode
 	if(m_project.get())
 	{
 		TerrainTileId tileId = m_project->GetPaintTerrainTile();
@@ -3355,13 +3448,14 @@ void MainWindow::OnBtnColTilesDelete(wxCommandEvent& event)
 	}
 #endif
 }
+#endif // !BEEHIVE_PLUGIN_LUMINARY
 
 void MainWindow::OnBtnToolsMapEdit( wxCommandEvent& event )
 {
 	ShowToolboxStamps();
 	ShowToolboxObjects();
 
-#if !BEEHIVE_FIXED_STAMP_MODE //No tile/collision editing in fixed mode
+#if !BEEHIVE_PLUGIN_LUMINARY //No tile/collision editing in fixed mode
 	ShowToolboxTiles();
 	ShowToolboxCollision();
 #endif
@@ -3392,6 +3486,7 @@ void MainWindow::OnBtnToolsPalettes( wxCommandEvent& event )
 	ShowPanelPalettes();
 }
 
+#if !BEEHIVE_PLUGIN_LUMINARY
 void MainWindow::OnBtnToolsGameObjs(wxCommandEvent& event)
 {
 	ShowPanelGameObjectTypes();
@@ -3401,6 +3496,7 @@ void MainWindow::OnBtnToolsGameObjParams(wxCommandEvent& event)
 {
 	ShowPanelGameObjectParams();
 }
+#endif
 
 void MainWindow::OnBtnToolsTimeline(wxCommandEvent& event)
 {
@@ -3411,7 +3507,7 @@ void MainWindow::OnBtnMapNew(wxCommandEvent& event)
 {
 	DialogNewMap dialog(this);
 
-#if BEEHIVE_FIXED_STAMP_MODE
+#if BEEHIVE_PLUGIN_LUMINARY
 	dialog.m_spinCtrlWidth->SetValue(8);
 	dialog.m_spinCtrlHeight->SetValue(4);
 #endif
@@ -3424,7 +3520,7 @@ void MainWindow::OnBtnMapNew(wxCommandEvent& event)
 		CollisionMap& newCollisionMap = m_project->GetCollisionMap(collisionMapId);
 		newMap.SetName(dialog.m_textMapName->GetValue().GetData().AsChar());
 
-#if BEEHIVE_FIXED_STAMP_MODE
+#if BEEHIVE_PLUGIN_LUMINARY
 		const PlatformConfig& config = m_project->GetPlatformConfig();
 		newMap.Resize(dialog.m_spinCtrlWidth->GetValue() * config.stampWidth, dialog.m_spinCtrlHeight->GetValue() * config.stampHeight, false, false);
 		newCollisionMap.Resize(dialog.m_spinCtrlWidth->GetValue() * config.stampWidth, dialog.m_spinCtrlHeight->GetValue() * config.stampHeight, false, false);
@@ -3443,6 +3539,7 @@ void MainWindow::OnBtnMapNew(wxCommandEvent& event)
 	}
 }
 
+#if !BEEHIVE_PLUGIN_LUMINARY // TODO: needs a lot of work to support new palettes/stampset refactor
 void MainWindow::OnBtnMapImport(wxCommandEvent& event)
 {
 	wxFileDialog dialog(this, _("Open BEE file"), "", "", "BEE files (*.bee)|*.bee", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
@@ -3605,6 +3702,7 @@ void MainWindow::OnBtnMapImport(wxCommandEvent& event)
 		}
 	}
 }
+#endif // !BEEHIVE_PLUGIN_LUMINARY
 
 void MainWindow::OnBtnMapCopy(wxCommandEvent& event)
 {
@@ -3670,7 +3768,7 @@ void MainWindow::OnBtnMapResize(wxCommandEvent& event)
 		CollisionMap& collisionMap = m_project->GetEditingCollisionMap();
 		const PlatformConfig& config = m_project->GetPlatformConfig();
 
-#if BEEHIVE_FIXED_STAMP_MODE
+#if BEEHIVE_PLUGIN_LUMINARY
 		const int originalWidth = map.GetWidth() / config.stampWidth;
 		const int originalHeight = map.GetHeight() / config.stampHeight;
 #else
@@ -3687,7 +3785,7 @@ void MainWindow::OnBtnMapResize(wxCommandEvent& event)
 
 		if(dialog.ShowModal() == wxID_OK)
 		{
-#if BEEHIVE_FIXED_STAMP_MODE
+#if BEEHIVE_PLUGIN_LUMINARY
 			int width = dialog.m_spinCtrlWidth->GetValue() * config.stampWidth;
 			int height = dialog.m_spinCtrlHeight->GetValue() * config.stampHeight;
 #else
@@ -3752,7 +3850,10 @@ void MainWindow::OnBtnGridShow(wxCommandEvent& event)
 		m_project->SetShowGrid(!m_project->GetShowGrid());
 		RedrawPanel(ePanelMap);
 		RedrawPanel(ePanelStamps);
+
+#if !BEEHIVE_PLUGIN_LUMINARY
 		RedrawPanel(ePanelTileEditor);
+#endif
 	}
 }
 
@@ -3792,6 +3893,7 @@ void MainWindow::OnBtnShowDisplayFrame(wxCommandEvent& event)
 	}
 }
 
+#if !BEEHIVE_PLUGIN_LUMINARY
 void MainWindow::OnBtnTerrainTileEdit(wxCommandEvent& event)
 {
 	ShowPanelTerrainEditor();
@@ -3805,6 +3907,7 @@ void MainWindow::OnBtnGameObjTypes(wxCommandEvent& event)
 		dialog.ShowModal();
 	}
 }
+#endif
 
 void MainWindow::OnBtnTool(wxCommandEvent& event)
 {
@@ -3812,7 +3915,7 @@ void MainWindow::OnBtnTool(wxCommandEvent& event)
 	{
 		switch(event.GetId())
 		{
-#if !BEEHIVE_FIXED_STAMP_MODE //No tile/collision editing in fixed mode
+#if !BEEHIVE_PLUGIN_LUMINARY //No tile/collision editing in fixed mode
 		case wxID_TOOL_PAINT:
 			m_mapPanel->SetTool(eToolPaintTile);
 			break;

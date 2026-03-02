@@ -14,6 +14,8 @@
 
 #include <ion/renderer/Texture.h>
 
+#if !BEEHIVE_PLUGIN_LUMINARY
+
 const float TileEditorPanel::s_defaultZoom = 3.0f;
 
 TileEditorPanel::TileEditorPanel(MainWindow* mainWindow, Project& project, ion::render::Renderer& renderer, wxGLContext* glContext, wxGLAttributes& glAttributes, RenderResources& renderResources, wxWindow *parent, wxWindowID winid, const wxPoint& pos, const wxSize& size, long style, const wxString& name)
@@ -71,7 +73,7 @@ void TileEditorPanel::OnMouseTileEvent(ion::Vector2i mousePos, ion::Vector2i mou
 	{
 		TileId tileId = m_project.GetPaintTile();
 
-#if !BEEHIVE_FIXED_STAMP_MODE //No tile editing in fixed mode
+#if !BEEHIVE_PLUGIN_LUMINARY //No tile editing in fixed mode
 		if(buttonBits & eMouseLeft)
 		{
 			if(Tile* tile = m_project.GetTileset().GetTile(tileId))
@@ -136,12 +138,14 @@ void TileEditorPanel::Refresh(bool eraseBackground, const wxRect *rect)
 	}
 }
 
-void TileEditorPanel::RenderTile(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z)
+void TileEditorPanel::RenderTile(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z, StampSetId stampSetId)
 {
 	//Draw tile
-	ion::render::Material* material = m_renderResources.GetMaterial(RenderResources::eMaterialTileset);
+	ion::render::Material* material = m_renderResources.GetMaterial(stampSetId);
 	material->SetDiffuseColour(ion::Colour(1.0f, 1.0f, 1.0f, 1.0f));
 	renderer.BindMaterial(*material, ion::Matrix4(), cameraInverseMtx, projectionMtx);
 	renderer.DrawVertexBuffer(m_tilePrimitive->GetVertexBuffer(), m_tilePrimitive->GetIndexBuffer());
 	renderer.UnbindMaterial(*material);
 }
+
+#endif // !BEEHIVE_PLUGIN_LUMINARY

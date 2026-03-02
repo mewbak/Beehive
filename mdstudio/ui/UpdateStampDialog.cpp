@@ -12,6 +12,8 @@
 #include "UpdateStampDialog.h"
 #include "SpriteCanvas.h"
 
+#if !BEEHIVE_PLUGIN_LUMINARY // Stamps come from directory scan only
+
 DialogUpdateStamp::DialogUpdateStamp(wxWindow* parent, Stamp& stamp, Project& project, ion::render::Renderer& renderer, wxGLContext& glContext, RenderResources& renderResources)
 	: DialogUpdateStampBase(parent)
 	, m_stampOld(stamp)
@@ -103,3 +105,5 @@ void DialogUpdateStamp::Draw(Stamp* stampA, Stamp* stampB)
 		m_canvasNew->Refresh();
 	}
 }
+
+#endif // !BEEHIVE_PLUGIN_LUMINARY

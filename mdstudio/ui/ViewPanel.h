@@ -20,6 +20,7 @@
 #include <ion/renderer/Material.h>
 #include <ion/beehive/Project.h>
 
+#include <wx/toplevel.h>
 #include <wx/event.h>
 #include <wx/panel.h>
 #include <wx/glcanvas.h>
@@ -29,7 +30,7 @@
 
 #include <stdint.h>
 
-#include "UIBase.h"
+//#include "UIBase.h"
 #include "Mouse.h"
 #include "MapTool.h"
 #include "RenderResources.h"
@@ -40,9 +41,15 @@ class ViewPanel : public wxGLCanvas
 {
 public:
 	ViewPanel(MainWindow* mainWindow, Project& project, ion::render::Renderer& renderer, wxGLContext* glContext, wxGLAttributes& glAttributes, RenderResources& renderResources, wxWindow *parent, wxWindowID winid = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL | wxNO_BORDER, const wxString& name = wxPanelNameStr);
+	ViewPanel(wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL | wxNO_BORDER, const wxString& name = wxFrameNameStr);
 	virtual ~ViewPanel();
 
+	void SetMainWindow(MainWindow* mainWindow) { m_mainWindow = mainWindow; }
+	void SetProject(Project* project) { m_project = project; }
+	void SetupRendering(ion::render::Renderer* renderer, wxGLContext* glContext, RenderResources* renderResources);
+
 	//Refresh panel
+	void ForceRefresh();
 	virtual void Refresh(bool eraseBackground = true, const wxRect *rect = NULL);
 
 	//Always take focus, even if we have child widgets
@@ -56,20 +63,20 @@ public:
 	void CentreCamera();
 
 	//Paint single tile to canvas
-	void PaintTile(TileId tileId, int x, int y, u32 flipFlags);
+	void PaintTile(TilesetId tilesetId, TileId tileId, int x, int y, u32 flipFlags);
 
 	//Paint collision tile to canvas
 	void PaintCollisionTile(TerrainTileId terrainTileId, int x, int y, u16 collisionFlags);
 
 	//Paint stamp to canvas
-	void PaintStamp(const Stamp& stamp, int x, int y, u32 flipFlags);
+	void PaintStamp(TilesetId tilesetId, const Stamp& stamp, int x, int y, u32 flipFlags);
 
 	//Paint stamp collision to canvas
 	void PaintStampCollision(const Stamp& stamp, int x, int y, u32 flipFlags);
 
 	//Fill selection with single tile
-	void FillTiles(TileId tileId, const ion::Vector2i& boxCorner1, const ion::Vector2i& boxCorner2);
-	void FillTiles(TileId tileId, const std::vector<ion::Vector2i>& selection);
+	void FillTiles(TilesetId tilesetId, TileId tileId, const ion::Vector2i& boxCorner1, const ion::Vector2i& boxCorner2);
+	void FillTiles(TilesetId tilesetId, TileId tileId, const std::vector<ion::Vector2i>& selection);
 
 protected:
 	//Event callbacks
@@ -102,20 +109,20 @@ protected:
 	void SetCameraZoom(float zoom);
 
 	//Rendering
-	void RenderCanvas(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z);
+	void RenderCanvas(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z, TilesetId tilesetId);
 	void RenderGrid(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z);
 	
 	//Main project
-	Project& m_project;
+	Project* m_project;
 
 	//Main window
 	MainWindow* m_mainWindow;
 
 	//Renderer
-	ion::render::Renderer& m_renderer;
+	ion::render::Renderer* m_renderer;
 
 	//Rendering resources
-	RenderResources& m_renderResources;
+	RenderResources* m_renderResources;
 
 	//GL context
 	wxGLContext* m_glContext;
@@ -152,6 +159,8 @@ protected:
 
 	//Prev panel size (for filtering resize events)
 	ion::Vector2i m_prevPanelSize;
+
+	bool m_forceRefresh;
 
 private:
 

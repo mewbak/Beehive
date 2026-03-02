@@ -14,6 +14,8 @@
 #include "GameObjectTypeDialog.h"
 #include "MainWindow.h"
 
+#if !BEEHIVE_PLUGIN_LUMINARY
+
 GameObjectTypeDialog::GameObjectTypeDialog(MainWindow& mainWindow, Project& project, RenderResources& renderResources)
 	: GameObjTypeDialogBase((wxWindow*)&mainWindow)
 	, m_mainWindow(mainWindow)
@@ -562,3 +564,5 @@ void DialogNewObjectType::PopulateAutoVars()
 		m_listVarsNotAdded->Append(wxString(GameObject::s_autoVars[i].name));
 	}
 }
+
+#endif // !BEEHIVE_PLUGIN_LUMINARY

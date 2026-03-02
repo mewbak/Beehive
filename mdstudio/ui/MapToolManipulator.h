@@ -17,6 +17,8 @@
 
 #include <ion/maths/Bounds.h>
 
+#include <wx/menu.h>
+
 template <typename T> class MapToolManipulator : public wxEvtHandler, public Tool
 {
 public:

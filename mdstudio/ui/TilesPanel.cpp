@@ -20,13 +20,14 @@ TilesPanel::TilesPanel(MainWindow* mainWindow, Project& project, ion::render::Re
 {
 	m_selectedTile = InvalidTileId;
 	m_hoverTile = InvalidTileId;
+	m_stampSetId = InvalidStampSetId;
 
 	//Custom zoom/pan handling
 	EnableZoom(false);
 	EnablePan(false);
 
-	const int tileWidth = m_project.GetPlatformConfig().tileWidth;
-	const int tileHeight = m_project.GetPlatformConfig().tileHeight;
+	const int tileWidth = m_project->GetPlatformConfig().tileWidth;
+	const int tileHeight = m_project->GetPlatformConfig().tileHeight;
 
 	//Create selection quad
 	m_selectionPrimitive = new ion::render::Quad(ion::render::Quad::Axis::xy, ion::Vector2(tileWidth / 2.0f, tileHeight / 2.0f));
@@ -37,12 +38,36 @@ TilesPanel::~TilesPanel()
 
 }
 
+void TilesPanel::SetStampSetId(StampSetId stampSetId)
+{
+	m_stampSetId = stampSetId;
+	Refresh();
+}
+
+StampSetId TilesPanel::GetStampSetId() const
+{
+	if (m_stampSetId == InvalidStampSetId)
+	{
+		// TODO: Just get from editing map for now, but this should be cleaned up
+		return m_project->GetEditingMap().GetStampSetId();
+	}
+	else
+	{
+		return m_stampSetId;
+	}
+}
+
+StampSet& TilesPanel::GetStampSet()
+{
+	return m_project->GetStampSet(GetStampSetId());
+}
+
 void TilesPanel::OnMouse(wxMouseEvent& event, const ion::Vector2i& mouseDelta)
 {
 	ViewPanel::OnMouse(event, mouseDelta);
 
-	const int tileWidth = m_project.GetPlatformConfig().tileWidth;
-	const int tileHeight = m_project.GetPlatformConfig().tileHeight;
+	const int tileWidth = m_project->GetPlatformConfig().tileWidth;
+	const int tileHeight = m_project->GetPlatformConfig().tileHeight;
 
 	//Camera pan Y (if canvas is taller than panel)
 	if((m_canvasSize.y * tileHeight) > (m_panelSize.y / m_cameraZoom))
@@ -91,8 +116,8 @@ void TilesPanel::OnResize(wxSizeEvent& event)
 	{
 		ViewPanel::OnResize(event);
 
-		const int tileWidth = m_project.GetPlatformConfig().tileWidth;
-		const int tileHeight = m_project.GetPlatformConfig().tileHeight;
+		const int tileWidth = m_project->GetPlatformConfig().tileWidth;
+		const int tileHeight = m_project->GetPlatformConfig().tileHeight;
 
 		if(m_panelSize.x > tileWidth && m_panelSize.y > tileHeight)
 		{
@@ -132,18 +157,18 @@ void TilesPanel::OnMouseTileEvent(ion::Vector2i mousePos, ion::Vector2i mouseDel
 		m_selectedTilePos = m_hoverTilePos;
 
 		//Set as current painting tile
-		m_project.SetPaintTile(selectedTile);
+		m_project->SetPaintTile(selectedTile);
 
-#if !BEEHIVE_FIXED_STAMP_MODE //No tile editing in fixed mode
+#if !BEEHIVE_PLUGIN_LUMINARY //No tile editing in fixed mode
 		//Set tile paint tool
 		m_mainWindow->SetMapTool(eToolPaintTile);
-#endif
 
 		//Refresh tile editor panel
 		m_mainWindow->RefreshPanel(MainWindow::ePanelTileEditor);
 
 		//Refresh collision tile editor panel
 		m_mainWindow->RefreshPanel(MainWindow::ePanelTerrainTileEditor);
+#endif
 	}
 
 	if(buttonBits & eMouseRight)
@@ -153,12 +178,12 @@ void TilesPanel::OnMouseTileEvent(ion::Vector2i mousePos, ion::Vector2i mouseDel
 			//Right-click menu
 			wxMenu contextMenu;
 
-#if !BEEHIVE_FIXED_STAMP_MODE //No tile editing in fixed mode
+#if !BEEHIVE_PLUGIN_LUMINARY //No tile editing in fixed mode
 			contextMenu.Append(eMenuDeleteTile, wxString("Delete tile"));
-#endif
 			contextMenu.Append(eMenuUseAsBgTile, wxString("Use as background tile"));
 			contextMenu.Connect(wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&TilesPanel::OnContextMenuClick, NULL, this);
 			PopupMenu(&contextMenu);
+#endif
 		}
 	}
 
@@ -168,10 +193,11 @@ void TilesPanel::OnMouseTileEvent(ion::Vector2i mousePos, ion::Vector2i mouseDel
 
 void TilesPanel::OnContextMenuClick(wxCommandEvent& event)
 {
+#if !BEEHIVE_PLUGIN_LUMINARY
 	if(event.GetId() == eMenuDeleteTile)
 	{
 		//Delete tile
-		m_project.DeleteTile(m_hoverTile);
+		m_project->DeleteTile(m_hoverTile);
 
 		//Invalidate hover/selected tile
 		m_hoverTile = InvalidTileId;
@@ -186,28 +212,32 @@ void TilesPanel::OnContextMenuClick(wxCommandEvent& event)
 	else if(event.GetId() == eMenuUseAsBgTile)
 	{
 		//Set background tile
-		m_project.SetBackgroundTile(m_hoverTile);
+		m_project->SetBackgroundTile(m_hoverTile);
 
 		//Redraw everything (tiles will have swapped places)
 		m_mainWindow->RefreshAll();
 	}
+#endif
 }
 
 void TilesPanel::OnRender(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float& z, float zOffset)
 {
+	const StampSet& stampSet = GetStampSet();
+	const Tileset& tileset = m_project->GetTileset(stampSet.GetTilesetId());
+
 	//Render canvas
-	RenderCanvas(renderer, cameraInverseMtx, projectionMtx, z);
+	RenderCanvas(renderer, cameraInverseMtx, projectionMtx, z, stampSet.GetTilesetId());
 
 	z += zOffset;
 
 	//Render selected tile
 	if(m_selectedTile)
 	{
-		if(Tile* tile = m_project.GetTileset().GetTile(m_selectedTile))
+		if(const Tile* tile = tileset.GetTile(m_selectedTile))
 		{
 			ion::debug::Assert(tile, "Invalid tile");
 			ion::Vector2 size(1, 1);
-			const ion::Colour& colour = m_renderResources.GetColour(RenderResources::eColourSelected);
+			const ion::Colour& colour = m_renderResources->GetColour(RenderResources::eColourSelected);
 			RenderBox(m_selectedTilePos, size, colour, renderer, cameraInverseMtx, projectionMtx, z);
 		}
 	}
@@ -217,11 +247,11 @@ void TilesPanel::OnRender(ion::render::Renderer& renderer, const ion::Matrix4& c
 	//Render mouse hover tile
 	if(m_hoverTile && m_hoverTile != m_selectedTile)
 	{
-		if(Tile* tile = m_project.GetTileset().GetTile(m_hoverTile))
+		if(const Tile* tile = tileset.GetTile(m_hoverTile))
 		{
 			ion::debug::Assert(tile, "Invalid tile");
 			ion::Vector2 size(1, 1);
-			const ion::Colour& colour = m_renderResources.GetColour(RenderResources::eColourHighlight);
+			const ion::Colour& colour = m_renderResources->GetColour(RenderResources::eColourHighlight);
 			RenderBox(m_hoverTilePos, size, colour, renderer, cameraInverseMtx, projectionMtx, z);
 		}
 	}
@@ -229,7 +259,7 @@ void TilesPanel::OnRender(ion::render::Renderer& renderer, const ion::Matrix4& c
 	z += zOffset;
 
 	//Render grid
-	if(m_project.GetShowGrid())
+	if(m_project->GetShowGrid())
 	{
 		RenderGrid(renderer, cameraInverseMtx, projectionMtx, z);
 	}
@@ -240,10 +270,11 @@ void TilesPanel::Refresh(bool eraseBackground, const wxRect *rect)
 	if(!m_mainWindow->IsRefreshLocked())
 	{
 		//If tiles invalidated
-		if(m_project.TilesAreInvalidated())
+		if(m_project->TilesAreInvalidated())
 		{
-			const int tileWidth = m_project.GetPlatformConfig().tileWidth;
-			const int tileHeight = m_project.GetPlatformConfig().tileHeight;
+			m_stampSetId = m_project->GetEditingMap().GetStampSetId();
+			const int tileWidth = m_project->GetPlatformConfig().tileWidth;
+			const int tileHeight = m_project->GetPlatformConfig().tileHeight;
 
 			if(m_panelSize.x > tileWidth && m_panelSize.y > tileHeight)
 			{
@@ -258,10 +289,11 @@ void TilesPanel::Refresh(bool eraseBackground, const wxRect *rect)
 
 ion::Vector2i TilesPanel::CalcCanvasSize()
 {
-	const int tileWidth = m_project.GetPlatformConfig().tileWidth;
-	const int tileHeight = m_project.GetPlatformConfig().tileHeight;
+	const int tileWidth = m_project->GetPlatformConfig().tileWidth;
+	const int tileHeight = m_project->GetPlatformConfig().tileHeight;
 	wxSize panelSize = GetClientSize();
-	int numTiles = m_project.GetTileset().GetCount();
+	const Tileset& tileset = m_project->GetTileset(GetStampSet().GetTilesetId());
+	int numTiles = tileset.GetCount();
 	int numCols = ion::maths::Ceil((float)panelSize.x / 8.0f / tileWidth);
 	int numRows = ion::maths::Max(numCols, (int)ion::maths::Ceil((float)numTiles / (float)numCols));
 	return ion::Vector2i(numCols, numRows);
@@ -273,7 +305,7 @@ void TilesPanel::InitPanel(int numCols, int numRows)
 	CreateCanvas(numCols, numRows);
 
 	//Fill with invalid tile
-	FillTiles(InvalidTileId, ion::Vector2i(0, 0), ion::Vector2i(numCols - 1, numRows - 1));
+	FillTiles(GetStampSet().GetTilesetId(), InvalidTileId, ion::Vector2i(0, 0), ion::Vector2i(numCols - 1, numRows - 1));
 
 	//Redraw tiles on canvas
 	PaintTiles();
@@ -287,21 +319,22 @@ void TilesPanel::InitPanel(int numCols, int numRows)
 
 void TilesPanel::PaintTiles()
 {
-	Tileset& tileset = m_project.GetTileset();
+	TilesetId tilesetId = GetStampSet().GetTilesetId();
+	const Tileset& tileset = m_project->GetTileset(tilesetId);
 
 	for(int i = 0; i < tileset.GetCount(); i++)
 	{
 		int x = ion::maths::Max(0, i % m_canvasSize.x);
 		int y = ion::maths::Max(0, m_canvasSize.y - 1 - (i / m_canvasSize.x));
 
-		PaintTile(i, x, y, 0);
+		PaintTile(tilesetId, i, x, y, 0);
 	}
 }
 
 void TilesPanel::RenderBox(const ion::Vector2i& pos, const ion::Vector2& size, const ion::Colour& colour, ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z)
 {
-	const int tileWidth = m_project.GetPlatformConfig().tileWidth;
-	const int tileHeight = m_project.GetPlatformConfig().tileHeight;
+	const int tileWidth = m_project->GetPlatformConfig().tileWidth;
+	const int tileHeight = m_project->GetPlatformConfig().tileHeight;
 	const int quadHalfExtentsX = 4;
 	const int quadHalfExtentsY = 4;
 
@@ -315,7 +348,7 @@ void TilesPanel::RenderBox(const ion::Vector2i& pos, const ion::Vector2& size, c
 	boxMtx.SetTranslation(boxPos);
 	boxMtx.SetScale(boxScale);
 
-	ion::render::Material* material = m_renderResources.GetMaterial(RenderResources::eMaterialFlatColour);
+	ion::render::Material* material = m_renderResources->GetMaterial(RenderResources::eMaterialFlatColour);
 
 	renderer.SetAlphaBlending(ion::render::Renderer::AlphaBlendType::Translucent);
 	material->SetDiffuseColour(colour);
@@ -327,8 +360,8 @@ void TilesPanel::RenderBox(const ion::Vector2i& pos, const ion::Vector2& size, c
 
 void TilesPanel::ResetZoomPan()
 {
-	const int tileWidth = m_project.GetPlatformConfig().tileWidth;
-	const int tileHeight = m_project.GetPlatformConfig().tileHeight;
+	const int tileWidth = m_project->GetPlatformConfig().tileWidth;
+	const int tileHeight = m_project->GetPlatformConfig().tileHeight;
 
 	m_cameraZoom = (float)m_panelSize.x / (m_canvasSize.x * tileWidth);
 
@@ -347,8 +380,8 @@ void TilesPanel::ScrollToTop()
 	//float zoom = m_cameraZoom;
 	//SetCameraZoom(1.0f);
 
-	const int tileWidth = m_project.GetPlatformConfig().tileWidth;
-	const int tileHeight = m_project.GetPlatformConfig().tileHeight;
+	const int tileWidth = m_project->GetPlatformConfig().tileWidth;
+	const int tileHeight = m_project->GetPlatformConfig().tileHeight;
 
 	//Scroll to top
 	float halfCanvas = (m_canvasSize.y * (tileHeight / 2.0f));

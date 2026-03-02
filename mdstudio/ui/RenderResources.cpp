@@ -18,10 +18,6 @@ RenderResources::RenderResources(Project& project, ion::io::ResourceManager& res
 	: m_project(project)
 	, m_resourceManager(resourceManager)
 {
-	m_tilesetSizeSq = 1;
-	m_terrainTilesetSizeSq = 1;
-	m_cellSizeTexSpaceSq = 1.0f;
-
 	//Load shaders
 	m_shaders[eShaderFlatColour] = resourceManager.GetResource<ion::render::Shader>("flatcoloured");
 	m_shaders[eShaderFlatTextured] = resourceManager.GetResource<ion::render::Shader>("flattextured");
@@ -49,13 +45,6 @@ RenderResources::RenderResources(Project& project, ion::io::ResourceManager& res
 	m_materials[eMaterialFlatColour]->SetDiffuseColour(ion::Colour(0.0f, 0.0f, 0.0f));
 #if defined ION_RENDERER_SHADER
 	m_materials[eMaterialFlatColour]->SetShader(m_shaders[eShaderFlatColour]);
-#endif
-
-	//Setup textured tileset material
-	m_materials[eMaterialTileset]->SetTextureMap(ion::render::Material::TextureMapType::Diffuse, m_textures[eTextureTileset]);
-	m_materials[eMaterialTileset]->SetDiffuseColour(ion::Colour(1.0f, 1.0f, 1.0f));
-#if defined ION_RENDERER_SHADER
-	m_materials[eMaterialTileset]->SetShader(m_shaders[eShaderFlatTextured]);
 #endif
 
 	//Setup textured collision types material
@@ -147,84 +136,116 @@ RenderResources::~RenderResources()
 	}
 }
 
-void RenderResources::CreateTilesetTexture()
+const RenderResources::TilesetResources& RenderResources::GetTilesetResources(TilesetId tilesetId) const
+{
+	const auto it = m_tilesetResources.find(tilesetId);
+	ion::debug::Assert(it != m_tilesetResources.end(), "RenderResources::GetTilesetResourcesInvalid tileset id");
+	return it->second;
+}
+
+RenderResources::TilesetResources& RenderResources::GetTilesetResources(TilesetId tilesetId)
+{
+	const auto it = m_tilesetResources.find(tilesetId);
+	ion::debug::Assert(it != m_tilesetResources.end(), "RenderResources::GetTilesetResourcesInvalid tileset id");
+	return it->second;
+}
+
+void RenderResources::CreateTilesetTextures()
 {
 	const int tileWidth = m_project.GetPlatformConfig().tileWidth;
 	const int tileHeight = m_project.GetPlatformConfig().tileHeight;
 
-	const Tileset& tileset = m_project.GetTileset();
-
-	u32 numTiles = tileset.GetCount();
-	m_tilesetSizeSq = ion::maths::Max(1, (int)ion::maths::Ceil(ion::maths::Sqrt((float)numTiles)));
-	u32 textureWidth = m_tilesetSizeSq * tileWidth;
-	u32 textureHeight = m_tilesetSizeSq * tileHeight;
-	u32 bytesPerPixel = 3;
-	u32 textureSize = textureWidth * textureHeight * bytesPerPixel;
-	m_cellSizeTexSpaceSq = 1.0f / (float)m_tilesetSizeSq;
-
-	u8* data = new u8[textureSize];
-	ion::memory::MemSet(data, 255, textureSize);
-
-	for(int i = 0; i < tileset.GetCount(); i++)
+	for (const auto tilesetIt : m_project.GetTilesets())
 	{
-		const Tile& tile = *tileset.GetTile(i);
+		const Tileset& tileset = tilesetIt.second;
+		const Palette* palette = m_project.GetPalette(tileset.GetPaletteId());
 
-		if (tile.GetHash() != 0)
+		TilesetResources tilesetResources;
+
+		u32 numTiles = tileset.GetCount();
+		tilesetResources.tilesetSizeSq = ion::maths::Max(1, (int)ion::maths::Ceil(ion::maths::Sqrt((float)numTiles)));
+		u32 textureWidth = tilesetResources.tilesetSizeSq * tileWidth;
+		u32 textureHeight = tilesetResources.tilesetSizeSq * tileHeight;
+		u32 bytesPerPixel = 3;
+		u32 textureSize = textureWidth * textureHeight * bytesPerPixel;
+		tilesetResources.cellSizeTexSpaceSq = 1.0f / (float)tilesetResources.tilesetSizeSq;
+
+		u8* data = new u8[textureSize];
+		ion::memory::MemSet(data, 255, textureSize);
+
+		for (int i = 0; i < tileset.GetCount(); i++)
 		{
-			u8 paletteId = tile.GetScenePaletteIndex();
-			Palette* palette = m_project.GetPalette(m_project.GetEditingMap().GetPaletteFromSlot(paletteId));
+			const Tile& tile = *tileset.GetTile(i);
 
-			u32 x = i % m_tilesetSizeSq;
-			u32 y = i / m_tilesetSizeSq;
-
-			for (int pixelY = 0; pixelY < tileHeight; pixelY++)
+			if (tile.GetHash() != 0)
 			{
-				for (int pixelX = 0; pixelX < tileWidth; pixelX++)
+				u32 x = i % tilesetResources.tilesetSizeSq;
+				u32 y = i / tilesetResources.tilesetSizeSq;
+
+				for (int pixelY = 0; pixelY < tileHeight; pixelY++)
 				{
-					//Invert Y for OpenGL
-					int pixelY_OGL = tileHeight - 1 - pixelY;
-
-					u8 colourIdx = tile.GetPixelColour(pixelX, pixelY_OGL);
-
-					//Protect against blank tiles
-					if (palette->IsColourUsed(colourIdx))
+					for (int pixelX = 0; pixelX < tileWidth; pixelX++)
 					{
-						const Colour& colour = palette->GetColour(colourIdx);
+						//Invert Y for OpenGL
+						int pixelY_OGL = tileHeight - 1 - pixelY;
 
-						int destPixelX = (x * tileWidth) + pixelX;
-						int destPixelY = (y * tileHeight) + pixelY;
-						u32 pixelIdx = (destPixelY * textureWidth) + destPixelX;
-						u32 dataOffset = pixelIdx * bytesPerPixel;
-						ion::debug::Assert(dataOffset + 2 < textureSize, "eOut of bounds");
-						data[dataOffset] = colour.GetRed();
-						data[dataOffset + 1] = colour.GetGreen();
-						data[dataOffset + 2] = colour.GetBlue();
+						u8 colourIdx = tile.GetPixelColour(pixelX, pixelY_OGL);
+
+						//Protect against blank tiles
+						if (palette->IsColourUsed(colourIdx))
+						{
+							const Colour& colour = palette->GetColour(colourIdx);
+
+							int destPixelX = (x * tileWidth) + pixelX;
+							int destPixelY = (y * tileHeight) + pixelY;
+							u32 pixelIdx = (destPixelY * textureWidth) + destPixelX;
+							u32 dataOffset = pixelIdx * bytesPerPixel;
+							ion::debug::Assert(dataOffset + 2 < textureSize, "eOut of bounds");
+							data[dataOffset] = colour.GetRed();
+							data[dataOffset + 1] = colour.GetGreen();
+							data[dataOffset + 2] = colour.GetBlue();
+						}
 					}
 				}
 			}
 		}
+
+		ion::render::Texture::TextureDesc desc =
+		{
+			textureWidth,
+			textureHeight,
+			ion::render::Texture::Type::Texture2D,
+			ion::render::Texture::Format::RGB,
+			ion::render::Texture::Format::RGB,
+			ion::render::Texture::BitsPerPixel::BPP24,
+			ion::render::Texture::DataType::Int,
+			false,
+			false,
+			data
+		};
+
+		//Create texture
+		static int idx = 0;
+		std::string texName = "BeehiveTilesetTexture_" + std::to_string(tilesetIt.first) + "_" + std::to_string(idx);
+		tilesetResources.texture = m_resourceManager.CreateResource(texName, ion::render::Texture::Create());
+
+		tilesetResources.texture->Load(desc);
+		tilesetResources.texture->SetMinifyFilter(ion::render::Texture::Filter::Nearest);
+		tilesetResources.texture->SetMagnifyFilter(ion::render::Texture::Filter::Nearest);
+		tilesetResources.texture->SetWrapping(ion::render::Texture::Wrapping::Clamp);
+
+		//Create material
+		std::string matName = "BeehiveTilesetMaterial_" + std::to_string(tilesetIt.first) + "_" + std::to_string(idx++);
+		tilesetResources.material = m_resourceManager.CreateResource(matName, new ion::render::Material());
+
+		tilesetResources.material->SetTextureMap(ion::render::Material::TextureMapType::Diffuse, tilesetResources.texture);
+		tilesetResources.material->SetDiffuseColour(ion::Colour(1.0f, 1.0f, 1.0f));
+		tilesetResources.material->SetShader(m_shaders[eShaderFlatTextured]);
+
+		m_tilesetResources[tilesetIt.first] = tilesetResources;
+
+		delete data;
 	}
-
-	ion::render::Texture::TextureDesc desc =
-	{
-		textureWidth,
-		textureHeight,
-		ion::render::Texture::Type::Texture2D,
-		ion::render::Texture::Format::RGB,
-		ion::render::Texture::Format::RGB,
-		ion::render::Texture::BitsPerPixel::BPP24,
-		ion::render::Texture::DataType::Int,
-		false,
-		false,
-		data
-	};
-
-	m_textures[eTextureTileset]->Load(desc);
-	m_textures[eTextureTileset]->SetMinifyFilter(ion::render::Texture::Filter::Nearest);
-	m_textures[eTextureTileset]->SetMagnifyFilter(ion::render::Texture::Filter::Nearest);
-	m_textures[eTextureTileset]->SetWrapping(ion::render::Texture::Wrapping::Clamp);
-
-	delete data;
 }
 
 void RenderResources::CreateTerrainTilesTextures()
@@ -504,13 +525,18 @@ ion::render::Texture* RenderResources::CreateSpriteSheetPreviewTexture(const Spr
 	return NULL;
 }
 
-void RenderResources::GetTileTexCoords(TileId tileId, ion::render::TexCoord texCoords[4], u32 flipFlags) const
+void RenderResources::GetTileTexCoords(TilesetId tilesetId, TileId tileId, ion::render::TexCoord texCoords[4], u32 flipFlags) const
 {
 	const int tileWidth = m_project.GetPlatformConfig().tileWidth;
 	const int tileHeight = m_project.GetPlatformConfig().tileHeight;
+	const TilesetResources& tilesetResource = GetTilesetResources(tilesetId);
 
 	if(tileId == InvalidTileId)
 	{
+#if BEEHIVE_PLUGIN_LUMINARY
+		// No such thing anymore
+		tileId = 0;
+#else
 		//Use background tile if there is one
 		tileId = m_project.GetBackgroundTile();
 
@@ -519,13 +545,14 @@ void RenderResources::GetTileTexCoords(TileId tileId, ion::render::TexCoord texC
 			//If no background tile, and there are tiles available, use first tile
 			tileId = 0;
 		}
+#endif
 	}
 
 	if(tileId == InvalidTileId)
 	{
 		//Invalid tile, use top-left pixel
-		float onePixelTexSpaceX = m_cellSizeTexSpaceSq / tileWidth;
-		float onePixelTexSpaceY = m_cellSizeTexSpaceSq / tileHeight;
+		float onePixelTexSpaceX = tilesetResource.cellSizeTexSpaceSq / tileWidth;
+		float onePixelTexSpaceY = tilesetResource.cellSizeTexSpaceSq / tileHeight;
 
 		//Top left
 		texCoords[0].x = 0.0f;
@@ -543,17 +570,17 @@ void RenderResources::GetTileTexCoords(TileId tileId, ion::render::TexCoord texC
 	else
 	{
 		//Map tile to X/Y on tileset texture
-		int tilesetX = (tileId % m_tilesetSizeSq);
-		int tilesetY = (tileId / m_tilesetSizeSq);
-		ion::Vector2 textureBottomLeft(m_cellSizeTexSpaceSq * tilesetX, m_cellSizeTexSpaceSq * tilesetY);
+		int tilesetX = (tileId % tilesetResource.tilesetSizeSq);
+		int tilesetY = (tileId / tilesetResource.tilesetSizeSq);
+		ion::Vector2 textureBottomLeft(tilesetResource.cellSizeTexSpaceSq * tilesetX, tilesetResource.cellSizeTexSpaceSq * tilesetY);
 
 		bool flipX = (flipFlags & Map::eFlipX) != 0;
 		bool flipY = (flipFlags & Map::eFlipY) != 0;
 
-		float top = flipY ? (textureBottomLeft.y) : (textureBottomLeft.y + m_cellSizeTexSpaceSq);
-		float left = flipX ? (textureBottomLeft.x + m_cellSizeTexSpaceSq) : (textureBottomLeft.x);
-		float bottom = flipY ? (textureBottomLeft.y + m_cellSizeTexSpaceSq) : (textureBottomLeft.y);
-		float right = flipX ? (textureBottomLeft.x) : (textureBottomLeft.x + m_cellSizeTexSpaceSq);
+		float top = flipY ? (textureBottomLeft.y) : (textureBottomLeft.y + tilesetResource.cellSizeTexSpaceSq);
+		float left = flipX ? (textureBottomLeft.x + tilesetResource.cellSizeTexSpaceSq) : (textureBottomLeft.x);
+		float bottom = flipY ? (textureBottomLeft.y + tilesetResource.cellSizeTexSpaceSq) : (textureBottomLeft.y);
+		float right = flipX ? (textureBottomLeft.x) : (textureBottomLeft.x + tilesetResource.cellSizeTexSpaceSq);
 
 		//Top left
 		texCoords[0].x = left;
@@ -650,28 +677,31 @@ void RenderResources::GetTerrainTileTexCoords(TerrainTileId tileId, ion::render:
 	texCoords[3].y = top;
 }
 
-void RenderResources::SetTilesetTexPixel(TileId tileId, const ion::Vector2i& pixel, u8 colourIdx)
+void RenderResources::SetTilesetTexPixel(TilesetId tilesetId, TileId tileId, const ion::Vector2i& pixel, u8 colourIdx)
 {
-	if(m_textures[eTextureTileset])
+	const TilesetResources& tilesetResource = GetTilesetResources(tilesetId);
+	if(tilesetResource.texture)
 	{
-		if(Tile* tile = m_project.GetTileset().GetTile(tileId))
+		const Tileset& tileset = m_project.GetTileset(tilesetId);
+
+		if(const Tile* tile = tileset.GetTile(tileId))
 		{
-			if(Palette* palette = m_project.GetPalette(m_project.GetEditingMap().GetPaletteFromSlot(tile->GetScenePaletteIndex())))
+			if(Palette* palette = m_project.GetPalette(tileset.GetPaletteId()))
 			{
 				const int tileWidth = m_project.GetPlatformConfig().tileWidth;
 				const int tileHeight = m_project.GetPlatformConfig().tileHeight;
 
 				const Colour& colour = palette->GetColour(colourIdx);
 
-				u32 x = tileId % m_tilesetSizeSq;
-				u32 y = tileId / m_tilesetSizeSq;
+				u32 x = tileId % tilesetResource.tilesetSizeSq;
+				u32 y = tileId / tilesetResource.tilesetSizeSq;
 
 				//Invert Y for OpenGL
 				int y_inv = tileHeight - 1 - pixel.y;
 
 				ion::Vector2i pixelPos((x * tileWidth) + pixel.x, (y * tileHeight) + y_inv);
 
-				m_textures[eTextureTileset]->SetPixel(pixelPos, ion::Colour(colour.GetRed(), colour.GetGreen(), colour.GetBlue()));
+				tilesetResource.texture->SetPixel(pixelPos, ion::Colour(colour.GetRed(), colour.GetGreen(), colour.GetBlue()));
 			}
 		}
 	}

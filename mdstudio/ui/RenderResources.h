@@ -36,7 +36,6 @@ public:
 	enum MaterialType
 	{
 		eMaterialFlatColour,
-		eMaterialTileset,
 		eMaterialCollisionTypes,
 		eMaterialTerrainTilesetHeight,
 		eMaterialTerrainTilesetWidth,
@@ -47,7 +46,6 @@ public:
 
 	enum TextureType
 	{
-		eTextureTileset,
 		eTextureCollisionTypes,
 		eTextureTerrainTilesetWidth,
 		eTextureTerrainTilesetHeight,
@@ -83,7 +81,7 @@ public:
 	~RenderResources();
 
 	//Create and redraw tileset texture
-	void CreateTilesetTexture();
+	void CreateTilesetTextures();
 
 	//Create and redraw terrain widthmap/heightmap tileset textures
 	void CreateTerrainTilesTextures();
@@ -99,7 +97,7 @@ public:
 	void CreateReferenceImageTexture(const ion::ImageFormat& reader);
 
 	//Get tileset UV coords for tile
-	void GetTileTexCoords(TileId tileId, ion::render::TexCoord texCoords[4], u32 flipFlags) const;
+	void GetTileTexCoords(TilesetId tilesetId, TileId tileId, ion::render::TexCoord texCoords[4], u32 flipFlags) const;
 
 	//Get terrain tileset UV coords for collision type
 	void GetCollisionTypeTexCoords(u16 collisionFlags, ion::render::TexCoord texCoords[4]) const;
@@ -108,13 +106,14 @@ public:
 	void GetTerrainTileTexCoords(TerrainTileId tileId, ion::render::TexCoord texCoords[4]) const;
 
 	//Edit tileset texture pixel
-	void SetTilesetTexPixel(TileId tileId, const ion::Vector2i& pixel, u8 colourIdx);
+	void SetTilesetTexPixel(TilesetId tilesetId, TileId tileId, const ion::Vector2i& pixel, u8 colourIdx);
 
 	//Edit terrain tileset texture height
 	void SetTerrainTileHeight(TerrainTileId terrainTileId, int x, s8 height);
 
 	//Get resources
 	ion::render::Material* GetMaterial(MaterialType type) { return m_materials[type]; }
+	ion::render::Material* GetMaterial(TilesetId tilesetId) { return m_tilesetResources[tilesetId].material; }
 	ion::render::Shader* GetShader(ShaderType type) { return m_shaders[type].Get(); }
 	ion::render::Primitive* GetPrimitive(PrimitiveType type) const { return m_primitives[type]; }
 	const ion::Colour& GetColour(ColourType type) const { return m_colours[type]; }
@@ -151,18 +150,21 @@ public:
 	SpriteSheetRenderResources* GetSpriteSheetResources(SpriteSheetId spriteSheetId);
 
 private:
+
+	struct TilesetResources
+	{
+		std::map<TileId, u32> tileIndexMap;	//Map tile IDs to indices
+		u32 tilesetSizeSq;					//Tileset size sq
+		float cellSizeTexSpaceSq;			//Tileset texture cell size sq
+		ion::io::ResourceHandle<ion::render::Texture> texture;
+		ion::io::ResourceHandle<ion::render::Material> material;
+	};
+
+	const TilesetResources& GetTilesetResources(TilesetId tilesetId) const;
+	TilesetResources& GetTilesetResources(TilesetId tilesetId);
 	
-	//Map tile IDs to indices
-	std::map<TileId, u32> m_tileIndexMap;
-
-	//Tileset size sq
-	u32 m_tilesetSizeSq;
-
 	//terrain tileset size sq
 	u32 m_terrainTilesetSizeSq;
-
-	//Tileset texture cell size sq
-	float m_cellSizeTexSpaceSq;
 
 	//terrain tileset texture cell size sq
 	float m_cellSizeTerrainTilesetTexSpaceSq;
@@ -177,6 +179,7 @@ private:
 	ion::io::ResourceHandle<ion::render::Shader> m_shaders[eShaderMax];
 	ion::io::ResourceHandle<ion::render::Texture> m_textures[eTextureMax];
 	ion::io::ResourceHandle<ion::render::Material> m_materials[eMaterialMax];
+	std::map<TilesetId, TilesetResources> m_tilesetResources;
 	ion::render::Primitive* m_primitives[ePrimitiveMax];
 	ion::Colour m_colours[eColourMax];
 

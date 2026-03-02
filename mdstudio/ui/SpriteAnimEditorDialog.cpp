@@ -616,11 +616,14 @@ void SpriteAnimEditorDialog::PopulateStampList()
 	m_selectedStampId = InvalidStampId;
 	m_selectedStamp = NULL;
 
+	const Map& map = m_project.GetEditingMap();
+	const StampSet& stampSet = m_project.GetStampSet(map.GetStampSetId());
+
 	typedef std::pair<std::string, ActorId> TNameIDPair;
 	typedef std::vector<TNameIDPair> TNameList;
 	TNameList nameList;
 
-	for(TStampMap::const_iterator it = m_project.StampsBegin(), end = m_project.StampsEnd(); it != end; ++it)
+	for(TStampMap::const_iterator it = stampSet.GetStamps().begin(), end = stampSet.GetStamps().end(); it != end; ++it)
 	{
 		//Check if tiles are sorted sequentially
 		if(it->second.CheckTilesBatched())
@@ -931,10 +934,16 @@ void SpriteAnimEditorDialog::SelectStamp(int index)
 	{
 		if(index >= 0 && index < m_stampCache.size())
 		{
+			Map& map = m_project.GetEditingMap();
+			StampSet& stampSet = m_project.GetStampSet(map.GetStampSetId());
+
 			m_selectedStampId = m_stampCache[index];
-			m_selectedStamp = m_project.GetStamp(m_selectedStampId);
-			ion::debug::Assert(m_selectedStamp, "SpriteAnimEditorDialog::OnStampSelected() - Invalid stamp ID");
-			PopulateStampAnimSheetList(*m_selectedStamp);
+			if (m_selectedStampId != InvalidStampId)
+			{
+				m_selectedStamp = &stampSet.GetStamp(m_selectedStampId);
+				ion::debug::Assert(m_selectedStamp, "SpriteAnimEditorDialog::OnStampSelected() - Invalid stamp ID");
+				PopulateStampAnimSheetList(*m_selectedStamp);
+			}
 		}
 	}
 }

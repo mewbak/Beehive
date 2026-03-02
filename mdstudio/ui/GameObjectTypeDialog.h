@@ -18,6 +18,8 @@
 #include "UIBase.h"
 #include "RenderResources.h"
 
+#if !BEEHIVE_PLUGIN_LUMINARY
+
 class MainWindow;
 class Project;
 
@@ -80,3 +82,5 @@ private:
 
 	std::vector<const GameObject::AutoVar*> m_notAddedAutoVars;
 };
+
+#endif // !BEEHIVE_PLUGIN_LUMINARY

@@ -11,6 +11,7 @@
 #include <wx/xrc/xmlres.h>
 class KeyframePanel;
 class SpriteCanvas;
+class TilesPanel;
 
 #include "StampCanvas.h"
 #include "StampsPanel.h"
@@ -1378,6 +1379,7 @@ class DialogAssetsBase : public wxDialog
 	protected:
 		wxNotebook* m_tabs;
 		wxPanel* m_tabPalettes;
+		wxStaticText* m_staticText181;
 		wxListBox* m_listPalettes;
 		wxButton* m_btnImportPalette;
 		wxButton* m_btnExportPalette;
@@ -1402,6 +1404,27 @@ class DialogAssetsBase : public wxDialog
 		wxChoice* m_choiceSlot2;
 		wxStaticText* m_staticText104;
 		wxChoice* m_choiceSlot3;
+		wxPanel* m_panelTilesets;
+		wxStaticText* m_staticText1261;
+		wxListBox* m_listTilesets;
+		wxButton* m_btnNewTileset;
+		wxButton* m_btnDeleteTileset;
+		wxButton* m_btnRenameTileset;
+		wxButton* m_btnScanTileset;
+		wxStaticText* m_staticText8811;
+		wxStaticText* m_txtTilesetName;
+		wxStaticText* m_staticText9011;
+		wxStaticText* m_txtTilesetId;
+		wxStaticText* m_staticText9611;
+		wxStaticText* m_txtTilesetCount;
+		wxStaticText* m_staticText9211;
+		wxStaticText* m_txtTilesetPalette;
+		wxStaticText* m_staticText92111;
+		wxStaticText* m_txtTilesetStampSet;
+		wxStaticText* m_staticText1271;
+		wxFilePickerCtrl* m_filePickerTilesImgDir;
+		wxStaticBoxSizer* m_sizerTiles;
+		TilesPanel* m_canvasTiles;
 		wxPanel* m_tabStamps;
 		wxStaticText* m_staticText126;
 		wxListBox* m_listStampSets;
@@ -1435,6 +1458,12 @@ class DialogAssetsBase : public wxDialog
 		virtual void OnListSlot1( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnListSlot2( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnListSlot3( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnListTileset( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnBtnNewTileset( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnBtnDeleteTileset( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnBtnRenameTileset( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnBtnScanTileset( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnBrowseTilesImgDir( wxFileDirPickerEvent& event ) { event.Skip(); }
 		virtual void OnListStampSet( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnNewStampSet( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnDeleteStampSet( wxCommandEvent& event ) { event.Skip(); }
@@ -1449,6 +1478,8 @@ class DialogAssetsBase : public wxDialog
 		PaletteViewCtrl* m_paletteViewSlot1;
 		PaletteViewCtrl* m_paletteViewSlot2;
 		PaletteViewCtrl* m_paletteViewSlot3;
+		PaletteViewCtrl* m_paletteViewTiles;
+		PaletteViewCtrl* m_paletteViewStamps;
 
 		DialogAssetsBase( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("Asset Management"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 768,691 ), long style = wxDEFAULT_DIALOG_STYLE );
 

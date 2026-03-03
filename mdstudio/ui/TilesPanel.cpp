@@ -20,17 +20,54 @@ TilesPanel::TilesPanel(MainWindow* mainWindow, Project& project, ion::render::Re
 {
 	m_selectedTile = InvalidTileId;
 	m_hoverTile = InvalidTileId;
-	m_stampSetId = InvalidStampSetId;
+	m_tilesetId = InvalidTilesetId;
 
 	//Custom zoom/pan handling
 	EnableZoom(false);
 	EnablePan(false);
 
-	const int tileWidth = m_project->GetPlatformConfig().tileWidth;
-	const int tileHeight = m_project->GetPlatformConfig().tileHeight;
+	SetProject(&project);
+}
+
+TilesPanel::TilesPanel(wxWindow* parent, wxWindowID winid, const wxPoint& pos, const wxSize& size, long style)
+	: ViewPanel(parent, winid, pos, size, style)
+{
+	m_selectedTile = InvalidTileId;
+	m_hoverTile = InvalidTileId;
+	m_tilesetId = InvalidTilesetId;
+
+	//Custom zoom/pan handling
+	EnableZoom(false);
+	EnablePan(false);
+}
+
+void TilesPanel::SetProject(Project* project)
+{
+	ViewPanel::SetProject(project);
+
+	const int tileWidth = project->GetPlatformConfig().tileWidth;
+	const int tileHeight = project->GetPlatformConfig().tileHeight;
 
 	//Create selection quad
 	m_selectionPrimitive = new ion::render::Quad(ion::render::Quad::Axis::xy, ion::Vector2(tileWidth / 2.0f, tileHeight / 2.0f));
+}
+
+void TilesPanel::SetupRendering(ion::render::Renderer* renderer, wxGLContext* glContext, RenderResources* renderResources)
+{
+	ViewPanel::SetupRendering(renderer, glContext, renderResources);
+
+	const int tileWidth = m_project->GetPlatformConfig().tileWidth;
+	const int tileHeight = m_project->GetPlatformConfig().tileHeight;
+
+	if (m_panelSize.x > tileWidth && m_panelSize.y > tileHeight)
+	{
+		ion::Vector2i canvasSize = CalcCanvasSize();
+
+		if (canvasSize.x != m_canvasSize.x || canvasSize.y != m_canvasSize.y)
+		{
+			InitPanel(canvasSize.x, canvasSize.y);
+		}
+	}
 }
 
 TilesPanel::~TilesPanel()
@@ -38,28 +75,30 @@ TilesPanel::~TilesPanel()
 
 }
 
-void TilesPanel::SetStampSetId(StampSetId stampSetId)
+void TilesPanel::SetTilesetId(TilesetId tilesetId)
 {
-	m_stampSetId = stampSetId;
+	m_tilesetId = tilesetId;
 	Refresh();
 }
 
-StampSetId TilesPanel::GetStampSetId() const
+StampSetId TilesPanel::GetTilesetId() const
 {
-	if (m_stampSetId == InvalidStampSetId)
+	if (m_tilesetId == InvalidTilesetId)
 	{
 		// TODO: Just get from editing map for now, but this should be cleaned up
-		return m_project->GetEditingMap().GetStampSetId();
+		StampSetId stampSetId = m_project->GetEditingMap().GetStampSetId();
+		const StampSet& stampSet = m_project->GetStampSet(stampSetId);
+		return stampSet.GetTilesetId();
 	}
 	else
 	{
-		return m_stampSetId;
+		return m_tilesetId;
 	}
 }
 
-StampSet& TilesPanel::GetStampSet()
+Tileset& TilesPanel::GetTileset()
 {
-	return m_project->GetStampSet(GetStampSetId());
+	return m_project->GetTileset(GetTilesetId());
 }
 
 void TilesPanel::OnMouse(wxMouseEvent& event, const ion::Vector2i& mouseDelta)
@@ -222,11 +261,11 @@ void TilesPanel::OnContextMenuClick(wxCommandEvent& event)
 
 void TilesPanel::OnRender(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float& z, float zOffset)
 {
-	const StampSet& stampSet = GetStampSet();
-	const Tileset& tileset = m_project->GetTileset(stampSet.GetTilesetId());
+	TilesetId tilesetId = GetTilesetId();
+	const Tileset& tileset = m_project->GetTileset(tilesetId);
 
 	//Render canvas
-	RenderCanvas(renderer, cameraInverseMtx, projectionMtx, z, stampSet.GetTilesetId());
+	RenderCanvas(renderer, cameraInverseMtx, projectionMtx, z, tilesetId);
 
 	z += zOffset;
 
@@ -272,7 +311,6 @@ void TilesPanel::Refresh(bool eraseBackground, const wxRect *rect)
 		//If tiles invalidated
 		if(m_project->TilesAreInvalidated())
 		{
-			m_stampSetId = m_project->GetEditingMap().GetStampSetId();
 			const int tileWidth = m_project->GetPlatformConfig().tileWidth;
 			const int tileHeight = m_project->GetPlatformConfig().tileHeight;
 
@@ -292,7 +330,7 @@ ion::Vector2i TilesPanel::CalcCanvasSize()
 	const int tileWidth = m_project->GetPlatformConfig().tileWidth;
 	const int tileHeight = m_project->GetPlatformConfig().tileHeight;
 	wxSize panelSize = GetClientSize();
-	const Tileset& tileset = m_project->GetTileset(GetStampSet().GetTilesetId());
+	const Tileset& tileset = m_project->GetTileset(GetTilesetId());
 	int numTiles = tileset.GetCount();
 	int numCols = ion::maths::Ceil((float)panelSize.x / 8.0f / tileWidth);
 	int numRows = ion::maths::Max(numCols, (int)ion::maths::Ceil((float)numTiles / (float)numCols));
@@ -305,7 +343,7 @@ void TilesPanel::InitPanel(int numCols, int numRows)
 	CreateCanvas(numCols, numRows);
 
 	//Fill with invalid tile
-	FillTiles(GetStampSet().GetTilesetId(), InvalidTileId, ion::Vector2i(0, 0), ion::Vector2i(numCols - 1, numRows - 1));
+	FillTiles(GetTilesetId(), InvalidTileId, ion::Vector2i(0, 0), ion::Vector2i(numCols - 1, numRows - 1));
 
 	//Redraw tiles on canvas
 	PaintTiles();
@@ -319,7 +357,7 @@ void TilesPanel::InitPanel(int numCols, int numRows)
 
 void TilesPanel::PaintTiles()
 {
-	TilesetId tilesetId = GetStampSet().GetTilesetId();
+	TilesetId tilesetId = GetTilesetId();
 	const Tileset& tileset = m_project->GetTileset(tilesetId);
 
 	for(int i = 0; i < tileset.GetCount(); i++)

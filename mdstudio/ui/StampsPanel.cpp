@@ -35,17 +35,32 @@ StampsPanel::StampsPanel(MainWindow* mainWindow, Project& project, ion::render::
 	EnableZoom(false);
 	EnablePan(false);
 
-	const int tileWidth = m_project->GetPlatformConfig().tileWidth;
-	const int tileHeight = m_project->GetPlatformConfig().tileHeight;
-
-	//Create selection quad
-	m_selectionPrimitive = new ion::render::Quad(ion::render::Quad::Axis::xy, ion::Vector2(tileWidth / 2.0f, tileHeight / 2.0f));
+	SetProject(&project);
 }
 
 StampsPanel::StampsPanel(wxWindow* parent, wxWindowID winid, const wxPoint& pos, const wxSize& size, long style)
 	: ViewPanel(parent, winid, pos, size, style)
 {
+	m_selectedStamp = InvalidStampId;
+	m_hoverStamp = InvalidStampId;
+	m_stampToSubstitute = InvalidStampId;
+	m_stampSetId = InvalidStampSetId;
+	m_mode = eModeSelect;
 
+	//Custom zoom/pan handling
+	EnableZoom(false);
+	EnablePan(false);
+}
+
+void StampsPanel::SetProject(Project* project)
+{
+	ViewPanel::SetProject(project);
+
+	const int tileWidth = project->GetPlatformConfig().tileWidth;
+	const int tileHeight = project->GetPlatformConfig().tileHeight;
+
+	//Create selection quad
+	m_selectionPrimitive = new ion::render::Quad(ion::render::Quad::Axis::xy, ion::Vector2(tileWidth / 2.0f, tileHeight / 2.0f));
 }
 
 StampsPanel::~StampsPanel()

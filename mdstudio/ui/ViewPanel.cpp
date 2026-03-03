@@ -25,36 +25,8 @@ ViewPanel::ViewPanel(MainWindow* mainWindow, Project& project, ion::render::Rend
 	m_terrainCanvasDirty = false;
 	m_collisionCanvasDirty = false;
 	m_forceRefresh = false;
-
-	SetBackgroundStyle(wxBG_STYLE_PAINT);
-
-	//Set viewport clear colour
-	m_viewport.SetClearColour(ion::Colour(0.3f, 0.3f, 0.3f));
-
-	//Bind events
-	Bind(wxEVT_LEFT_DOWN, &ViewPanel::EventHandlerMouse, this, GetId());
-	Bind(wxEVT_LEFT_UP, &ViewPanel::EventHandlerMouse, this, GetId());
-	Bind(wxEVT_LEFT_DCLICK, &ViewPanel::EventHandlerMouse, this, GetId());
-	Bind(wxEVT_MIDDLE_DOWN, &ViewPanel::EventHandlerMouse, this, GetId());
-	Bind(wxEVT_MIDDLE_UP, &ViewPanel::EventHandlerMouse, this, GetId());
-	Bind(wxEVT_RIGHT_DOWN, &ViewPanel::EventHandlerMouse, this, GetId());
-	Bind(wxEVT_RIGHT_UP, &ViewPanel::EventHandlerMouse, this, GetId());
-	Bind(wxEVT_MOTION, &ViewPanel::EventHandlerMouse, this, GetId());
-	Bind(wxEVT_MOUSEWHEEL, &ViewPanel::EventHandlerMouse, this, GetId());
-	Bind(wxEVT_KEY_DOWN, &ViewPanel::EventHandlerKeyboard, this, GetId());
-	Bind(wxEVT_KEY_UP, &ViewPanel::EventHandlerKeyboard, this, GetId());
-	Bind(wxEVT_PAINT, &ViewPanel::EventHandlerPaint, this, GetId());
-	Bind(wxEVT_ERASE_BACKGROUND, &ViewPanel::EventHandlerErase, this, GetId());
-	Bind(wxEVT_SIZE, &ViewPanel::EventHandlerResize, this, GetId());
-
-	//Centre camera on canvas
-	CentreCamera();
-
-	//Reset zoom
-	SetCameraZoom(1.0f);
-
-	//Refresh panel
-	Refresh();
+	
+	SetupRendering(&renderer, glContext, &renderResources);
 }
 
 ViewPanel::ViewPanel(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style, const wxString& name)
@@ -75,6 +47,31 @@ ViewPanel::ViewPanel(wxWindow* parent, wxWindowID id, const wxPoint& pos, const 
 	m_terrainCanvasDirty = false;
 	m_collisionCanvasDirty = false;
 	m_forceRefresh = false;
+}
+
+void ViewPanel::SetupRendering(ion::render::Renderer* renderer, wxGLContext* glContext, RenderResources* renderResources)
+{
+	m_renderer = renderer;
+	m_renderResources = renderResources;
+	m_glContext = glContext;
+	SetCurrent(*glContext);
+	m_forceRefresh = true;
+
+	//Bind input events
+	Bind(wxEVT_LEFT_DOWN, &ViewPanel::EventHandlerMouse, this, GetId());
+	Bind(wxEVT_LEFT_UP, &ViewPanel::EventHandlerMouse, this, GetId());
+	Bind(wxEVT_LEFT_DCLICK, &ViewPanel::EventHandlerMouse, this, GetId());
+	Bind(wxEVT_MIDDLE_DOWN, &ViewPanel::EventHandlerMouse, this, GetId());
+	Bind(wxEVT_MIDDLE_UP, &ViewPanel::EventHandlerMouse, this, GetId());
+	Bind(wxEVT_RIGHT_DOWN, &ViewPanel::EventHandlerMouse, this, GetId());
+	Bind(wxEVT_RIGHT_UP, &ViewPanel::EventHandlerMouse, this, GetId());
+	Bind(wxEVT_MOTION, &ViewPanel::EventHandlerMouse, this, GetId());
+	Bind(wxEVT_MOUSEWHEEL, &ViewPanel::EventHandlerMouse, this, GetId());
+	Bind(wxEVT_KEY_DOWN, &ViewPanel::EventHandlerKeyboard, this, GetId());
+	Bind(wxEVT_KEY_UP, &ViewPanel::EventHandlerKeyboard, this, GetId());
+	Bind(wxEVT_PAINT, &ViewPanel::EventHandlerPaint, this, GetId());
+	Bind(wxEVT_ERASE_BACKGROUND, &ViewPanel::EventHandlerErase, this, GetId());
+	Bind(wxEVT_SIZE, &ViewPanel::EventHandlerResize, this, GetId());
 
 	SetBackgroundStyle(wxBG_STYLE_PAINT);
 
@@ -86,22 +83,14 @@ ViewPanel::ViewPanel(wxWindow* parent, wxWindowID id, const wxPoint& pos, const 
 
 	//Reset zoom
 	SetCameraZoom(1.0f);
-}
-
-void ViewPanel::SetupRendering(ion::render::Renderer* renderer, wxGLContext* glContext, RenderResources* renderResources)
-{
-	m_renderer = renderer;
-	m_renderResources = renderResources;
-	SetCurrent(*glContext);
-	m_forceRefresh = true;
 
 	wxSize clientSize = GetSize();
-
+	
 	if (clientSize.x != m_panelSize.x || clientSize.y != m_panelSize.y)
 	{
 		m_panelSize.x = clientSize.x;
 		m_panelSize.y = clientSize.y;
-
+	
 		if (m_panelSize.x > 1 && m_panelSize.y > 1)
 		{
 			//Filter out superflous resize events (wx sends them if UI thread doesn't respond during saving/loading)
@@ -112,6 +101,8 @@ void ViewPanel::SetupRendering(ion::render::Renderer* renderer, wxGLContext* glC
 			}
 		}
 	}
+
+	Refresh();
 }
 
 ViewPanel::~ViewPanel()

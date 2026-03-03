@@ -19,7 +19,12 @@ public:
 	TilesPanel(MainWindow* mainWindow, Project& project, ion::render::Renderer& renderer, wxGLContext* glContext, wxGLAttributes& glAttributes, RenderResources& renderResources, wxWindow *parent, wxWindowID winid = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL | wxNO_BORDER, const wxString& name = wxPanelNameStr);
 	virtual ~TilesPanel();
 
-	void SetStampSetId(StampSetId stampSetId);
+	TilesPanel(wxWindow* parent, wxWindowID winid = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL | wxNO_BORDER);
+
+	virtual void SetProject(Project* project);
+	virtual void SetupRendering(ion::render::Renderer* renderer, wxGLContext* glContext, RenderResources* renderResources);
+
+	void SetTilesetId(TilesetId tilesetId);
 
 	//Events
 	virtual void OnMouse(wxMouseEvent& event, const ion::Vector2i& mouseDelta);
@@ -48,8 +53,8 @@ private:
 #endif
 	};
 
-	StampSetId GetStampSetId() const;
-	StampSet& GetStampSet();
+	TilesetId GetTilesetId() const;
+	Tileset& GetTileset();
 
 	//Calc canvas size
 	ion::Vector2i CalcCanvasSize();
@@ -80,5 +85,5 @@ private:
 	//Rendering primitives
 	ion::render::Quad* m_selectionPrimitive;
 
-	StampSetId m_stampSetId;
+	TilesetId m_tilesetId;
 };

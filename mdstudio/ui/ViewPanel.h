@@ -45,8 +45,8 @@ public:
 	virtual ~ViewPanel();
 
 	void SetMainWindow(MainWindow* mainWindow) { m_mainWindow = mainWindow; }
-	void SetProject(Project* project) { m_project = project; }
-	void SetupRendering(ion::render::Renderer* renderer, wxGLContext* glContext, RenderResources* renderResources);
+	virtual void SetProject(Project* project) { m_project = project; }
+	virtual void SetupRendering(ion::render::Renderer* renderer, wxGLContext* glContext, RenderResources* renderResources);
 
 	//Refresh panel
 	void ForceRefresh();

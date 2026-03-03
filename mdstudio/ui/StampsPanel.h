@@ -20,6 +20,8 @@ public:
 	StampsPanel(wxWindow* parent, wxWindowID winid = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL | wxNO_BORDER);
 	virtual ~StampsPanel();
 
+	virtual void SetProject(Project* project);
+
 	void SetStampSetId(StampSetId stampSetId);
 
 	//Events

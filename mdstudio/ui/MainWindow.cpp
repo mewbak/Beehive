@@ -25,6 +25,7 @@
 #include "MainWindow.h"
 #include "Dialogs.h"
 #include "ExportDialog.h"
+#include "AssetManagementDialog.h"
 #include "SpriteAnimEditorDialog.h"
 #include "ProjectSettingsDialog.h"
 #include "PalettesPanel.h"

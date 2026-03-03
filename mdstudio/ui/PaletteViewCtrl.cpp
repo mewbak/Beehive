@@ -17,6 +17,8 @@ void PaletteViewCtrl::SetPalette(const Palette& palette)
 		else
 			m_brushes[i] = wxBrush(wxColour(255,0,0), wxBRUSHSTYLE_CROSSDIAG_HATCH);
 	}
+
+	Refresh();
 }
 
 void PaletteViewCtrl::OnPaint(wxPaintEvent& evt)

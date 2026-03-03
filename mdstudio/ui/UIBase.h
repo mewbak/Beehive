@@ -1423,6 +1423,8 @@ class DialogAssetsBase : public wxDialog
 		wxStaticText* m_txtTilesetStampSet;
 		wxStaticText* m_staticText1271;
 		wxFilePickerCtrl* m_filePickerTilesImgDir;
+		wxStaticText* m_staticText212;
+		wxChoice* m_choiceTilesetPalette;
 		wxStaticBoxSizer* m_sizerTiles;
 		TilesPanel* m_canvasTiles;
 		wxPanel* m_tabStamps;
@@ -1464,6 +1466,7 @@ class DialogAssetsBase : public wxDialog
 		virtual void OnBtnRenameTileset( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnScanTileset( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBrowseTilesImgDir( wxFileDirPickerEvent& event ) { event.Skip(); }
+		virtual void OnListTilesetPalette( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnListStampSet( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnNewStampSet( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnDeleteStampSet( wxCommandEvent& event ) { event.Skip(); }

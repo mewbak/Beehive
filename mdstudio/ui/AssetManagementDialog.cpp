@@ -13,10 +13,12 @@
 #include "Dialogs.h"
 #include "StampsPanel.h"
 #include "TilesPanel.h"
+#include "MainWindow.h"
 
 DialogAssetManagement::DialogAssetManagement(MainWindow& mainWindow, Project& project, ion::render::Renderer& renderer, wxGLContext& glContext, RenderResources& renderResources)
 	: DialogAssetsBase((wxWindow*)&mainWindow)
 	, m_project(project)
+	, m_mainWindow(mainWindow)
 {
 	// Setup canvases
 	m_canvasTiles->SetProject(&project);
@@ -44,6 +46,8 @@ DialogAssetManagement::DialogAssetManagement(MainWindow& mainWindow, Project& pr
 
 void DialogAssetManagement::PopulatePalettes()
 {
+	int index = m_listPalettes->GetSelection();
+
 	m_populatedPalettes.clear();
 	m_listPalettes->Clear();
 
@@ -52,7 +56,13 @@ void DialogAssetManagement::PopulatePalettes()
 	for (const auto palette : palettes)
 	{
 		m_listPalettes->Append(palette.second.GetName());
+		m_choiceTilesetPalette->Append(palette.second.GetName());
 		m_populatedPalettes.push_back(std::make_pair(palette.first, palette.second));
+	}
+
+	if (index >= 0 && index < m_populatedPalettes.size())
+	{
+		m_listPalettes->SetSelection(index);
 	}
 
 	PaletteViewCtrl* views[4] = { m_paletteViewSlot0, m_paletteViewSlot1, m_paletteViewSlot2, m_paletteViewSlot3 };
@@ -84,6 +94,8 @@ void DialogAssetManagement::PopulatePalettes()
 
 void DialogAssetManagement::PopulateTilesets()
 {
+	int index = m_listTilesets->GetSelection();
+
 	m_populatedTilesets.clear();
 	m_listTilesets->Clear();
 
@@ -94,10 +106,17 @@ void DialogAssetManagement::PopulateTilesets()
 		m_listTilesets->Append(tileset.second.GetName());
 		m_populatedTilesets.push_back(tileset.first);
 	}
+
+	if (index >= 0 && index < m_populatedTilesets.size())
+	{
+		m_listTilesets->SetSelection(index);
+	}
 }
 
 void DialogAssetManagement::PopulateStampSets()
 {
+	int index = m_listStampSets->GetSelection();
+
 	m_populatedStampSets.clear();
 	m_listStampSets->Clear();
 
@@ -108,12 +127,19 @@ void DialogAssetManagement::PopulateStampSets()
 		m_listStampSets->Append(stampSet.second.GetName());
 		m_populatedStampSets.push_back(stampSet.first);
 	}
+
+	if (index >= 0 && index < m_populatedStampSets.size())
+	{
+		m_listStampSets->SetSelection(index);
+	}
 }
 
 void DialogAssetManagement::SelectPalette(int index)
 {
 	if (index >= 0 && index < m_populatedPalettes.size())
 	{
+		m_listPalettes->SetSelection(index);
+
 		PaletteId paletteId = m_populatedPalettes[index].first;
 		const Palette& palette = m_populatedPalettes[index].second;
 		m_paletteViewSelected->SetPalette(palette);
@@ -142,6 +168,8 @@ void DialogAssetManagement::SelectTileset(int index)
 {
 	if (index >= 0 && index < m_populatedTilesets.size())
 	{
+		m_listTilesets->SetSelection(index);
+
 		TilesetId tilesetId = m_populatedTilesets[index];
 		const Tileset& tileset = m_project.GetTileset(tilesetId);
 
@@ -162,6 +190,8 @@ void DialogAssetManagement::SelectStampSet(int index)
 {
 	if (index >= 0 && index < m_populatedStampSets.size())
 	{
+		m_listStampSets->SetSelection(index);
+
 		StampSetId stampSetId = m_populatedStampSets[index];
 		const StampSet& stampSet = m_project.GetStampSet(stampSetId);
 
@@ -211,6 +241,29 @@ void DialogAssetManagement::OnListTilesets(wxCommandEvent& event)
 void DialogAssetManagement::OnListStampSet(wxCommandEvent& event)
 {
 	SelectStampSet(m_listStampSets->GetSelection());
+}
+
+void DialogAssetManagement::OnListTilesetPalette(wxCommandEvent& event)
+{
+	int paletteIdx = m_choiceTilesetPalette->GetSelection();
+	int tilesetIdx = m_listTilesets->GetSelection();
+	if (   paletteIdx >= 0 && paletteIdx < m_populatedPalettes.size()
+		&& tilesetIdx >= 0 && tilesetIdx < m_populatedTilesets.size())
+	{
+		PaletteId paletteId = m_populatedPalettes[paletteIdx].first;
+		TilesetId tilesetId = m_populatedTilesets[tilesetIdx];
+		const Palette& palette = m_populatedPalettes[paletteIdx].second;
+		Tileset& tileset = m_project.GetTileset(tilesetId);
+
+		m_paletteViewTiles->SetPalette(palette);
+		m_txtTilesetPalette->SetLabelText(palette.GetName());
+		tileset.SetPaletteId(paletteId);
+
+		m_mainWindow.RefreshTileset();
+
+		SelectTileset(m_listTilesets->GetSelection());
+		SelectStampSet(m_listStampSets->GetSelection());
+	}
 }
 
 void DialogAssetManagement::OnBtnImportPalette(wxCommandEvent& event)

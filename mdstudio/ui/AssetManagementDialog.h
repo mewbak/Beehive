@@ -25,12 +25,8 @@ public:
 
 	virtual void OnTabChanged(wxNotebookEvent& event);
 
-	// List selection
-	virtual void OnListPalette(wxCommandEvent& event);
-	virtual void OnListTilesets(wxCommandEvent& event);
-	virtual void OnListStampSet(wxCommandEvent& event);
-
 	// Palettes tab
+	virtual void OnListPalette(wxCommandEvent& event);
 	virtual void OnBtnImportPalette(wxCommandEvent& event);
 	virtual void OnBtnExportPalette(wxCommandEvent& event);
 	virtual void OnBtnRenamePalette(wxCommandEvent& event);
@@ -39,6 +35,13 @@ public:
 	virtual void OnListSlot1(wxCommandEvent& event);
 	virtual void OnListSlot2(wxCommandEvent& event);
 	virtual void OnListSlot3(wxCommandEvent& event);
+
+	// Tilesets tab
+	virtual void OnListTilesets(wxCommandEvent& event);
+	virtual void OnListTilesetPalette(wxCommandEvent& event);
+
+	// Stamp sets tab
+	virtual void OnListStampSet(wxCommandEvent& event);
 
 private:
 	void PopulatePalettes();
@@ -52,6 +55,8 @@ private:
 	void AssignPalette(int index, int slotIndex);
 
 	Project& m_project;
+	MainWindow& m_mainWindow;
+
 	std::vector<std::pair<PaletteId, Palette>> m_populatedPalettes;
 	std::vector<TilesetId> m_populatedTilesets;
 	std::vector<StampSetId> m_populatedStampSets;

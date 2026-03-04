@@ -157,8 +157,10 @@ void DialogAssetManagement::SelectPalette(int index)
 			}
 		}
 
-		m_txtPaletteNumSprites->SetLabelText("");
-		m_txtPaletteNumStamps->SetLabelText("");
+		std::vector<TilesetId> tilesets;
+		std::vector<std::pair<ActorId, SpriteSheetId>> spriteSheets;
+		std::vector<MapId> maps;
+		m_txtPaletteUsageCount->SetLabelText(std::to_string(GetPaletteUsage(paletteId, tilesets, spriteSheets, maps)));
 
 		Refresh();
 	}
@@ -183,6 +185,9 @@ void DialogAssetManagement::SelectTileset(int index)
 		m_txtTilesetId->SetLabelText(std::to_string(tilesetId));
 		m_txtTilesetPalette->SetLabelText(palette->GetName());
 		m_txtTilesetCount->SetLabelText(std::to_string(tileset.GetCount()));
+
+		std::vector<StampSetId> stampSets;
+		m_txtTilesetUsageCount->SetLabelText(std::to_string(GetTilesetUsage(tilesetId, stampSets)));
 	}
 }
 
@@ -208,6 +213,9 @@ void DialogAssetManagement::SelectStampSet(int index)
 		m_txtStampSetId->SetLabelText(std::to_string(stampSetId));
 		m_txtStampSetPalette->SetLabelText(palette->GetName());
 		m_txtStampSetTileset->SetLabelText(tileset.GetName());
+
+		std::vector<MapId> maps;
+		m_txtStampSetUsageCount->SetLabelText(std::to_string(GetStampSetUsage(stampSetId, maps)));
 
 		Refresh();
 	}
@@ -254,6 +262,13 @@ void DialogAssetManagement::OnListTilesetPalette(wxCommandEvent& event)
 		TilesetId tilesetId = m_populatedTilesets[tilesetIdx];
 		const Palette& palette = m_populatedPalettes[paletteIdx].second;
 		Tileset& tileset = m_project.GetTileset(tilesetId);
+
+		if (!m_project.CheckCompatibilityPaletteTileset(paletteId, tilesetId))
+		{
+			std::string msg = "Palette " + palette.GetName() + " is incompatible with tileset " + tileset.GetName();
+			wxMessageBox(msg, "Error");
+			return;
+		}
 
 		m_paletteViewTiles->SetPalette(palette);
 		m_txtTilesetPalette->SetLabelText(palette.GetName());
@@ -324,7 +339,59 @@ void DialogAssetManagement::OnBtnDeletePalette(wxCommandEvent& event)
 	int index = m_listPalettes->GetSelection();
 	if (index >= 0 && index < m_populatedPalettes.size())
 	{
-		m_project.DeletePalette(m_populatedPalettes[index].first);
+		PaletteId paletteId = m_populatedPalettes[index].first;
+		const Palette* palette = m_project.GetPalette(paletteId);
+
+		std::vector<TilesetId> tilesets;
+		std::vector<std::pair<ActorId, SpriteSheetId>> spriteSheets;
+		std::vector<MapId> maps;
+		int usageCount = GetPaletteUsage(paletteId, tilesets, spriteSheets, maps);
+
+		if (usageCount > 0)
+		{
+			std::string msg = "Cannot delete in-use palette " + palette->GetName() + "\n";
+			
+			if (tilesets.size() > 0)
+			{
+				msg += "\nUsed by tileset(s):\n\n";
+
+				for (TilesetId tilesetId : tilesets)
+				{
+					const Tileset& tileset = m_project.GetTileset(tilesetId);
+					msg += " " + tileset.GetName() + "\n";
+				}
+
+				
+			}
+
+			if (spriteSheets.size() > 0)
+			{
+				msg += "\nUsed by sprite sheet(s):\n\n";
+
+				for (const auto it : spriteSheets)
+				{
+					const Actor* actor = m_project.GetActor(it.first);
+					const SpriteSheet* spriteSheet = actor->GetSpriteSheet(it.second);
+					msg += " " + spriteSheet->GetName() + "\n";
+				}
+			}
+
+			if (maps.size() > 0)
+			{
+				msg += "\nAssigned to slot(s) in map(s):\n\n";
+
+				for (const auto mapId : maps)
+				{
+					const Map& map = m_project.GetMap(mapId);
+					msg += " " + map.GetName() + "\n";
+				}
+			}
+
+			wxMessageBox(msg, "Error");
+			return;
+		}
+
+		m_project.DeletePalette(paletteId);
 		PopulatePalettes();
 	}
 }
@@ -347,4 +414,55 @@ void DialogAssetManagement::OnListSlot2(wxCommandEvent& event)
 void DialogAssetManagement::OnListSlot3(wxCommandEvent& event)
 {
 	AssignPalette(m_choiceSlot3->GetSelection(), 3);
+}
+
+int DialogAssetManagement::GetPaletteUsage(PaletteId paletteId, std::vector<TilesetId>& tilesets, std::vector<std::pair<ActorId, SpriteSheetId>>& spriteSheets, std::vector<MapId>& maps) const
+{
+	for (const auto& tileset : m_project.GetTilesets())
+	{
+		if (tileset.second.GetPaletteId() == paletteId)
+			tilesets.push_back(tileset.first);
+	}
+
+	for (const auto& actor : m_project.GetActors())
+	{
+		for (const auto& spriteSheet : actor.second.GetSpriteSheets())
+		{
+			if (spriteSheet.second.GetPaletteId() == paletteId)
+				spriteSheets.push_back(std::make_pair(actor.first, spriteSheet.first));
+		}
+	}
+
+	for (const auto& map : m_project.GetMaps())
+	{
+		for (int i = 0; i < map.second.GetNumPaletteSlots(); i++)
+		{
+			if (map.second.GetPaletteFromSlot(i) == paletteId)
+				maps.push_back(map.first);
+		}
+	}
+
+	return tilesets.size() + spriteSheets.size() + maps.size();
+}
+
+int DialogAssetManagement::GetTilesetUsage(TilesetId tilesetId, std::vector<StampSetId>& stampSets) const
+{
+	for (const auto& stampset : m_project.GetStampSets())
+	{
+		if (stampset.second.GetTilesetId() == tilesetId)
+			stampSets.push_back(stampset.first);
+	}
+
+	return stampSets.size();
+}
+
+int DialogAssetManagement::GetStampSetUsage(StampSetId stampSetId, std::vector<MapId>& maps) const
+{
+	for (const auto& map : m_project.GetMaps())
+	{
+		if (map.second.GetStampSetId() == stampSetId)
+			maps.push_back(map.first);
+	}
+
+	return maps.size();
 }

@@ -1392,9 +1392,7 @@ class DialogAssetsBase : public wxDialog
 		wxStaticText* m_staticText92;
 		wxStaticText* m_txtPaletteActiveSlot;
 		wxStaticText* m_staticText94;
-		wxStaticText* m_txtPaletteNumSprites;
-		wxStaticText* m_staticText96;
-		wxStaticText* m_txtPaletteNumStamps;
+		wxStaticText* m_txtPaletteUsageCount;
 		wxStaticBoxSizer* m_sizerSlots;
 		wxStaticText* m_staticText98;
 		wxChoice* m_choiceSlot0;
@@ -1420,7 +1418,7 @@ class DialogAssetsBase : public wxDialog
 		wxStaticText* m_staticText9211;
 		wxStaticText* m_txtTilesetPalette;
 		wxStaticText* m_staticText92111;
-		wxStaticText* m_txtTilesetStampSet;
+		wxStaticText* m_txtTilesetUsageCount;
 		wxStaticText* m_staticText1271;
 		wxFilePickerCtrl* m_filePickerTilesImgDir;
 		wxStaticText* m_staticText212;
@@ -1444,6 +1442,8 @@ class DialogAssetsBase : public wxDialog
 		wxStaticText* m_txtStampSetPalette;
 		wxStaticText* m_staticText941;
 		wxStaticText* m_txtStampSetTileset;
+		wxStaticText* m_staticText9411;
+		wxStaticText* m_txtStampSetUsageCount;
 		wxStaticText* m_staticText127;
 		wxFilePickerCtrl* m_filePickerStampsImgDir;
 		wxStaticBoxSizer* m_sizerStamps;
@@ -1452,10 +1452,10 @@ class DialogAssetsBase : public wxDialog
 		// Virtual event handlers, override them in your derived class
 		virtual void OnTabChanged( wxNotebookEvent& event ) { event.Skip(); }
 		virtual void OnListPalette( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnBtnImport( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnBtnExport( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnBtnRename( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnBtnDelete( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnBtnImportPalette( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnBtnExportPalette( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnBtnRenamePalette( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnBtnDeletePalette( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnListSlot0( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnListSlot1( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnListSlot2( wxCommandEvent& event ) { event.Skip(); }

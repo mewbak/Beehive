@@ -739,7 +739,7 @@ void PropertyPanel::AddProperty(const GameObjectBase* gameObject, const GameObje
 
 					const auto palettes = m_project.GetPalettes();
 
-					for (const auto palette : palettes)
+					for (const auto& palette : palettes)
 					{
 						int slotIdx = -1;
 						for (int i = 0; i < editingMap.GetNumPaletteSlots(); i++)

@@ -155,10 +155,10 @@ void RenderResources::CreateTilesetTextures()
 	const int tileWidth = m_project.GetPlatformConfig().tileWidth;
 	const int tileHeight = m_project.GetPlatformConfig().tileHeight;
 
-	for (const auto tilesetIt : m_project.GetTilesets())
+	for (const auto& tilesetIt : m_project.GetTilesets())
 	{
 		const Tileset& tileset = tilesetIt.second;
-		const Palette* palette = m_project.GetPalette(tileset.GetPaletteId());
+		const Palette& palette = m_project.GetPalette(tileset.GetPaletteId());
 
 		TilesetResources tilesetResources;
 
@@ -192,9 +192,9 @@ void RenderResources::CreateTilesetTextures()
 						u8 colourIdx = tile.GetPixelColour(pixelX, pixelY_OGL);
 
 						//Protect against blank tiles
-						if (palette->IsColourUsed(colourIdx))
+						if (palette.IsColourUsed(colourIdx))
 						{
-							const Colour& colour = palette->GetColour(colourIdx);
+							const Colour& colour = palette.GetColour(colourIdx);
 
 							int destPixelX = (x * tileWidth) + pixelX;
 							int destPixelY = (y * tileHeight) + pixelY;
@@ -686,23 +686,21 @@ void RenderResources::SetTilesetTexPixel(TilesetId tilesetId, TileId tileId, con
 
 		if(const Tile* tile = tileset.GetTile(tileId))
 		{
-			if(Palette* palette = m_project.GetPalette(tileset.GetPaletteId()))
-			{
-				const int tileWidth = m_project.GetPlatformConfig().tileWidth;
-				const int tileHeight = m_project.GetPlatformConfig().tileHeight;
+			const Palette& palette = m_project.GetPalette(tileset.GetPaletteId());
+			const int tileWidth = m_project.GetPlatformConfig().tileWidth;
+			const int tileHeight = m_project.GetPlatformConfig().tileHeight;
 
-				const Colour& colour = palette->GetColour(colourIdx);
+			const Colour& colour = palette.GetColour(colourIdx);
 
-				u32 x = tileId % tilesetResource.tilesetSizeSq;
-				u32 y = tileId / tilesetResource.tilesetSizeSq;
+			u32 x = tileId % tilesetResource.tilesetSizeSq;
+			u32 y = tileId / tilesetResource.tilesetSizeSq;
 
-				//Invert Y for OpenGL
-				int y_inv = tileHeight - 1 - pixel.y;
+			//Invert Y for OpenGL
+			int y_inv = tileHeight - 1 - pixel.y;
 
-				ion::Vector2i pixelPos((x * tileWidth) + pixel.x, (y * tileHeight) + y_inv);
+			ion::Vector2i pixelPos((x * tileWidth) + pixel.x, (y * tileHeight) + y_inv);
 
-				tilesetResource.texture->SetPixel(pixelPos, ion::Colour(colour.GetRed(), colour.GetGreen(), colour.GetBlue()));
-			}
+			tilesetResource.texture->SetPixel(pixelPos, ion::Colour(colour.GetRed(), colour.GetGreen(), colour.GetBlue()));
 		}
 	}
 }
@@ -927,7 +925,7 @@ void RenderResources::SpriteSheetRenderResources::Load(const SpriteSheet& sprite
 		u32 textureSize = textureWidth * textureHeight * bytesPerPixel;
 
 		PaletteId paletteId = spriteSheet.GetPaletteId();
-		Palette palette = (paletteId == InvalidPaletteId) ? spriteSheet.GetImportedPalette() : *project->GetPalette(paletteId);
+		Palette palette = (paletteId == InvalidPaletteId) ? spriteSheet.GetImportedPalette() : project->GetPalette(paletteId);
 
 		static int resourceIdx = 0;
 

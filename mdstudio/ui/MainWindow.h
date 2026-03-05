@@ -169,6 +169,7 @@ protected:
 	virtual void OnBtnProjNew(wxCommandEvent& event);
 	virtual void OnBtnProjOpen(wxCommandEvent& event);
 	virtual void OnBtnProjSave(wxCommandEvent& event);
+	virtual void OnBtnProjAssets(wxCommandEvent& event);
 	virtual void OnBtnProjSettings(wxCommandEvent& event);
 	virtual void OnBtnBuildExport(wxCommandEvent& event);
 	virtual void OnBtnBuildAssemble(wxCommandEvent& event);

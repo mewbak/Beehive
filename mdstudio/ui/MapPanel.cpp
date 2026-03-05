@@ -2180,7 +2180,7 @@ void MapPanel::RenderGameObjects(ion::render::Renderer& renderer, const ion::Mat
 				if (gameObjectType->IsPrefabType())
 				{
 					//Draw all prefab children
-					for (const auto prefabChild : gameObjectType->GetPrefabChildren())
+					for (const auto& prefabChild : gameObjectType->GetPrefabChildren())
 					{
 						selected = (m_selectedPrefabChild == prefabChild.instanceId);
 

@@ -60,77 +60,78 @@ class TilesPanel;
 #define wxID_BTN_PROJ_NEW 1001
 #define wxID_BTN_PROJ_OPEN 1002
 #define wxID_BTN_PROJ_SAVE 1003
-#define wxID_BTN_PROJ_SETTINGS 1004
-#define wxID_BTN_BUILD_EXPORT 1005
-#define wxID_BTN_BUILD_EXPORT_ASSEMBLE 1006
-#define wxID_BTN_BUILD_EXPORT_ASSEMBLE_RUN 1007
-#define wxID_BTN_TOOLS_MAPEDIT 1008
-#define wxID_BTN_TOOLS_MAP_LIST 1009
-#define wxID_BTN_TOOLS_TILES 1010
-#define wxID_BTN_TOOLS_COLLISION_TILES 1011
-#define wxID_BTN_TOOLS_STAMPS 1012
-#define wxID_BTN_TOOLS_PALETTES 1013
-#define wxID_BTN_TOOLS_GAMEOBJS 1014
-#define wxID_BTN_TOOLS_GAMEOBJPARAMS 1015
-#define wxID_BTN_TOOLS_TIMELINE 1016
-#define wxID_BTN_TOOLS_SPRITEANIM 1017
-#define wxID_BTN_SAVE_LAYOUT 1018
-#define wxID_BTN_RESET_LAYOUT 1019
-#define wxID_BTN_GRID_SHOW 1020
-#define wxID_BTN_GRID_SNAP 1021
-#define wxID_BTN_SHOW_OUTLINES 1022
-#define wxID_BTN_SHOW_COLLISION 1023
-#define wxID_BTN_SHOW_DISPLAYFRAME 1024
-#define wxID_MENU_TOOLS_TWEAKS_GAMEOBJ_CENTRE_ORIGIN 1025
-#define wxID_BTN_MAP_NEW 1026
-#define wxID_ANYwxID_BTN_MAP_COPY 1027
-#define wxID_BTN_MAP_DELETE 1028
-#define wxID_BTN_MAP_RENAME 1029
-#define wxID_BTN_MAP_CLEAR 1030
-#define wxID_BTN_MAP_RESIZE 1031
-#define wxID_BTN_MAP_EXPORT_BMP 1032
-#define wxID_BTN_TILES_CLEANUP 1033
-#define wxID_BTN_SPRITE_EDITOR 1034
-#define wxID_BTN_STAMPS_UPDATE 1035
-#define wxID_BTN_STAMPS_EXPORT_BMP 1036
-#define wxID_BTN_STAMPS_CLEANUP 1037
-#define wxID_BTN_PALETTES_MANAGEMENT 1038
-#define wxID_BTN_COL_GEN_BEZIER 1039
-#define wxID_BTN_COL_TILES_CLEANUP 1040
-#define wxID_BTN_COL_MAP_CLEAR 1041
-#define wxID_MENU_ANIMATION_IMPORT 1042
-#define wxID_MENU_ANIMATION_EXPORT 1043
-#define wxID_MENU_ANIMATION_CONVERT_RELATIVE 1044
-#define wxID_BTN_CANCEL 1045
-#define wxID_TOOL_COL_ADDTERRAINBEZIER 1046
-#define wxID_TOOL_COL_EDITTERRAINBEZIER 1047
-#define wxID_TOOL_COL_DELETETERRAINBEZIER 1048
-#define wxID_TOOL_COL_PAINTSOLID 1049
-#define wxID_TOOL_GENERATETERRAIN 1050
-#define wxID_MATCH 1051
-#define wxID_TOOL_SELECTSTAMP 1052
-#define wxID_TOOL_STAMP 1053
-#define wxID_TOOL_MOVESTAMP 1054
-#define wxID_TOOL_STAMPPICKER 1055
-#define wxID_TOOL_CREATESTAMP 1056
-#define wxID_TOOL_REMOVESTAMP 1057
-#define wxID_TOOL_COL_PAINTTERRAIN 1058
-#define wxID_TOOL_COL_PAINTHOLE 1059
-#define wxID_TOOL_COL_DELETETERRTILE 1060
-#define wxID_TOOL_SELECTTILE 1061
-#define wxID_TOOL_PAINT 1062
-#define wxID_TOOL_TILEPICKER 1063
-#define wxID_TOOL_FLIPX 1064
-#define wxID_TOOL_FLIPY 1065
-#define wxID_TOOL_FILL 1066
-#define wxID_TOOL_CLONE 1067
-#define wxID_TOOL_CREATE_SCENE_ANIM 1068
-#define wxID_TOOL_COPY_TO_NEW_MAP 1069
-#define wxID_TOOL_SELECTGAMEOBJ 1070
-#define wxID_TOOL_PLACEGAMEOBJ 1071
-#define wxID_TOOL_ANIMATEGAMEOBJ 1072
-#define wxID_TOOL_REMOVEGAMEOBJ 1073
-#define wxID_TOOL_DRAWGAMEOBJ 1074
+#define wxID_BTN_PROJ_ASSETS 1004
+#define wxID_BTN_PROJ_SETTINGS 1005
+#define wxID_BTN_BUILD_EXPORT 1006
+#define wxID_BTN_BUILD_EXPORT_ASSEMBLE 1007
+#define wxID_BTN_BUILD_EXPORT_ASSEMBLE_RUN 1008
+#define wxID_BTN_TOOLS_MAPEDIT 1009
+#define wxID_BTN_TOOLS_MAP_LIST 1010
+#define wxID_BTN_TOOLS_TILES 1011
+#define wxID_BTN_TOOLS_COLLISION_TILES 1012
+#define wxID_BTN_TOOLS_STAMPS 1013
+#define wxID_BTN_TOOLS_PALETTES 1014
+#define wxID_BTN_TOOLS_GAMEOBJS 1015
+#define wxID_BTN_TOOLS_GAMEOBJPARAMS 1016
+#define wxID_BTN_TOOLS_TIMELINE 1017
+#define wxID_BTN_TOOLS_SPRITEANIM 1018
+#define wxID_BTN_SAVE_LAYOUT 1019
+#define wxID_BTN_RESET_LAYOUT 1020
+#define wxID_BTN_GRID_SHOW 1021
+#define wxID_BTN_GRID_SNAP 1022
+#define wxID_BTN_SHOW_OUTLINES 1023
+#define wxID_BTN_SHOW_COLLISION 1024
+#define wxID_BTN_SHOW_DISPLAYFRAME 1025
+#define wxID_MENU_TOOLS_TWEAKS_GAMEOBJ_CENTRE_ORIGIN 1026
+#define wxID_BTN_MAP_NEW 1027
+#define wxID_ANYwxID_BTN_MAP_COPY 1028
+#define wxID_BTN_MAP_DELETE 1029
+#define wxID_BTN_MAP_RENAME 1030
+#define wxID_BTN_MAP_CLEAR 1031
+#define wxID_BTN_MAP_RESIZE 1032
+#define wxID_BTN_MAP_EXPORT_BMP 1033
+#define wxID_BTN_TILES_CLEANUP 1034
+#define wxID_BTN_SPRITE_EDITOR 1035
+#define wxID_BTN_STAMPS_UPDATE 1036
+#define wxID_BTN_STAMPS_EXPORT_BMP 1037
+#define wxID_BTN_STAMPS_CLEANUP 1038
+#define wxID_BTN_PALETTES_MANAGEMENT 1039
+#define wxID_BTN_COL_GEN_BEZIER 1040
+#define wxID_BTN_COL_TILES_CLEANUP 1041
+#define wxID_BTN_COL_MAP_CLEAR 1042
+#define wxID_MENU_ANIMATION_IMPORT 1043
+#define wxID_MENU_ANIMATION_EXPORT 1044
+#define wxID_MENU_ANIMATION_CONVERT_RELATIVE 1045
+#define wxID_BTN_CANCEL 1046
+#define wxID_TOOL_COL_ADDTERRAINBEZIER 1047
+#define wxID_TOOL_COL_EDITTERRAINBEZIER 1048
+#define wxID_TOOL_COL_DELETETERRAINBEZIER 1049
+#define wxID_TOOL_COL_PAINTSOLID 1050
+#define wxID_TOOL_GENERATETERRAIN 1051
+#define wxID_MATCH 1052
+#define wxID_TOOL_SELECTSTAMP 1053
+#define wxID_TOOL_STAMP 1054
+#define wxID_TOOL_MOVESTAMP 1055
+#define wxID_TOOL_STAMPPICKER 1056
+#define wxID_TOOL_CREATESTAMP 1057
+#define wxID_TOOL_REMOVESTAMP 1058
+#define wxID_TOOL_COL_PAINTTERRAIN 1059
+#define wxID_TOOL_COL_PAINTHOLE 1060
+#define wxID_TOOL_COL_DELETETERRTILE 1061
+#define wxID_TOOL_SELECTTILE 1062
+#define wxID_TOOL_PAINT 1063
+#define wxID_TOOL_TILEPICKER 1064
+#define wxID_TOOL_FLIPX 1065
+#define wxID_TOOL_FLIPY 1066
+#define wxID_TOOL_FILL 1067
+#define wxID_TOOL_CLONE 1068
+#define wxID_TOOL_CREATE_SCENE_ANIM 1069
+#define wxID_TOOL_COPY_TO_NEW_MAP 1070
+#define wxID_TOOL_SELECTGAMEOBJ 1071
+#define wxID_TOOL_PLACEGAMEOBJ 1072
+#define wxID_TOOL_ANIMATEGAMEOBJ 1073
+#define wxID_TOOL_REMOVEGAMEOBJ 1074
+#define wxID_TOOL_DRAWGAMEOBJ 1075
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Class MainWindowBase
@@ -162,6 +163,7 @@ class MainWindowBase : public wxFrame
 		virtual void OnBtnProjNew( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnProjOpen( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnProjSave( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnBtnProjAssets( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnProjSettings( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnBuildExport( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnBuildAssemble( wxCommandEvent& event ) { event.Skip(); }
@@ -1393,15 +1395,6 @@ class DialogAssetsBase : public wxDialog
 		wxStaticText* m_txtPaletteActiveSlot;
 		wxStaticText* m_staticText94;
 		wxStaticText* m_txtPaletteUsageCount;
-		wxStaticBoxSizer* m_sizerSlots;
-		wxStaticText* m_staticText98;
-		wxChoice* m_choiceSlot0;
-		wxStaticText* m_staticText102;
-		wxChoice* m_choiceSlot1;
-		wxStaticText* m_staticText103;
-		wxChoice* m_choiceSlot2;
-		wxStaticText* m_staticText104;
-		wxChoice* m_choiceSlot3;
 		wxPanel* m_panelTilesets;
 		wxStaticText* m_staticText1261;
 		wxListBox* m_listTilesets;
@@ -1451,6 +1444,30 @@ class DialogAssetsBase : public wxDialog
 		wxDirPickerCtrl* m_dirPickerStampsImg;
 		wxStaticBoxSizer* m_sizerStamps;
 		StampsPanel* m_canvasStamps;
+		wxPanel* m_tabMaps;
+		wxStaticText* m_staticText1811;
+		wxListBox* m_listMaps;
+		wxButton* m_btnImportMap;
+		wxButton* m_btnExportMap;
+		wxButton* m_btnRenameMap;
+		wxButton* m_btnDeleteMap;
+		wxStaticText* m_staticText882;
+		wxStaticText* m_txtMapName;
+		wxStaticText* m_staticText902;
+		wxStaticText* m_txtMapId;
+		wxStaticText* m_staticText922;
+		wxStaticText* m_txtMapTileset;
+		wxStaticText* m_staticText942;
+		wxStaticText* m_txtMapStampSet;
+		wxStaticBoxSizer* m_sizerSlots;
+		wxStaticText* m_staticText98;
+		wxChoice* m_choiceSlot0;
+		wxStaticText* m_staticText102;
+		wxChoice* m_choiceSlot1;
+		wxStaticText* m_staticText103;
+		wxChoice* m_choiceSlot2;
+		wxStaticText* m_staticText104;
+		wxChoice* m_choiceSlot3;
 
 		// Virtual event handlers, override them in your derived class
 		virtual void OnTabChanged( wxNotebookEvent& event ) { event.Skip(); }
@@ -1459,10 +1476,6 @@ class DialogAssetsBase : public wxDialog
 		virtual void OnBtnExportPalette( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnRenamePalette( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnDeletePalette( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnListSlot0( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnListSlot1( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnListSlot2( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnListSlot3( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnListTileset( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnNewTileset( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnDeleteTileset( wxCommandEvent& event ) { event.Skip(); }
@@ -1477,16 +1490,25 @@ class DialogAssetsBase : public wxDialog
 		virtual void OnBtnScanStampSet( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBrowseStampsImg( wxFileDirPickerEvent& event ) { event.Skip(); }
 		virtual void OnBrowseStampsImgDir( wxFileDirPickerEvent& event ) { event.Skip(); }
+		virtual void OnListMap( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnBtnImportMap( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnBtnExportMap( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnBtnRenameMap( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnBtnDeleteMap( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnListSlot0( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnListSlot1( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnListSlot2( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnListSlot3( wxCommandEvent& event ) { event.Skip(); }
 
 
 	public:
 		PaletteViewCtrl* m_paletteViewSelected;
+		PaletteViewCtrl* m_paletteViewTiles;
+		PaletteViewCtrl* m_paletteViewStamps;
 		PaletteViewCtrl* m_paletteViewSlot0;
 		PaletteViewCtrl* m_paletteViewSlot1;
 		PaletteViewCtrl* m_paletteViewSlot2;
 		PaletteViewCtrl* m_paletteViewSlot3;
-		PaletteViewCtrl* m_paletteViewTiles;
-		PaletteViewCtrl* m_paletteViewStamps;
 
 		DialogAssetsBase( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("Asset Management"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 768,691 ), long style = wxDEFAULT_DIALOG_STYLE );
 

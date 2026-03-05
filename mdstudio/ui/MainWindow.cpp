@@ -2194,6 +2194,12 @@ void MainWindow::OnBtnProjSave(wxCommandEvent& event)
 	}
 }
 
+void MainWindow::OnBtnProjAssets(wxCommandEvent& event)
+{
+	DialogAssetManagement dlg(*this, *m_project, *m_renderer, *m_context, *m_renderResources, DialogAssetManagement::Tab::Tilesets);
+	dlg.ShowModal();
+}
+
 void MainWindow::OnBtnProjSettings(wxCommandEvent& event)
 {
 	if(m_project.get())
@@ -2513,10 +2519,10 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 
 				for (int i = 0; i < m_project->GetEditingMap().GetNumPaletteSlots(); i++)
 				{
-					const Palette* palette = m_project->GetPalette(m_project->GetEditingMap().GetPaletteFromSlot(i));
-					if (palette->GetUsedColourMask() > 0)
+					const Palette& palette = m_project->GetPalette(m_project->GetEditingMap().GetPaletteFromSlot(i));
+					if (palette.GetUsedColourMask() > 0)
 					{
-						palettes.push_back(*palette);
+						palettes.push_back(palette);
 					}
 				}
 
@@ -2537,7 +2543,7 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 			}
 
 			//Export Luminary tilesets
-			for (const auto tileset : m_project->GetTilesets())
+			for (const auto& tileset : m_project->GetTilesets())
 			{
 				std::string tileSetName = tileset.second.GetName();
 				std::string fnamePrefix = ion::string::ToUpper(scenesExportDir + "\\" + tileset.second.GetName());
@@ -2550,7 +2556,7 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 				}
 			}
 
-			for (const auto stampSet : m_project->GetStampSets())
+			for (const auto& stampSet : m_project->GetStampSets())
 			{
 				std::string stampSetName = stampSet.second.GetName();
 				std::string fnamePrefix = ion::string::ToUpper(scenesExportDir + "\\" + stampSet.second.GetName());
@@ -3278,7 +3284,7 @@ void MainWindow::OnBtnStampsCleanup(wxCommandEvent& event)
 
 void MainWindow::OnBtnPaletteManager(wxCommandEvent& event)
 {
-	DialogAssetManagement dlg(*this, *m_project, *m_renderer, *m_context, *m_renderResources);
+	DialogAssetManagement dlg(*this, *m_project, *m_renderer, *m_context, *m_renderResources, DialogAssetManagement::Tab::Palettes);
 	dlg.ShowModal();
 }
 

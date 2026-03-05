@@ -15,7 +15,7 @@
 #include "TilesPanel.h"
 #include "MainWindow.h"
 
-DialogAssetManagement::DialogAssetManagement(MainWindow& mainWindow, Project& project, ion::render::Renderer& renderer, wxGLContext& glContext, RenderResources& renderResources)
+DialogAssetManagement::DialogAssetManagement(MainWindow& mainWindow, Project& project, ion::render::Renderer& renderer, wxGLContext& glContext, RenderResources& renderResources, Tab tab)
 	: DialogAssetsBase((wxWindow*)&mainWindow)
 	, m_project(project)
 	, m_mainWindow(mainWindow)
@@ -29,17 +29,18 @@ DialogAssetManagement::DialogAssetManagement(MainWindow& mainWindow, Project& pr
 	m_canvasStamps->SetMainWindow(&mainWindow);
 	m_canvasStamps->SetupRendering(&renderer, &glContext, &renderResources);
 
-	const Map& editingMap = project.GetEditingMap();
-	m_sizerSlots->GetStaticBox()->SetLabel("Active Slots (Map \'" + editingMap.GetName() + "\')");
-
 	// Populate all tabs
 	PopulatePalettes();
 	PopulateTilesets();
 	PopulateStampSets();
+	PopulateMaps();
 
 	SelectPalette(0);
 	SelectTileset(0);
 	SelectStampSet(0);
+	SelectMap(0);
+
+	m_tabs->ChangeSelection((int)tab);
 
 	Refresh();
 }
@@ -53,42 +54,16 @@ void DialogAssetManagement::PopulatePalettes()
 
 	const auto& palettes = m_project.GetPalettes();
 
-	for (const auto palette : palettes)
+	for (const auto& palette : palettes)
 	{
 		m_listPalettes->Append(palette.second.GetName());
 		m_choiceTilesetPalette->Append(palette.second.GetName());
-		m_populatedPalettes.push_back(std::make_pair(palette.first, palette.second));
+		m_populatedPalettes.push_back(palette.first);
 	}
 
 	if (index >= 0 && index < m_populatedPalettes.size())
 	{
 		m_listPalettes->SetSelection(index);
-	}
-
-	PaletteViewCtrl* views[4] = { m_paletteViewSlot0, m_paletteViewSlot1, m_paletteViewSlot2, m_paletteViewSlot3 };
-	wxChoice* lists[4] = { m_choiceSlot0, m_choiceSlot1, m_choiceSlot2, m_choiceSlot3 };
-
-	for (int i = 0; i < 4; i++)
-	{
-		lists[i]->Clear();
-
-		PaletteId id = m_project.GetEditingMap().GetPaletteFromSlot(i);
-		if (id == InvalidPaletteId)
-		{
-			views[i]->SetPalette(Palette());
-		}
-		else
-		{
-			const Palette* palette = m_project.GetPalette(id);
-			views[i]->SetPalette(*palette);
-		}
-
-		for (const auto palette : palettes)
-		{
-			lists[i]->Append(palette.second.GetName());
-			if (palette.first == id)
-				lists[i]->SetSelection(i);
-		}
 	}
 }
 
@@ -101,7 +76,7 @@ void DialogAssetManagement::PopulateTilesets()
 
 	const auto& tilesets = m_project.GetTilesets();
 
-	for (const auto tileset : tilesets)
+	for (const auto& tileset : tilesets)
 	{
 		m_listTilesets->Append(tileset.second.GetName());
 		m_populatedTilesets.push_back(tileset.first);
@@ -122,7 +97,7 @@ void DialogAssetManagement::PopulateStampSets()
 
 	const auto& stampSets = m_project.GetStampSets();
 
-	for (const auto stampSet : stampSets)
+	for (const auto& stampSet : stampSets)
 	{
 		m_listStampSets->Append(stampSet.second.GetName());
 		m_populatedStampSets.push_back(stampSet.first);
@@ -134,14 +109,35 @@ void DialogAssetManagement::PopulateStampSets()
 	}
 }
 
+void DialogAssetManagement::PopulateMaps()
+{
+	int index = m_listMaps->GetSelection();
+
+	m_populatedMaps.clear();
+	m_listMaps->Clear();
+
+	const auto& maps = m_project.GetMaps();
+
+	for (const auto& map : maps)
+	{
+		m_listMaps->Append(map.second.GetName());
+		m_populatedMaps.push_back(map.first);
+	}
+
+	if (index >= 0 && index < m_populatedMaps.size())
+	{
+		m_listMaps->SetSelection(index);
+	}
+}
+
 void DialogAssetManagement::SelectPalette(int index)
 {
 	if (index >= 0 && index < m_populatedPalettes.size())
 	{
 		m_listPalettes->SetSelection(index);
 
-		PaletteId paletteId = m_populatedPalettes[index].first;
-		const Palette& palette = m_populatedPalettes[index].second;
+		PaletteId paletteId = m_populatedPalettes[index];
+		const Palette& palette = m_project.GetPalette(paletteId);
 		m_paletteViewSelected->SetPalette(palette);
 		m_txtPaletteName->SetLabelText(palette.GetName());
 		m_txtPaletteId->SetLabelText(std::to_string(paletteId));
@@ -176,14 +172,14 @@ void DialogAssetManagement::SelectTileset(int index)
 		const Tileset& tileset = m_project.GetTileset(tilesetId);
 
 		PaletteId paletteId = tileset.GetPaletteId();
-		const Palette* palette = m_project.GetPalette(paletteId);
+		const Palette palette = m_project.GetPalette(paletteId);
 
 		m_canvasTiles->SetTilesetId(tilesetId);
-		m_paletteViewTiles->SetPalette(*palette);
+		m_paletteViewTiles->SetPalette(palette);
 
 		m_txtTilesetName->SetLabelText(tileset.GetName());
 		m_txtTilesetId->SetLabelText(std::to_string(tilesetId));
-		m_txtTilesetPalette->SetLabelText(palette->GetName());
+		m_txtTilesetPalette->SetLabelText(palette.GetName());
 		m_txtTilesetCount->SetLabelText(std::to_string(tileset.GetCount()));
 
 		std::vector<StampSetId> stampSets;
@@ -204,14 +200,14 @@ void DialogAssetManagement::SelectStampSet(int index)
 		const Tileset& tileset = m_project.GetTileset(tilesetId);
 
 		PaletteId paletteId = tileset.GetPaletteId();
-		const Palette* palette = m_project.GetPalette(paletteId);
+		const Palette& palette = m_project.GetPalette(paletteId);
 
 		m_canvasStamps->SetStampSetId(stampSetId);
-		m_paletteViewStamps->SetPalette(*palette);
+		m_paletteViewStamps->SetPalette(palette);
 
 		m_txtStampSetName->SetLabelText(stampSet.GetName());
 		m_txtStampSetId->SetLabelText(std::to_string(stampSetId));
-		m_txtStampSetPalette->SetLabelText(palette->GetName());
+		m_txtStampSetPalette->SetLabelText(palette.GetName());
 		m_txtStampSetTileset->SetLabelText(tileset.GetName());
 
 		std::vector<MapId> maps;
@@ -221,14 +217,70 @@ void DialogAssetManagement::SelectStampSet(int index)
 	}
 }
 
+void DialogAssetManagement::SelectMap(int index)
+{
+	if (index >= 0 && index < m_populatedMaps.size())
+	{
+		m_listMaps->SetSelection(index);
+
+		MapId mapId = m_populatedMaps[index];
+		const Map& map = m_project.GetMap(mapId);
+
+		PaletteViewCtrl* views[4] = { m_paletteViewSlot0, m_paletteViewSlot1, m_paletteViewSlot2, m_paletteViewSlot3 };
+		wxChoice* lists[4] = { m_choiceSlot0, m_choiceSlot1, m_choiceSlot2, m_choiceSlot3 };
+
+		for (int i = 0; i < 4; i++)
+		{
+			lists[i]->Clear();
+
+			if (map.IsBackgroundMap())
+			{
+				lists[i]->Disable();
+			}
+			else
+			{
+				lists[i]->Enable();
+
+				PaletteId id = map.GetPaletteFromSlot(i);
+				if (id == InvalidPaletteId)
+				{
+					views[i]->SetPalette(Palette());
+				}
+				else
+				{
+					const Palette& palette = m_project.GetPalette(id);
+					views[i]->SetPalette(palette);
+				}
+
+				for (PaletteId paletteId : m_populatedPalettes)
+				{
+					const Palette& palette = m_project.GetPalette(paletteId);
+					lists[i]->Append(palette.GetName());
+					if (paletteId == id)
+						lists[i]->SetSelection(i);
+				}
+			}
+		}
+	}
+}
+
 void DialogAssetManagement::AssignPalette(int index, int slotIndex)
 {
-	PaletteViewCtrl* views[4] = { m_paletteViewSlot0, m_paletteViewSlot1, m_paletteViewSlot2, m_paletteViewSlot3 };
-	PaletteId paletteId = m_populatedPalettes[index].first;
-	const Palette& palette = m_populatedPalettes[index].second;
-	views[slotIndex]->SetPalette(palette);
-	m_project.GetEditingMap().AssignPaletteToSlot(paletteId, slotIndex);
-	Refresh();
+	int mapIdx = m_listMaps->GetSelection();
+	if (mapIdx >= 0 && mapIdx < m_populatedMaps.size())
+	{
+		MapId mapId = m_populatedMaps[mapIdx];
+		PaletteId paletteId = m_populatedPalettes[index];
+
+		Map& map = m_project.GetMap(mapId);
+		const Palette& palette = m_project.GetPalette(paletteId);
+
+		map.AssignPaletteToSlot(paletteId, slotIndex);
+
+		PaletteViewCtrl* views[4] = { m_paletteViewSlot0, m_paletteViewSlot1, m_paletteViewSlot2, m_paletteViewSlot3 };
+		views[slotIndex]->SetPalette(palette);
+		Refresh();
+	}
 }
 
 void DialogAssetManagement::OnTabChanged(wxNotebookEvent& event)
@@ -251,6 +303,11 @@ void DialogAssetManagement::OnListStampSet(wxCommandEvent& event)
 	SelectStampSet(m_listStampSets->GetSelection());
 }
 
+void DialogAssetManagement::OnListMap(wxCommandEvent& event)
+{
+	SelectMap(m_listMaps->GetSelection());
+}
+
 void DialogAssetManagement::OnListTilesetPalette(wxCommandEvent& event)
 {
 	int paletteIdx = m_choiceTilesetPalette->GetSelection();
@@ -258,9 +315,9 @@ void DialogAssetManagement::OnListTilesetPalette(wxCommandEvent& event)
 	if (   paletteIdx >= 0 && paletteIdx < m_populatedPalettes.size()
 		&& tilesetIdx >= 0 && tilesetIdx < m_populatedTilesets.size())
 	{
-		PaletteId paletteId = m_populatedPalettes[paletteIdx].first;
+		PaletteId paletteId = m_populatedPalettes[paletteIdx];
 		TilesetId tilesetId = m_populatedTilesets[tilesetIdx];
-		const Palette& palette = m_populatedPalettes[paletteIdx].second;
+		const Palette& palette = m_project.GetPalette(paletteId);
 		Tileset& tileset = m_project.GetTileset(tilesetId);
 
 		if (!m_project.CheckCompatibilityPaletteTileset(paletteId, tilesetId))
@@ -312,7 +369,8 @@ void DialogAssetManagement::OnBtnExportPalette(wxCommandEvent& event)
 	int index = m_listPalettes->GetSelection();
 	if (index >= 0 && index < m_populatedPalettes.size())
 	{
-		const Palette& palette = m_populatedPalettes[index].second;
+		PaletteId paletteId = m_populatedPalettes[index];
+		const Palette& palette = m_project.GetPalette(paletteId);
 
 		wxFileDialog fileDlg(this, _("Save BMP file"), "", "", "BMP files (*.bmp)|*.bmp", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
 		if (fileDlg.ShowModal() == wxID_OK)
@@ -353,14 +411,14 @@ void DialogAssetManagement::OnBtnRenamePalette(wxCommandEvent& event)
 	int index = m_listPalettes->GetSelection();
 	if (index >= 0 && index < m_populatedPalettes.size())
 	{
-		wxTextEntryDialog dlg(this, "Rename palette", "Rename palette", m_populatedPalettes[index].second.GetName());
+		PaletteId paletteId = m_populatedPalettes[index];
+		Palette& palette = m_project.GetPalette(paletteId);
+
+		wxTextEntryDialog dlg(this, "Rename palette", "Rename palette", palette.GetName());
 		if (dlg.ShowModal() == wxID_OK)
 		{
-			if (Palette* palette = m_project.GetPalette(m_populatedPalettes[index].first))
-			{
-				palette->SetName(dlg.GetValue().c_str().AsChar());
-				PopulatePalettes();
-			}
+			palette.SetName(dlg.GetValue().c_str().AsChar());
+			PopulatePalettes();
 		}
 	}
 }
@@ -370,8 +428,8 @@ void DialogAssetManagement::OnBtnDeletePalette(wxCommandEvent& event)
 	int index = m_listPalettes->GetSelection();
 	if (index >= 0 && index < m_populatedPalettes.size())
 	{
-		PaletteId paletteId = m_populatedPalettes[index].first;
-		const Palette* palette = m_project.GetPalette(paletteId);
+		PaletteId paletteId = m_populatedPalettes[index];
+		const Palette& palette = m_project.GetPalette(paletteId);
 
 		std::vector<TilesetId> tilesets;
 		std::vector<std::pair<ActorId, SpriteSheetId>> spriteSheets;
@@ -380,7 +438,7 @@ void DialogAssetManagement::OnBtnDeletePalette(wxCommandEvent& event)
 
 		if (usageCount > 0)
 		{
-			std::string msg = "Cannot delete in-use palette " + palette->GetName() + "\n";
+			std::string msg = "Cannot delete in-use palette " + palette.GetName() + "\n";
 			
 			if (tilesets.size() > 0)
 			{
@@ -399,7 +457,7 @@ void DialogAssetManagement::OnBtnDeletePalette(wxCommandEvent& event)
 			{
 				msg += "\nUsed by sprite sheet(s):\n\n";
 
-				for (const auto it : spriteSheets)
+				for (const auto& it : spriteSheets)
 				{
 					const Actor* actor = m_project.GetActor(it.first);
 					const SpriteSheet* spriteSheet = actor->GetSpriteSheet(it.second);
@@ -411,7 +469,7 @@ void DialogAssetManagement::OnBtnDeletePalette(wxCommandEvent& event)
 			{
 				msg += "\nAssigned to slot(s) in map(s):\n\n";
 
-				for (const auto mapId : maps)
+				for (const auto& mapId : maps)
 				{
 					const Map& map = m_project.GetMap(mapId);
 					msg += " " + map.GetName() + "\n";

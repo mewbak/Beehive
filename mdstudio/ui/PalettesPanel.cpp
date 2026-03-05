@@ -487,7 +487,7 @@ void PalettesPanel::OnPaint(wxPaintEvent& event)
 	for(int i = 0; i < editingMap.GetNumPaletteSlots(); i++)
 	{
 		PaletteId paletteId = editingMap.GetPaletteFromSlot(i);
-		const Palette* palette = (editingMap.GetPaletteFromSlot(i) != InvalidPaletteId) ? m_project.GetPalette(editingMap.GetPaletteFromSlot(i)) : nullptr;
+		const Palette& palette = (paletteId != InvalidPaletteId) ? m_project.GetPalette(editingMap.GetPaletteFromSlot(i)) : Palette();
 
 		for (int j = 0; j < Palette::coloursPerPalette; j++)
 		{
@@ -496,9 +496,9 @@ void PalettesPanel::OnPaint(wxPaintEvent& event)
 
 			wxBrush brush;
 
-			if (palette && palette->IsColourUsed(j))
+			if (paletteId != InvalidPaletteId && palette.IsColourUsed(j))
 			{
-				const Colour& colour = palette->GetColour(j);
+				const Colour& colour = palette.GetColour(j);
 				brush.SetColour(wxColour(colour.GetRed(), colour.GetGreen(), colour.GetBlue()));
 			}
 			else

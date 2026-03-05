@@ -86,7 +86,7 @@ void MapListPanel::OnMapRightClick(wxListEvent& event)
 
 	m_stampSetIds.clear();
 
-	for (const auto stampSet : m_project.GetStampSets())
+	for (const auto& stampSet : m_project.GetStampSets())
 	{
 		stampSetsMenu->Append(Flag_StampSet | (int)m_stampSetIds.size(), stampSet.second.GetName());
 		m_stampSetIds.push_back(stampSet.first);

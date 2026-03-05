@@ -21,7 +21,15 @@
 class DialogAssetManagement : public DialogAssetsBase
 {
 public:
-	DialogAssetManagement(MainWindow& mainWindow, Project& project, ion::render::Renderer& renderer, wxGLContext& glContext, RenderResources& renderResources);
+	enum class Tab
+	{
+		Palettes,
+		Tilesets,
+		Stampsets,
+		Maps
+	};
+
+	DialogAssetManagement(MainWindow& mainWindow, Project& project, ion::render::Renderer& renderer, wxGLContext& glContext, RenderResources& renderResources, Tab tab = Tab::Palettes);
 
 	virtual void OnTabChanged(wxNotebookEvent& event);
 
@@ -31,10 +39,6 @@ public:
 	virtual void OnBtnExportPalette(wxCommandEvent& event);
 	virtual void OnBtnRenamePalette(wxCommandEvent& event);
 	virtual void OnBtnDeletePalette(wxCommandEvent& event);
-	virtual void OnListSlot0(wxCommandEvent& event);
-	virtual void OnListSlot1(wxCommandEvent& event);
-	virtual void OnListSlot2(wxCommandEvent& event);
-	virtual void OnListSlot3(wxCommandEvent& event);
 
 	// Tilesets tab
 	virtual void OnListTilesets(wxCommandEvent& event);
@@ -43,14 +47,23 @@ public:
 	// Stamp sets tab
 	virtual void OnListStampSet(wxCommandEvent& event);
 
+	// Maps tab
+	virtual void OnListMap(wxCommandEvent& event);
+	virtual void OnListSlot0(wxCommandEvent& event);
+	virtual void OnListSlot1(wxCommandEvent& event);
+	virtual void OnListSlot2(wxCommandEvent& event);
+	virtual void OnListSlot3(wxCommandEvent& event);
+
 private:
 	void PopulatePalettes();
 	void PopulateTilesets();
 	void PopulateStampSets();
+	void PopulateMaps();
 
 	void SelectPalette(int index);
 	void SelectTileset(int index);
 	void SelectStampSet(int index);
+	void SelectMap(int index);
 
 	void AssignPalette(int index, int slotIndex);
 
@@ -63,7 +76,9 @@ private:
 	Project& m_project;
 	MainWindow& m_mainWindow;
 
-	std::vector<std::pair<PaletteId, Palette>> m_populatedPalettes;
+	std::vector<PaletteId> m_populatedPalettes;
 	std::vector<TilesetId> m_populatedTilesets;
 	std::vector<StampSetId> m_populatedStampSets;
+	std::vector<MapId> m_populatedMaps;
+	std::vector<PaletteId> m_populatedMapPalettes;
 };

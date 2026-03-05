@@ -13,7 +13,7 @@ void PaletteViewCtrl::SetPalette(const Palette& palette)
 	for (int i = 0; i < s_numColours; i++)
 	{
 		if (palette.IsColourUsed(i))
-			m_brushes[i] = wxBrush(wxColour(palette.GetColour(i).rgb));
+			m_brushes[i] = wxBrush(wxColour(palette.GetColour(i).GetRed(), palette.GetColour(i).GetGreen(), palette.GetColour(i).GetBlue()));
 		else
 			m_brushes[i] = wxBrush(wxColour(255,0,0), wxBRUSHSTYLE_CROSSDIAG_HATCH);
 	}

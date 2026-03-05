@@ -58,6 +58,8 @@ private:
 	int GetTilesetUsage(TilesetId tilesetId, std::vector<StampSetId>& stampSets) const;
 	int GetStampSetUsage(StampSetId stampSetId, std::vector<MapId>& maps) const;
 
+	void ShowImportError(Project::ImportResult result, const std::string& filename) const;
+
 	Project& m_project;
 	MainWindow& m_mainWindow;
 

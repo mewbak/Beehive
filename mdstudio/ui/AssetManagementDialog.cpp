@@ -287,34 +287,65 @@ void DialogAssetManagement::OnBtnImportPalette(wxCommandEvent& event)
 	wxFileDialog fileDlg(this, _("Open image files"), "", "", "PNG files (*.png)|*.png|BMP files (*.bmp)|*.bmp", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
 	if (fileDlg.ShowModal() == wxID_OK)
 	{
-		//Read BMP
+		//Import palette
 		std::string filename = fileDlg.GetPath().c_str().AsChar();
-		std::string name = filename.substr(filename.find_last_of("/\\") + 1);
-		ion::ImageFormat* reader = ion::ImageFormat::CreateReader(ion::string::GetFileExtension(filename));
-		if (reader && reader->Read(filename))
+		Palette palette;
+		Project::ImportResult result = m_project.ImportPaletteFromImage(filename, palette);
+
+		if (result != Project::ImportResult::Success)
 		{
-			//Import palette
-			Palette palette(name);
-
-			for (int i = 0; i < reader->GetPaletteSize(); i++)
-			{
-				ion::ImageFormat::Colour colour = reader->GetPaletteEntry(i);
-				palette.AddColour(Colour(colour.r, colour.g, colour.b));
-			}
-
-			//Match with existing or create new
-			MatchPaletteDialog matchDlg(this, m_project, palette, InvalidPaletteId);
-			matchDlg.ShowModal();
-
-			PopulatePalettes();
-			SelectPalette(m_populatedPalettes.size() - 1);
+			ShowImportError(result, filename);
+			return;
 		}
+
+		//Match with existing or create new
+		MatchPaletteDialog matchDlg(this, m_project, palette, InvalidPaletteId);
+		matchDlg.ShowModal();
+
+		PopulatePalettes();
+		SelectPalette(m_populatedPalettes.size() - 1);
 	}
 }
 
 void DialogAssetManagement::OnBtnExportPalette(wxCommandEvent& event)
 {
-	wxMessageBox("Unimplemented, sorry", "Error");
+	int index = m_listPalettes->GetSelection();
+	if (index >= 0 && index < m_populatedPalettes.size())
+	{
+		const Palette& palette = m_populatedPalettes[index].second;
+
+		wxFileDialog fileDlg(this, _("Save BMP file"), "", "", "BMP files (*.bmp)|*.bmp", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
+		if (fileDlg.ShowModal() == wxID_OK)
+		{
+			ion::ImageFormatBMP writer(ion::ImageFormat::BitFormat::eIndexed16Colour);
+
+			for (int i = 0; i < Palette::coloursPerPalette; i++)
+			{
+				Colour colour(0, 0, 0);
+				if (palette.IsColourUsed(i))
+					colour = palette.GetColour(i);
+				writer.SetPaletteEntry(i, ion::ImageFormat::Colour(colour.GetRed(), colour.GetGreen(), colour.GetBlue()));
+			}
+
+			const int blockWidth = 32;
+			const int blockHeight = 32;
+
+			writer.SetDimensions(blockWidth * Palette::coloursPerPalette, blockHeight);
+
+			for (int x = 0; x < blockWidth * Palette::coloursPerPalette; x++)
+			{
+				for (int y = 0; y < blockHeight; y++)
+				{
+					u8 index = x / blockWidth;
+					writer.SetColourIndex(x, y, index);
+				}
+			}
+
+			std::string filename = fileDlg.GetPath().c_str().AsChar();
+			if (!writer.Write(filename))
+				wxMessageBox("Error exporting palette to image '" + filename + "'", "Error");
+		}
+	}
 }
 
 void DialogAssetManagement::OnBtnRenamePalette(wxCommandEvent& event)
@@ -465,4 +496,32 @@ int DialogAssetManagement::GetStampSetUsage(StampSetId stampSetId, std::vector<M
 	}
 
 	return maps.size();
+}
+
+void DialogAssetManagement::ShowImportError(Project::ImportResult result, const std::string& filename) const
+{
+	std::string msg = "Error importing file '" + filename + "'\n\n";
+
+	switch (result)
+	{
+	case Project::ImportResult::Success:
+		return;
+	case Project::ImportResult::FileNotFound:
+		msg += "File not found";
+		break;
+	case Project::ImportResult::InvalidFileFormat:
+		msg += "File format not supported";
+		break;
+	case Project::ImportResult::BadHeader:
+		msg += "Bad file header or unsupported format";
+		break;
+	case Project::ImportResult::ImageNotIndexed16:
+		msg += "Image is not 16 colour indexed";
+		break;
+	case Project::ImportResult::PaletteMismatch:
+		msg += "Palette does not match image to be replaced";
+		break;
+	}
+
+	wxMessageBox(msg, "Error");
 }

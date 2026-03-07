@@ -86,7 +86,7 @@ private:
 class MatchPaletteDialog : public DialogMatchPalette
 {
 public:
-	MatchPaletteDialog(wxWindow* parent, Project& project, const Palette& paletteToMatch, PaletteId currentPaletteId);
+	MatchPaletteDialog(wxWindow* parent, Project& project, const Palette& paletteToMatch, PaletteId currentPaletteId, const std::string& defaultName);
 
 	virtual void OnChoicePalette(wxCommandEvent& event);
 	virtual void OnBtnMatch(wxCommandEvent& event);
@@ -98,4 +98,5 @@ public:
 	Palette m_paletteToMatch;
 	PaletteId m_selectedPaletteId;
 	std::vector<std::pair<PaletteId, Palette>> m_matches;
+	const std::string m_defaultName;
 };

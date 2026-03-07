@@ -658,7 +658,7 @@ void MainWindow::ScanStamps(const std::string& stampsDir)
 			if (fileList.size() > 0)
 			{
 				std::string dirname = subdir.c_str().AsChar();
-				std::string name = dirname.substr(dirname.find_last_of("/\\") + 1);
+				std::string name = ion::string::GetFilename(dirname);
 
 				//Find or create tileset
 				TilesetId tilsetId = m_project->FindTileset(name);
@@ -2196,7 +2196,7 @@ void MainWindow::OnBtnProjSave(wxCommandEvent& event)
 
 void MainWindow::OnBtnProjAssets(wxCommandEvent& event)
 {
-	DialogAssetManagement dlg(*this, *m_project, *m_renderer, *m_context, *m_renderResources, DialogAssetManagement::Tab::Tilesets);
+	DialogAssetManagement dlg(*this, *m_project, *m_renderer, *m_context, *m_renderResources, DialogAssetManagement::Tab::Palettes);
 	dlg.ShowModal();
 }
 

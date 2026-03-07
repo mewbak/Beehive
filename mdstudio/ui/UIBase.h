@@ -1402,6 +1402,7 @@ class DialogAssetsBase : public wxDialog
 		wxButton* m_btnDeleteTileset;
 		wxButton* m_btnRenameTileset;
 		wxButton* m_btnScanTileset;
+		wxButton* m_bbtnExportTileset;
 		wxStaticText* m_staticText8811;
 		wxStaticText* m_txtTilesetName;
 		wxStaticText* m_staticText9011;
@@ -1423,8 +1424,9 @@ class DialogAssetsBase : public wxDialog
 		wxListBox* m_listStampSets;
 		wxButton* m_btnNewStampSet;
 		wxButton* m_btnDeleteStampSet;
-		wxButton* m_btnRenameStampSet;
 		wxButton* m_btnScanStampSet;
+		wxButton* m_btnExportStampSet;
+		wxButton* m_btnRenameStampSet;
 		wxStaticText* m_staticText881;
 		wxStaticText* m_txtStampSetName;
 		wxStaticText* m_staticText901;
@@ -1437,11 +1439,8 @@ class DialogAssetsBase : public wxDialog
 		wxStaticText* m_txtStampSetTileset;
 		wxStaticText* m_staticText9411;
 		wxStaticText* m_txtStampSetUsageCount;
-		wxRadioBox* m_stampSetSource;
 		wxStaticText* m_staticText127;
 		wxFilePickerCtrl* m_filePickerStampsImg;
-		wxStaticText* m_staticText219;
-		wxDirPickerCtrl* m_dirPickerStampsImg;
 		wxStaticBoxSizer* m_sizerStamps;
 		StampsPanel* m_canvasStamps;
 		wxPanel* m_tabMaps;
@@ -1459,6 +1458,8 @@ class DialogAssetsBase : public wxDialog
 		wxStaticText* m_txtMapTileset;
 		wxStaticText* m_staticText942;
 		wxStaticText* m_txtMapStampSet;
+		wxStaticText* m_staticText246;
+		wxChoice* m_choiceBgMap;
 		wxStaticBoxSizer* m_sizerSlots;
 		wxStaticText* m_staticText98;
 		wxChoice* m_choiceSlot0;
@@ -1481,20 +1482,22 @@ class DialogAssetsBase : public wxDialog
 		virtual void OnBtnDeleteTileset( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnRenameTileset( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnScanTileset( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnBtnExportTileset( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBrowseTilesImg( wxFileDirPickerEvent& event ) { event.Skip(); }
 		virtual void OnListTilesetPalette( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnListStampSet( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnNewStampSet( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnDeleteStampSet( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnBtnRenameStampSet( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnScanStampSet( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnBtnExportStampSet( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnBtnRenameStampSet( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBrowseStampsImg( wxFileDirPickerEvent& event ) { event.Skip(); }
-		virtual void OnBrowseStampsImgDir( wxFileDirPickerEvent& event ) { event.Skip(); }
 		virtual void OnListMap( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnImportMap( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnExportMap( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnRenameMap( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnDeleteMap( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnBackgroundMap( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnListSlot0( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnListSlot1( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnListSlot2( wxCommandEvent& event ) { event.Skip(); }

@@ -3997,7 +3997,7 @@ DialogAssetsBase::DialogAssetsBase( wxWindow* parent, wxWindowID id, const wxStr
 	m_tabPalettes->SetSizer( fgSizer71 );
 	m_tabPalettes->Layout();
 	fgSizer71->Fit( m_tabPalettes );
-	m_tabs->AddPage( m_tabPalettes, wxT("Palettes"), true );
+	m_tabs->AddPage( m_tabPalettes, wxT("Palettes"), false );
 	m_panelTilesets = new wxPanel( m_tabs, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxFlexGridSizer* fgSizer7111;
 	fgSizer7111 = new wxFlexGridSizer( 2, 1, 0, 0 );
@@ -4044,7 +4044,7 @@ DialogAssetsBase::DialogAssetsBase( wxWindow* parent, wxWindowID id, const wxStr
 	sbSizer311 = new wxStaticBoxSizer( new wxStaticBox( m_panelTilesets, wxID_ANY, wxT("Manage") ), wxVERTICAL );
 
 	wxFlexGridSizer* fgSizer7511;
-	fgSizer7511 = new wxFlexGridSizer( 2, 2, 0, 0 );
+	fgSizer7511 = new wxFlexGridSizer( 0, 2, 0, 0 );
 	fgSizer7511->SetFlexibleDirection( wxBOTH );
 	fgSizer7511->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 
@@ -4059,6 +4059,9 @@ DialogAssetsBase::DialogAssetsBase( wxWindow* parent, wxWindowID id, const wxStr
 
 	m_btnScanTileset = new wxButton( sbSizer311->GetStaticBox(), wxID_ANY, wxT("Re-scan"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer7511->Add( m_btnScanTileset, 0, wxALL, 5 );
+
+	m_bbtnExportTileset = new wxButton( sbSizer311->GetStaticBox(), wxID_ANY, wxT("Export"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizer7511->Add( m_bbtnExportTileset, 0, wxALL, 5 );
 
 
 	sbSizer311->Add( fgSizer7511, 1, wxEXPAND, 5 );
@@ -4234,7 +4237,7 @@ DialogAssetsBase::DialogAssetsBase( wxWindow* parent, wxWindowID id, const wxStr
 	sbSizer31 = new wxStaticBoxSizer( new wxStaticBox( m_tabStamps, wxID_ANY, wxT("Manage") ), wxVERTICAL );
 
 	wxFlexGridSizer* fgSizer751;
-	fgSizer751 = new wxFlexGridSizer( 2, 2, 0, 0 );
+	fgSizer751 = new wxFlexGridSizer( 0, 2, 0, 0 );
 	fgSizer751->SetFlexibleDirection( wxBOTH );
 	fgSizer751->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 
@@ -4244,11 +4247,14 @@ DialogAssetsBase::DialogAssetsBase( wxWindow* parent, wxWindowID id, const wxStr
 	m_btnDeleteStampSet = new wxButton( sbSizer31->GetStaticBox(), wxID_ANY, wxT("Delete"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer751->Add( m_btnDeleteStampSet, 0, wxALL, 5 );
 
-	m_btnRenameStampSet = new wxButton( sbSizer31->GetStaticBox(), wxID_ANY, wxT("Rename"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer751->Add( m_btnRenameStampSet, 0, wxALL, 5 );
-
 	m_btnScanStampSet = new wxButton( sbSizer31->GetStaticBox(), wxID_ANY, wxT("Re-scan"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer751->Add( m_btnScanStampSet, 0, wxALL, 5 );
+
+	m_btnExportStampSet = new wxButton( sbSizer31->GetStaticBox(), wxID_ANY, wxT("Export"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizer751->Add( m_btnExportStampSet, 0, wxALL, 5 );
+
+	m_btnRenameStampSet = new wxButton( sbSizer31->GetStaticBox(), wxID_ANY, wxT("Rename"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizer751->Add( m_btnRenameStampSet, 0, wxALL, 5 );
 
 
 	sbSizer31->Add( fgSizer751, 1, wxEXPAND, 5 );
@@ -4328,12 +4334,6 @@ DialogAssetsBase::DialogAssetsBase( wxWindow* parent, wxWindowID id, const wxStr
 	wxBoxSizer* bSizer75;
 	bSizer75 = new wxBoxSizer( wxVERTICAL );
 
-	wxString m_stampSetSourceChoices[] = { wxT("File"), wxT("Directory") };
-	int m_stampSetSourceNChoices = sizeof( m_stampSetSourceChoices ) / sizeof( wxString );
-	m_stampSetSource = new wxRadioBox( m_tabStamps, wxID_ANY, wxT("Source"), wxDefaultPosition, wxDefaultSize, m_stampSetSourceNChoices, m_stampSetSourceChoices, 2, wxRA_SPECIFY_COLS );
-	m_stampSetSource->SetSelection( 0 );
-	bSizer75->Add( m_stampSetSource, 0, wxALL, 5 );
-
 	wxFlexGridSizer* fgSizer91;
 	fgSizer91 = new wxFlexGridSizer( 0, 2, 0, 0 );
 	fgSizer91->AddGrowableCol( 1 );
@@ -4348,15 +4348,6 @@ DialogAssetsBase::DialogAssetsBase( wxWindow* parent, wxWindowID id, const wxStr
 	m_filePickerStampsImg->SetMinSize( wxSize( 360,-1 ) );
 
 	fgSizer91->Add( m_filePickerStampsImg, 0, wxALL, 5 );
-
-	m_staticText219 = new wxStaticText( m_tabStamps, wxID_ANY, wxT("Image Directory:"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText219->Wrap( -1 );
-	fgSizer91->Add( m_staticText219, 0, wxALL|wxRIGHT, 5 );
-
-	m_dirPickerStampsImg = new wxDirPickerCtrl( m_tabStamps, wxID_ANY, wxEmptyString, wxT("Select a folder"), wxDefaultPosition, wxDefaultSize, wxDIRP_DEFAULT_STYLE );
-	m_dirPickerStampsImg->SetMinSize( wxSize( 360,-1 ) );
-
-	fgSizer91->Add( m_dirPickerStampsImg, 0, wxALL, 5 );
 
 
 	bSizer75->Add( fgSizer91, 1, wxEXPAND, 5 );
@@ -4389,7 +4380,7 @@ DialogAssetsBase::DialogAssetsBase( wxWindow* parent, wxWindowID id, const wxStr
 	m_tabStamps->SetSizer( fgSizer711 );
 	m_tabStamps->Layout();
 	fgSizer711->Fit( m_tabStamps );
-	m_tabs->AddPage( m_tabStamps, wxT("Stamps"), false );
+	m_tabs->AddPage( m_tabStamps, wxT("Stamps"), true );
 	m_tabMaps = new wxPanel( m_tabs, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxFlexGridSizer* fgSizer712;
 	fgSizer712 = new wxFlexGridSizer( 2, 1, 0, 0 );
@@ -4508,6 +4499,26 @@ DialogAssetsBase::DialogAssetsBase( wxWindow* parent, wxWindowID id, const wxStr
 
 	fgSizer732->Add( fgSizer742, 1, wxEXPAND, 5 );
 
+	wxFlexGridSizer* fgSizer159;
+	fgSizer159 = new wxFlexGridSizer( 0, 2, 0, 0 );
+	fgSizer159->AddGrowableCol( 1 );
+	fgSizer159->SetFlexibleDirection( wxBOTH );
+	fgSizer159->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+
+	m_staticText246 = new wxStaticText( m_tabMaps, wxID_ANY, wxT("Background map:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText246->Wrap( -1 );
+	fgSizer159->Add( m_staticText246, 0, wxALL, 5 );
+
+	wxArrayString m_choiceBgMapChoices;
+	m_choiceBgMap = new wxChoice( m_tabMaps, wxID_ANY, wxDefaultPosition, wxDefaultSize, m_choiceBgMapChoices, 0 );
+	m_choiceBgMap->SetSelection( 0 );
+	m_choiceBgMap->SetMinSize( wxSize( 360,-1 ) );
+
+	fgSizer159->Add( m_choiceBgMap, 0, wxALL, 5 );
+
+
+	fgSizer732->Add( fgSizer159, 1, wxEXPAND, 5 );
+
 
 	fgSizer722->Add( fgSizer732, 1, wxEXPAND, 5 );
 
@@ -4618,20 +4629,22 @@ DialogAssetsBase::DialogAssetsBase( wxWindow* parent, wxWindowID id, const wxStr
 	m_btnDeleteTileset->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnDeleteTileset ), NULL, this );
 	m_btnRenameTileset->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnRenameTileset ), NULL, this );
 	m_btnScanTileset->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnScanTileset ), NULL, this );
+	m_bbtnExportTileset->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnExportTileset ), NULL, this );
 	m_filePickerTilesImg->Connect( wxEVT_COMMAND_FILEPICKER_CHANGED, wxFileDirPickerEventHandler( DialogAssetsBase::OnBrowseTilesImg ), NULL, this );
 	m_choiceTilesetPalette->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DialogAssetsBase::OnListTilesetPalette ), NULL, this );
 	m_listStampSets->Connect( wxEVT_COMMAND_LISTBOX_SELECTED, wxCommandEventHandler( DialogAssetsBase::OnListStampSet ), NULL, this );
 	m_btnNewStampSet->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnNewStampSet ), NULL, this );
 	m_btnDeleteStampSet->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnDeleteStampSet ), NULL, this );
-	m_btnRenameStampSet->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnRenameStampSet ), NULL, this );
 	m_btnScanStampSet->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnScanStampSet ), NULL, this );
+	m_btnExportStampSet->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnExportStampSet ), NULL, this );
+	m_btnRenameStampSet->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnRenameStampSet ), NULL, this );
 	m_filePickerStampsImg->Connect( wxEVT_COMMAND_FILEPICKER_CHANGED, wxFileDirPickerEventHandler( DialogAssetsBase::OnBrowseStampsImg ), NULL, this );
-	m_dirPickerStampsImg->Connect( wxEVT_COMMAND_DIRPICKER_CHANGED, wxFileDirPickerEventHandler( DialogAssetsBase::OnBrowseStampsImgDir ), NULL, this );
 	m_listMaps->Connect( wxEVT_COMMAND_LISTBOX_SELECTED, wxCommandEventHandler( DialogAssetsBase::OnListMap ), NULL, this );
 	m_btnImportMap->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnImportMap ), NULL, this );
 	m_btnExportMap->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnExportMap ), NULL, this );
 	m_btnRenameMap->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnRenameMap ), NULL, this );
 	m_btnDeleteMap->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnDeleteMap ), NULL, this );
+	m_choiceBgMap->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DialogAssetsBase::OnBackgroundMap ), NULL, this );
 	m_choiceSlot0->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DialogAssetsBase::OnListSlot0 ), NULL, this );
 	m_choiceSlot1->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DialogAssetsBase::OnListSlot1 ), NULL, this );
 	m_choiceSlot2->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DialogAssetsBase::OnListSlot2 ), NULL, this );
@@ -4652,20 +4665,22 @@ DialogAssetsBase::~DialogAssetsBase()
 	m_btnDeleteTileset->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnDeleteTileset ), NULL, this );
 	m_btnRenameTileset->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnRenameTileset ), NULL, this );
 	m_btnScanTileset->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnScanTileset ), NULL, this );
+	m_bbtnExportTileset->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnExportTileset ), NULL, this );
 	m_filePickerTilesImg->Disconnect( wxEVT_COMMAND_FILEPICKER_CHANGED, wxFileDirPickerEventHandler( DialogAssetsBase::OnBrowseTilesImg ), NULL, this );
 	m_choiceTilesetPalette->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DialogAssetsBase::OnListTilesetPalette ), NULL, this );
 	m_listStampSets->Disconnect( wxEVT_COMMAND_LISTBOX_SELECTED, wxCommandEventHandler( DialogAssetsBase::OnListStampSet ), NULL, this );
 	m_btnNewStampSet->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnNewStampSet ), NULL, this );
 	m_btnDeleteStampSet->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnDeleteStampSet ), NULL, this );
-	m_btnRenameStampSet->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnRenameStampSet ), NULL, this );
 	m_btnScanStampSet->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnScanStampSet ), NULL, this );
+	m_btnExportStampSet->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnExportStampSet ), NULL, this );
+	m_btnRenameStampSet->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnRenameStampSet ), NULL, this );
 	m_filePickerStampsImg->Disconnect( wxEVT_COMMAND_FILEPICKER_CHANGED, wxFileDirPickerEventHandler( DialogAssetsBase::OnBrowseStampsImg ), NULL, this );
-	m_dirPickerStampsImg->Disconnect( wxEVT_COMMAND_DIRPICKER_CHANGED, wxFileDirPickerEventHandler( DialogAssetsBase::OnBrowseStampsImgDir ), NULL, this );
 	m_listMaps->Disconnect( wxEVT_COMMAND_LISTBOX_SELECTED, wxCommandEventHandler( DialogAssetsBase::OnListMap ), NULL, this );
 	m_btnImportMap->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnImportMap ), NULL, this );
 	m_btnExportMap->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnExportMap ), NULL, this );
 	m_btnRenameMap->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnRenameMap ), NULL, this );
 	m_btnDeleteMap->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnDeleteMap ), NULL, this );
+	m_choiceBgMap->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DialogAssetsBase::OnBackgroundMap ), NULL, this );
 	m_choiceSlot0->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DialogAssetsBase::OnListSlot0 ), NULL, this );
 	m_choiceSlot1->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DialogAssetsBase::OnListSlot1 ), NULL, this );
 	m_choiceSlot2->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DialogAssetsBase::OnListSlot2 ), NULL, this );

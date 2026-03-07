@@ -43,6 +43,12 @@ public:
 	// Tilesets tab
 	virtual void OnListTilesets(wxCommandEvent& event);
 	virtual void OnListTilesetPalette(wxCommandEvent& event);
+	virtual void OnBtnNewTileset(wxCommandEvent& event);
+	virtual void OnBtnDeleteTileset(wxCommandEvent& event);
+	virtual void OnBtnRenameTileset(wxCommandEvent& event);
+	virtual void OnBtnScanTileset(wxCommandEvent& event);
+	virtual void OnBtnExportTileset(wxCommandEvent& event);
+	virtual void OnBrowseTilesImg(wxFileDirPickerEvent& event);
 
 	// Stamp sets tab
 	virtual void OnListStampSet(wxCommandEvent& event);
@@ -64,6 +70,11 @@ private:
 	void SelectTileset(int index);
 	void SelectStampSet(int index);
 	void SelectMap(int index);
+
+	void SelectPaletteById(PaletteId paletteId);
+	void SelectTilesetById(TilesetId tilesetId);
+	void SelectStampSetById(StampSetId stampSetId);
+	void SelectMapById(MapId mapId);
 
 	void AssignPalette(int index, int slotIndex);
 

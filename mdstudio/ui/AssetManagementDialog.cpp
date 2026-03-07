@@ -15,6 +15,8 @@
 #include "TilesPanel.h"
 #include "MainWindow.h"
 
+#include <ion/core/utils/STL.h>
+
 DialogAssetManagement::DialogAssetManagement(MainWindow& mainWindow, Project& project, ion::render::Renderer& renderer, wxGLContext& glContext, RenderResources& renderResources, Tab tab)
 	: DialogAssetsBase((wxWindow*)&mainWindow)
 	, m_project(project)
@@ -264,6 +266,26 @@ void DialogAssetManagement::SelectMap(int index)
 	}
 }
 
+void DialogAssetManagement::SelectPaletteById(PaletteId paletteId)
+{
+	SelectPalette(ion::utils::stl::IndexOf(m_populatedPalettes, paletteId));
+}
+
+void DialogAssetManagement::SelectTilesetById(TilesetId tilesetId)
+{
+	SelectTileset(ion::utils::stl::IndexOf(m_populatedTilesets, tilesetId));
+}
+
+void DialogAssetManagement::SelectStampSetById(StampSetId stampSetId)
+{
+	SelectStampSet(ion::utils::stl::IndexOf(m_populatedStampSets, stampSetId));
+}
+
+void DialogAssetManagement::SelectMapById(MapId mapId)
+{
+	SelectMap(ion::utils::stl::IndexOf(m_populatedMaps, mapId));
+}
+
 void DialogAssetManagement::AssignPalette(int index, int slotIndex)
 {
 	int mapIdx = m_listMaps->GetSelection();
@@ -341,11 +363,12 @@ void DialogAssetManagement::OnListTilesetPalette(wxCommandEvent& event)
 void DialogAssetManagement::OnBtnImportPalette(wxCommandEvent& event)
 {
 	//Open BMP
-	wxFileDialog fileDlg(this, _("Open image files"), "", "", "PNG files (*.png)|*.png|BMP files (*.bmp)|*.bmp", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+	wxFileDialog fileDlg(this, _("Open image file"), "", "", "PNG files (*.png)|*.png|BMP files (*.bmp)|*.bmp", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
 	if (fileDlg.ShowModal() == wxID_OK)
 	{
 		//Import palette
 		std::string filename = fileDlg.GetPath().c_str().AsChar();
+		std::string name = ion::string::GetFilename(filename);
 		Palette palette;
 		Project::ImportResult result = m_project.ImportPaletteFromImage(filename, palette);
 
@@ -356,7 +379,7 @@ void DialogAssetManagement::OnBtnImportPalette(wxCommandEvent& event)
 		}
 
 		//Match with existing or create new
-		MatchPaletteDialog matchDlg(this, m_project, palette, InvalidPaletteId);
+		MatchPaletteDialog matchDlg(this, m_project, palette, InvalidPaletteId, name);
 		matchDlg.ShowModal();
 
 		PopulatePalettes();
@@ -483,6 +506,69 @@ void DialogAssetManagement::OnBtnDeletePalette(wxCommandEvent& event)
 		m_project.DeletePalette(paletteId);
 		PopulatePalettes();
 	}
+}
+
+void DialogAssetManagement::OnBtnNewTileset(wxCommandEvent& event)
+{
+	//Open BMP
+	wxFileDialog fileDlg(this, _("Open image file"), "", "", "PNG files (*.png)|*.png|BMP files (*.bmp)|*.bmp", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+	if (fileDlg.ShowModal() == wxID_OK)
+	{
+		//Import tileset
+		std::string filename = fileDlg.GetPath().c_str().AsChar();
+		std::string name = ion::string::GetFilename(filename);
+		Palette palette;
+		Tileset tileset;
+		Project::ImportResult result = m_project.ImportTilesetFromImage(filename, palette, tileset);
+
+		if (result != Project::ImportResult::Success)
+		{
+			ShowImportError(result, filename);
+			return;
+		}
+
+		//Match palette with existing or create new
+		MatchPaletteDialog matchDlg(this, m_project, palette, InvalidPaletteId, name);
+		matchDlg.ShowModal();
+		PaletteId paletteId = matchDlg.m_selectedPaletteId;
+		tileset.SetPaletteId(paletteId);
+
+		//Add new tilset
+		TilesetId tilesetId = m_project.AddTileset(tileset);
+
+		//Recreate render resources
+		m_mainWindow.RefreshTileset();
+
+		PopulatePalettes();
+		PopulateTilesets();
+		SelectPaletteById(paletteId);
+		SelectTilesetById(tilesetId);
+	}
+}
+
+void DialogAssetManagement::OnBtnDeleteTileset(wxCommandEvent& event)
+{
+
+}
+
+void DialogAssetManagement::OnBtnRenameTileset(wxCommandEvent& event)
+{
+
+}
+
+void DialogAssetManagement::OnBtnScanTileset(wxCommandEvent& event)
+{
+
+}
+
+void DialogAssetManagement::OnBtnExportTileset(wxCommandEvent& event)
+{
+
+}
+
+void DialogAssetManagement::OnBrowseTilesImg(wxFileDirPickerEvent& event)
+{
+
 }
 
 void DialogAssetManagement::OnListSlot0(wxCommandEvent& event)

@@ -190,9 +190,10 @@ void ImportDialogSpriteSheet::OnSpinCellCount(wxSpinEvent& event)
 	m_canvas->SetDrawPreview(true, m_spinCellCount->GetValue());
 }
 
-MatchPaletteDialog::MatchPaletteDialog(wxWindow* parent, Project& project, const Palette& paletteToMatch, PaletteId currentPaletteId)
+MatchPaletteDialog::MatchPaletteDialog(wxWindow* parent, Project& project, const Palette& paletteToMatch, PaletteId currentPaletteId, const std::string& defaultName)
 	: DialogMatchPalette(parent)
 	, m_project(project)
+	, m_defaultName(defaultName)
 {
 	m_paletteToMatch = paletteToMatch;
 
@@ -253,6 +254,7 @@ void MatchPaletteDialog::OnBtnNew(wxCommandEvent& event)
 {
 	DialogNewPalette dlg(this);
 
+	dlg.m_textName->SetLabelText(m_defaultName);
 	dlg.m_paletteView->SetPalette(m_paletteToMatch);
 	
 	if (dlg.ShowModal() == wxID_OK)

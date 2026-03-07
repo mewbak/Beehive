@@ -1435,7 +1435,8 @@ class DialogAssetsBase : public wxDialog
 		wxButton* m_btnDeleteTileset;
 		wxButton* m_btnRenameTileset;
 		wxButton* m_btnScanTileset;
-		wxButton* m_bbtnExportTileset;
+		wxButton* m_btnExportTileset;
+		wxButton* m_btnCleanupTileset;
 		wxStaticText* m_staticText8811;
 		wxStaticText* m_txtTilesetName;
 		wxStaticText* m_staticText9011;
@@ -1460,6 +1461,7 @@ class DialogAssetsBase : public wxDialog
 		wxButton* m_btnScanStampSet;
 		wxButton* m_btnExportStampSet;
 		wxButton* m_btnRenameStampSet;
+		wxButton* m_btnCleanupStampSet;
 		wxStaticText* m_staticText881;
 		wxStaticText* m_txtStampSetName;
 		wxStaticText* m_staticText901;
@@ -1516,6 +1518,7 @@ class DialogAssetsBase : public wxDialog
 		virtual void OnBtnRenameTileset( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnScanTileset( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnExportTileset( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnBtnCleanupTileset( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBrowseTilesImg( wxFileDirPickerEvent& event ) { event.Skip(); }
 		virtual void OnListTilesetPalette( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnListStampSet( wxCommandEvent& event ) { event.Skip(); }
@@ -1524,6 +1527,7 @@ class DialogAssetsBase : public wxDialog
 		virtual void OnBtnScanStampSet( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnExportStampSet( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnRenameStampSet( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnBtnCleanupStampSet( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBrowseStampsImg( wxFileDirPickerEvent& event ) { event.Skip(); }
 		virtual void OnListMap( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnImportMap( wxCommandEvent& event ) { event.Skip(); }

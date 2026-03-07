@@ -3340,10 +3340,12 @@ void MainWindow::OnBtnTilesCleanup(wxCommandEvent& event)
 {
 	if(m_project.get())
 	{
-		if(m_project->CleanupTiles())
+		for (const auto& it : m_project->GetTilesets())
 		{
-			RefreshAll();
+			m_project->CleanupTileset(it.first);
 		}
+		
+		RefreshAll();
 	}
 }
 

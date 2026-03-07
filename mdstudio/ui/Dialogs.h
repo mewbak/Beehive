@@ -108,7 +108,6 @@ public:
 
 	virtual void OnRadioOriginal(wxCommandEvent& event);
 	virtual void OnRadioImported(wxCommandEvent& event);
-	virtual void OnBtnMerge(wxCommandEvent& event);
 
 	const Palette& GetMergedPalette() { return m_merged; }
 

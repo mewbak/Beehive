@@ -315,8 +315,3 @@ void MergePaleteDialog::OnRadioImported(wxCommandEvent& event)
 	m_radioOriginal->SetValue(false);
 	MergeUp();
 }
-
-void MergePaleteDialog::OnBtnMerge(wxCommandEvent& event)
-{
-
-}

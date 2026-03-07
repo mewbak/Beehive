@@ -358,7 +358,8 @@ void DialogAssetManagement::OnBtnExportPalette(wxCommandEvent& event)
 		PaletteId paletteId = m_populatedPalettes[index];
 		const Palette& palette = m_project.GetPalette(paletteId);
 
-		wxFileDialog fileDlg(this, _("Save BMP file"), "", "", "BMP files (*.bmp)|*.bmp", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
+		std::string defaultFilename = palette.GetName() + ".bmp";
+		wxFileDialog fileDlg(this, _("Save BMP file"), "", defaultFilename, "BMP files (*.bmp)|*.bmp", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
 		if (fileDlg.ShowModal() == wxID_OK)
 		{
 			ion::ImageFormatBMP writer(ion::ImageFormat::BitFormat::eIndexed16Colour);
@@ -468,6 +469,7 @@ void DialogAssetManagement::OnBtnDeletePalette(wxCommandEvent& event)
 
 		m_project.DeletePalette(paletteId);
 		PopulatePalettes();
+		SelectPalette(0);
 	}
 }
 
@@ -558,12 +560,52 @@ void DialogAssetManagement::OnBtnNewTileset(wxCommandEvent& event)
 
 void DialogAssetManagement::OnBtnDeleteTileset(wxCommandEvent& event)
 {
+	int index = m_listTilesets->GetSelection();
+	if (index >= 0 && index < m_populatedTilesets.size())
+	{
+		TilesetId tilesetId = m_populatedTilesets[index];
+		const Tileset& tileset = m_project.GetTileset(tilesetId);
 
+		std::vector<StampSetId> stampsets;
+		int usageCount = GetTilesetUsage(tilesetId, stampsets);
+
+		if (usageCount > 0)
+		{
+			std::string msg = "Cannot delete in-use tilset " + tileset.GetName() + "\n";
+
+			msg += "\nUsed by stamp sets(s):\n\n";
+
+			for (StampSetId stampSetId : stampsets)
+			{
+				const StampSet& stampset = m_project.GetStampSet(stampSetId);
+				msg += " " + stampset.GetName() + "\n";
+			}
+
+			wxMessageBox(msg, "Error");
+			return;
+		}
+
+		m_project.DeleteTileset(tilesetId);
+		PopulateTilesets();
+		SelectTileset(0);
+	}
 }
 
 void DialogAssetManagement::OnBtnRenameTileset(wxCommandEvent& event)
 {
+	int index = m_listTilesets->GetSelection();
+	if (index >= 0 && index < m_populatedTilesets.size())
+	{
+		TilesetId tilesetId = m_populatedTilesets[index];
+		Tileset& tileset = m_project.GetTileset(tilesetId);
 
+		wxTextEntryDialog dlg(this, "Rename tileset", "Rename tileset", tileset.GetName());
+		if (dlg.ShowModal() == wxID_OK)
+		{
+			tileset.SetName(dlg.GetValue().c_str().AsChar());
+			PopulateTilesets();
+		}
+	}
 }
 
 void DialogAssetManagement::OnBtnScanTileset(wxCommandEvent& event)
@@ -579,7 +621,71 @@ void DialogAssetManagement::OnBtnScanTileset(wxCommandEvent& event)
 
 void DialogAssetManagement::OnBtnExportTileset(wxCommandEvent& event)
 {
+	int index = m_listTilesets->GetSelection();
+	if (index >= 0 && index < m_populatedTilesets.size())
+	{
+		TilesetId tilesetId = m_populatedTilesets[index];
+		const Tileset& tileset = m_project.GetTileset(tilesetId);
+		PaletteId paletteId = tileset.GetPaletteId();
+		const Palette& palette = m_project.GetPalette(paletteId);
 
+		std::string defaultFilename = tileset.GetName() + ".bmp";
+		wxFileDialog fileDlg(this, _("Save BMP file"), "", defaultFilename, "BMP files (*.bmp)|*.bmp", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
+		if (fileDlg.ShowModal() == wxID_OK)
+		{
+			ion::ImageFormatBMP writer(ion::ImageFormat::BitFormat::eIndexed16Colour);
+
+			for (int i = 0; i < Palette::coloursPerPalette; i++)
+			{
+				Colour colour(0, 0, 0);
+				if (palette.IsColourUsed(i))
+					colour = palette.GetColour(i);
+				writer.SetPaletteEntry(i, ion::ImageFormat::Colour(colour.GetRed(), colour.GetGreen(), colour.GetBlue()));
+			}
+
+			const int numTiles = tileset.GetCount();
+			const int numTilesSq = (int)ion::maths::Ceil(ion::maths::Sqrt(numTiles));
+			const int tilesPerRow = numTilesSq;
+			const int tileWidth = m_project.GetPlatformConfig().tileWidth;
+			const int tileHeight = m_project.GetPlatformConfig().tileHeight;
+
+			writer.SetDimensions(numTilesSq * tileWidth, numTilesSq * tileHeight);
+
+			for (int i = 0; i < numTiles; i++)
+			{
+				const Tile* tile = tileset.GetTile(i);
+				int tileX = i % numTilesSq;
+				int tileY = i / numTilesSq;
+
+				for (int pixelX = 0; pixelX < tileWidth; pixelX++)
+				{
+					for (int pixelY = 0; pixelY < tileHeight; pixelY++)
+					{
+						int imageX = (tileX * tileWidth) + pixelX;
+						int imageY = (tileY * tileHeight) + pixelY;
+						writer.SetColourIndex(imageX, imageY, tile->GetPixelColour(pixelX, pixelY));
+					}
+				}
+			}
+
+			std::string filename = fileDlg.GetPath().c_str().AsChar();
+			if (!writer.Write(filename))
+				wxMessageBox("Error exporting tileset to image '" + filename + "'", "Error");
+		}
+	}
+}
+
+void DialogAssetManagement::OnBtnCleanupTileset(wxCommandEvent& event)
+{
+	int index = m_listTilesets->GetSelection();
+	if (index >= 0 && index < m_populatedTilesets.size())
+	{
+		TilesetId tilesetId = m_populatedTilesets[index];
+		const Tileset& tileset = m_project.GetTileset(tilesetId);
+		int cleaned = m_project.CleanupTileset(tilesetId);
+		wxMessageBox("Removed " + std::to_string(cleaned) + " unused tiles from tileset '" + tileset.GetName() + "'", "Cleanup");
+		SelectTileset(index);
+	}
 }
 
 void DialogAssetManagement::OnBrowseTilesImg(wxFileDirPickerEvent& event)

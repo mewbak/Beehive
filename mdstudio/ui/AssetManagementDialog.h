@@ -48,6 +48,7 @@ public:
 	virtual void OnBtnRenameTileset(wxCommandEvent& event);
 	virtual void OnBtnScanTileset(wxCommandEvent& event);
 	virtual void OnBtnExportTileset(wxCommandEvent& event);
+	virtual void OnBtnCleanupTileset(wxCommandEvent& event);
 	virtual void OnBrowseTilesImg(wxFileDirPickerEvent& event);
 
 	// Stamp sets tab

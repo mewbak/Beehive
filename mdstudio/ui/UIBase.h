@@ -39,10 +39,10 @@ class TilesPanel;
 #include <wx/textctrl.h>
 #include <wx/choice.h>
 #include "PaletteViewCtrl.h"
+#include <wx/radiobut.h>
 #include <wx/toolbar.h>
 #include <wx/listctrl.h>
 #include <wx/listbox.h>
-#include <wx/radiobut.h>
 #include <wx/scrolwin.h>
 #include <wx/notebook.h>
 #include <wx/clrpicker.h>
@@ -496,6 +496,39 @@ class DialogMatchPalette : public wxDialog
 		DialogMatchPalette( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("Palette Matches"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 572,203 ), long style = wxCAPTION|wxSTAY_ON_TOP );
 
 		~DialogMatchPalette();
+
+};
+
+///////////////////////////////////////////////////////////////////////////////
+/// Class DialogMergePaletteBase
+///////////////////////////////////////////////////////////////////////////////
+class DialogMergePaletteBase : public wxDialog
+{
+	private:
+
+	protected:
+		wxRadioButton* m_radioOriginal;
+		wxRadioButton* m_radioImported;
+		wxStaticText* m_staticText84;
+		wxStaticText* m_staticText85;
+		wxStaticText* m_staticText851;
+		wxStdDialogButtonSizer* m_sdbSizer11;
+		wxButton* m_sdbSizer11OK;
+		wxButton* m_sdbSizer11Cancel;
+
+		// Virtual event handlers, override them in your derived class
+		virtual void OnRadioOriginal( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnRadioImported( wxCommandEvent& event ) { event.Skip(); }
+
+
+	public:
+		PaletteViewCtrl* m_paletteViewOriginal;
+		PaletteViewCtrl* m_paletteViewImported;
+		PaletteViewCtrl* m_paletteViewMerged;
+
+		DialogMergePaletteBase( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("Merge Palette"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 572,251 ), long style = wxCAPTION|wxSTAY_ON_TOP );
+
+		~DialogMergePaletteBase();
 
 };
 

@@ -53,6 +53,7 @@ void DialogAssetManagement::PopulatePalettes()
 
 	m_populatedPalettes.clear();
 	m_listPalettes->Clear();
+	m_choiceTilesetPalette->Clear();
 
 	const auto& palettes = m_project.GetPalettes();
 
@@ -178,6 +179,8 @@ void DialogAssetManagement::SelectTileset(int index)
 
 		m_canvasTiles->SetTilesetId(tilesetId);
 		m_paletteViewTiles->SetPalette(palette);
+		m_choiceTilesetPalette->SetSelection(ion::utils::stl::IndexOf(m_populatedPalettes, paletteId));
+		m_filePickerTilesImg->SetPath(m_project.m_settings.GetAbsolutePath(tilesetId));
 
 		m_txtTilesetName->SetLabelText(tileset.GetName());
 		m_txtTilesetId->SetLabelText(std::to_string(tilesetId));
@@ -186,6 +189,8 @@ void DialogAssetManagement::SelectTileset(int index)
 
 		std::vector<StampSetId> stampSets;
 		m_txtTilesetUsageCount->SetLabelText(std::to_string(GetTilesetUsage(tilesetId, stampSets)));
+
+		Refresh();
 	}
 }
 
@@ -315,51 +320,6 @@ void DialogAssetManagement::OnListPalette(wxCommandEvent& event)
 	SelectPalette(m_listPalettes->GetSelection());
 }
 
-void DialogAssetManagement::OnListTilesets(wxCommandEvent& event)
-{
-	SelectTileset(m_listTilesets->GetSelection());
-}
-
-void DialogAssetManagement::OnListStampSet(wxCommandEvent& event)
-{
-	SelectStampSet(m_listStampSets->GetSelection());
-}
-
-void DialogAssetManagement::OnListMap(wxCommandEvent& event)
-{
-	SelectMap(m_listMaps->GetSelection());
-}
-
-void DialogAssetManagement::OnListTilesetPalette(wxCommandEvent& event)
-{
-	int paletteIdx = m_choiceTilesetPalette->GetSelection();
-	int tilesetIdx = m_listTilesets->GetSelection();
-	if (   paletteIdx >= 0 && paletteIdx < m_populatedPalettes.size()
-		&& tilesetIdx >= 0 && tilesetIdx < m_populatedTilesets.size())
-	{
-		PaletteId paletteId = m_populatedPalettes[paletteIdx];
-		TilesetId tilesetId = m_populatedTilesets[tilesetIdx];
-		const Palette& palette = m_project.GetPalette(paletteId);
-		Tileset& tileset = m_project.GetTileset(tilesetId);
-
-		if (!m_project.CheckCompatibilityPaletteTileset(paletteId, tilesetId))
-		{
-			std::string msg = "Palette " + palette.GetName() + " is incompatible with tileset " + tileset.GetName();
-			wxMessageBox(msg, "Error");
-			return;
-		}
-
-		m_paletteViewTiles->SetPalette(palette);
-		m_txtTilesetPalette->SetLabelText(palette.GetName());
-		tileset.SetPaletteId(paletteId);
-
-		m_mainWindow.RefreshTileset();
-
-		SelectTileset(m_listTilesets->GetSelection());
-		SelectStampSet(m_listStampSets->GetSelection());
-	}
-}
-
 void DialogAssetManagement::OnBtnImportPalette(wxCommandEvent& event)
 {
 	//Open BMP
@@ -381,6 +341,9 @@ void DialogAssetManagement::OnBtnImportPalette(wxCommandEvent& event)
 		//Match with existing or create new
 		MatchPaletteDialog matchDlg(this, m_project, palette, InvalidPaletteId, name);
 		matchDlg.ShowModal();
+
+		//Remember source path
+		m_project.m_settings.SetAbsolutePath(matchDlg.m_selectedPaletteId, filename);
 
 		PopulatePalettes();
 		SelectPalette(m_populatedPalettes.size() - 1);
@@ -508,6 +471,42 @@ void DialogAssetManagement::OnBtnDeletePalette(wxCommandEvent& event)
 	}
 }
 
+void DialogAssetManagement::OnListTileset(wxCommandEvent& event)
+{
+	SelectTileset(m_listTilesets->GetSelection());
+}
+
+void DialogAssetManagement::OnListTilesetPalette(wxCommandEvent& event)
+{
+	int paletteIdx = m_choiceTilesetPalette->GetSelection();
+	int tilesetIdx = m_listTilesets->GetSelection();
+	if (paletteIdx >= 0 && paletteIdx < m_populatedPalettes.size()
+		&& tilesetIdx >= 0 && tilesetIdx < m_populatedTilesets.size())
+	{
+		PaletteId paletteId = m_populatedPalettes[paletteIdx];
+		TilesetId tilesetId = m_populatedTilesets[tilesetIdx];
+		const Palette& palette = m_project.GetPalette(paletteId);
+		Tileset& tileset = m_project.GetTileset(tilesetId);
+
+		if (!m_project.CheckCompatibilityPaletteTileset(paletteId, tilesetId))
+		{
+			std::string msg = "Palette " + palette.GetName() + " is incompatible with tileset " + tileset.GetName();
+			wxMessageBox(msg, "Error");
+			m_choiceTilesetPalette->SetSelection(ion::utils::stl::IndexOf(m_populatedPalettes, tileset.GetPaletteId()));
+			return;
+		}
+
+		m_paletteViewTiles->SetPalette(palette);
+		m_txtTilesetPalette->SetLabelText(palette.GetName());
+		tileset.SetPaletteId(paletteId);
+
+		m_mainWindow.RefreshTileset();
+
+		SelectTileset(m_listTilesets->GetSelection());
+		SelectStampSet(m_listStampSets->GetSelection());
+	}
+}
+
 void DialogAssetManagement::OnBtnNewTileset(wxCommandEvent& event)
 {
 	//Open BMP
@@ -531,14 +530,25 @@ void DialogAssetManagement::OnBtnNewTileset(wxCommandEvent& event)
 		MatchPaletteDialog matchDlg(this, m_project, palette, InvalidPaletteId, name);
 		matchDlg.ShowModal();
 		PaletteId paletteId = matchDlg.m_selectedPaletteId;
+
+		if (paletteId == InvalidPaletteId)
+		{
+			wxMessageBox("Cannot import tileset, no matching palette selected", "Error");
+			return;
+		}
+
 		tileset.SetPaletteId(paletteId);
 
 		//Add new tilset
 		TilesetId tilesetId = m_project.AddTileset(tileset);
 
+		//Remember source path
+		m_project.m_settings.SetAbsolutePath(tilesetId, filename);
+
 		//Recreate render resources
 		m_mainWindow.RefreshTileset();
 
+		// Refresh
 		PopulatePalettes();
 		PopulateTilesets();
 		SelectPaletteById(paletteId);
@@ -558,7 +568,13 @@ void DialogAssetManagement::OnBtnRenameTileset(wxCommandEvent& event)
 
 void DialogAssetManagement::OnBtnScanTileset(wxCommandEvent& event)
 {
-
+	int index = m_listTilesets->GetSelection();
+	if (index >= 0 && index < m_populatedTilesets.size())
+	{
+		TilesetId tilesetId = m_populatedTilesets[index];
+		std::string filename = m_project.m_settings.GetAbsolutePath(tilesetId);
+		MergeTileset(filename, tilesetId);
+	}
 }
 
 void DialogAssetManagement::OnBtnExportTileset(wxCommandEvent& event)
@@ -568,7 +584,85 @@ void DialogAssetManagement::OnBtnExportTileset(wxCommandEvent& event)
 
 void DialogAssetManagement::OnBrowseTilesImg(wxFileDirPickerEvent& event)
 {
+	int index = m_listTilesets->GetSelection();
+	if (index >= 0 && index < m_populatedTilesets.size())
+	{
+		TilesetId tilesetId = m_populatedTilesets[index];
+		std::string filename = m_filePickerTilesImg->GetPath();
+		MergeTileset(filename, tilesetId);
+	}
+}
 
+void DialogAssetManagement::MergeTileset(const std::string filename, TilesetId tilesetId)
+{
+	Tileset& tileset = m_project.GetTileset(tilesetId);
+	PaletteId paletteId = tileset.GetPaletteId();
+	Palette& palette = m_project.GetPalette(paletteId);
+
+	// Check palette is compatible
+	Palette importedPalette;
+	Project::ImportResult paletteResult = m_project.ImportPaletteFromImage(filename, importedPalette);
+	if (paletteResult != Project::ImportResult::Success)
+	{
+		ShowImportError(paletteResult, filename);
+		return;
+	}
+
+	// Check if imported palette has changed any colours
+	bool paletteMatch = true;
+	for (int i = 0; i < Palette::coloursPerPalette; i++)
+	{
+		if (   (palette.IsColourUsed(i) && importedPalette.IsColourUsed(i))
+			&& (palette.GetColour(i) != importedPalette.GetColour(i)))
+		{
+			paletteMatch = false;
+			break;
+		}
+	}
+
+	if (!paletteMatch)
+	{
+		MergePaleteDialog dlg(this, palette, importedPalette);
+		if (dlg.ShowModal() != wxID_OK)
+			return;
+
+		palette = dlg.GetMergedPalette();
+	}
+
+	// Keep original name
+	std::string name = tileset.GetName();
+
+	// Merge tileset
+	Project::ImportResult tilesetResult = m_project.ImportTilesetFromImage(filename, importedPalette, tileset);
+	if (tilesetResult != Project::ImportResult::Success)
+	{
+		ShowImportError(tilesetResult, filename);
+		return;
+	}
+
+	tileset.SetName(name);
+
+	//Remember source path
+	m_project.m_settings.SetAbsolutePath(tilesetId, filename);
+
+	//Recreate render resources
+	m_mainWindow.RefreshTileset();
+
+	// Refresh
+	PopulatePalettes();
+	PopulateTilesets();
+	SelectPaletteById(paletteId);
+	SelectTilesetById(tilesetId);
+}
+
+void DialogAssetManagement::OnListStampSet(wxCommandEvent& event)
+{
+	SelectStampSet(m_listStampSets->GetSelection());
+}
+
+void DialogAssetManagement::OnListMap(wxCommandEvent& event)
+{
+	SelectMap(m_listMaps->GetSelection());
 }
 
 void DialogAssetManagement::OnListSlot0(wxCommandEvent& event)

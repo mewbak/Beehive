@@ -41,7 +41,7 @@ public:
 	virtual void OnBtnDeletePalette(wxCommandEvent& event);
 
 	// Tilesets tab
-	virtual void OnListTilesets(wxCommandEvent& event);
+	virtual void OnListTileset(wxCommandEvent& event);
 	virtual void OnListTilesetPalette(wxCommandEvent& event);
 	virtual void OnBtnNewTileset(wxCommandEvent& event);
 	virtual void OnBtnDeleteTileset(wxCommandEvent& event);
@@ -75,6 +75,8 @@ private:
 	void SelectTilesetById(TilesetId tilesetId);
 	void SelectStampSetById(StampSetId stampSetId);
 	void SelectMapById(MapId mapId);
+
+	void MergeTileset(const std::string filename, TilesetId tilesetId);
 
 	void AssignPalette(int index, int slotIndex);
 

@@ -100,3 +100,24 @@ public:
 	std::vector<std::pair<PaletteId, Palette>> m_matches;
 	const std::string m_defaultName;
 };
+
+class MergePaleteDialog : public  DialogMergePaletteBase
+{
+public:
+	MergePaleteDialog(wxWindow* parent, const Palette& original, const Palette& imported);
+
+	virtual void OnRadioOriginal(wxCommandEvent& event);
+	virtual void OnRadioImported(wxCommandEvent& event);
+	virtual void OnBtnMerge(wxCommandEvent& event);
+
+	const Palette& GetMergedPalette() { return m_merged; }
+
+private:
+	void MergeUp();
+	void MergeDown();
+
+	Palette m_original;
+	Palette m_imported;
+	Palette m_merged;
+
+};

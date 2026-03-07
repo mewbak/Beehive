@@ -264,3 +264,59 @@ void MatchPaletteDialog::OnBtnNew(wxCommandEvent& event)
 		Populate(m_selectedPaletteId);
 	}
 }
+
+MergePaleteDialog::MergePaleteDialog(wxWindow* parent, const Palette& original, const Palette& imported)
+	: DialogMergePaletteBase(parent)
+	, m_original(original)
+	, m_imported(imported)
+{
+	m_paletteViewOriginal->SetPalette(original);
+	m_paletteViewImported->SetPalette(imported);
+	MergeUp();
+}
+
+void MergePaleteDialog::MergeUp()
+{
+	// Take clashing colours from imported
+	m_merged = m_imported;
+
+	for (int i = 0; i < Palette::coloursPerPalette; i++)
+	{
+		if (!m_imported.IsColourUsed(i) && m_original.IsColourUsed(i))
+			m_merged.SetColour(i, m_original.GetColour(i));
+	}
+
+	m_paletteViewMerged->SetPalette(m_merged);
+}
+
+void MergePaleteDialog::MergeDown()
+{
+	// Take clashing colours from original
+	m_merged = m_original;
+
+	for (int i = 0; i < Palette::coloursPerPalette; i++)
+	{
+		if (m_imported.IsColourUsed(i) && !m_original.IsColourUsed(i))
+			m_merged.SetColour(i, m_imported.GetColour(i));
+	}
+
+	m_paletteViewMerged->SetPalette(m_merged);
+}
+
+void MergePaleteDialog::OnRadioOriginal(wxCommandEvent& event)
+{
+	m_radioImported->SetValue(false);
+	MergeDown();
+}
+
+void MergePaleteDialog::OnRadioImported(wxCommandEvent& event)
+{
+
+	m_radioOriginal->SetValue(false);
+	MergeUp();
+}
+
+void MergePaleteDialog::OnBtnMerge(wxCommandEvent& event)
+{
+
+}

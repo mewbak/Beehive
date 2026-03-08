@@ -101,10 +101,10 @@ public:
 	const std::string m_defaultName;
 };
 
-class MergePaleteDialog : public  DialogMergePaletteBase
+class MergePaletteDialog : public  DialogMergePaletteBase
 {
 public:
-	MergePaleteDialog(wxWindow* parent, const Palette& original, const Palette& imported);
+	MergePaletteDialog(wxWindow* parent, const Palette& original, const Palette& imported);
 
 	virtual void OnRadioOriginal(wxCommandEvent& event);
 	virtual void OnRadioImported(wxCommandEvent& event);
@@ -119,4 +119,20 @@ private:
 	Palette m_imported;
 	Palette m_merged;
 
+};
+
+class MatchTilesetDialog : public MatchTilesetDialogBase
+{
+public:
+	MatchTilesetDialog(MainWindow& mainWindow, Project& project, TilesetId tilesetToMatch, const std::vector<std::pair<TilesetId, int>>& matches, ion::render::Renderer& renderer, wxGLContext& glContext, RenderResources& renderResources);
+
+	virtual void OnChoiceTileset(wxCommandEvent& event);
+	virtual void OnBtnMatch(wxCommandEvent& event);
+	virtual void OnBtnNew(wxCommandEvent& event);
+
+	TilesetId GetSelectedTileset() const;
+
+private:
+	void PopulateView(TilesPanel* view, TilesetId tilesetId);
+	const std::vector<std::pair<TilesetId, int>>& m_matches;
 };

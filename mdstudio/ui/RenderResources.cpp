@@ -158,7 +158,7 @@ void RenderResources::CreateTilesetTextures()
 	for (const auto& tilesetIt : m_project.GetTilesets())
 	{
 		const Tileset& tileset = tilesetIt.second;
-		const Palette& palette = m_project.GetPalette(tileset.GetPaletteId());
+		const Palette& palette = m_project.GetPalette(tileset.GetDefaultPaletteId());
 
 		TilesetResources tilesetResources;
 
@@ -173,14 +173,16 @@ void RenderResources::CreateTilesetTextures()
 		u8* data = new u8[textureSize];
 		ion::memory::MemSet(data, 255, textureSize);
 
-		for (int i = 0; i < tileset.GetCount(); i++)
+		int i = 0;
+		for(const auto& it : tileset.GetTiles())
 		{
-			const Tile& tile = *tileset.GetTile(i);
+			const Tile& tile = it.second;
 
 			if (tile.GetHash() != 0)
 			{
 				u32 x = i % tilesetResources.tilesetSizeSq;
 				u32 y = i / tilesetResources.tilesetSizeSq;
+				i++;
 
 				for (int pixelY = 0; pixelY < tileHeight; pixelY++)
 				{
@@ -677,33 +679,31 @@ void RenderResources::GetTerrainTileTexCoords(TerrainTileId tileId, ion::render:
 	texCoords[3].y = top;
 }
 
+#if !BEEHIVE_PLUGIN_LUMINARY
 void RenderResources::SetTilesetTexPixel(TilesetId tilesetId, TileId tileId, const ion::Vector2i& pixel, u8 colourIdx)
 {
 	const TilesetResources& tilesetResource = GetTilesetResources(tilesetId);
 	if(tilesetResource.texture)
 	{
 		const Tileset& tileset = m_project.GetTileset(tilesetId);
+		const Palette& palette = m_project.GetPalette(tileset.GetDefaultPaletteId());
+		const int tileWidth = m_project.GetPlatformConfig().tileWidth;
+		const int tileHeight = m_project.GetPlatformConfig().tileHeight;
 
-		if(const Tile* tile = tileset.GetTile(tileId))
-		{
-			const Palette& palette = m_project.GetPalette(tileset.GetPaletteId());
-			const int tileWidth = m_project.GetPlatformConfig().tileWidth;
-			const int tileHeight = m_project.GetPlatformConfig().tileHeight;
+		const Colour& colour = palette.GetColour(colourIdx);
 
-			const Colour& colour = palette.GetColour(colourIdx);
+		u32 x = tileId % tilesetResource.tilesetSizeSq;
+		u32 y = tileId / tilesetResource.tilesetSizeSq;
 
-			u32 x = tileId % tilesetResource.tilesetSizeSq;
-			u32 y = tileId / tilesetResource.tilesetSizeSq;
+		//Invert Y for OpenGL
+		int y_inv = tileHeight - 1 - pixel.y;
 
-			//Invert Y for OpenGL
-			int y_inv = tileHeight - 1 - pixel.y;
+		ion::Vector2i pixelPos((x * tileWidth) + pixel.x, (y * tileHeight) + y_inv);
 
-			ion::Vector2i pixelPos((x * tileWidth) + pixel.x, (y * tileHeight) + y_inv);
-
-			tilesetResource.texture->SetPixel(pixelPos, ion::Colour(colour.GetRed(), colour.GetGreen(), colour.GetBlue()));
-		}
+		tilesetResource.texture->SetPixel(pixelPos, ion::Colour(colour.GetRed(), colour.GetGreen(), colour.GetBlue()));
 	}
 }
+#endif
 
 void RenderResources::SetTerrainTileHeight(TerrainTileId terrainTileId, int x, s8 height)
 {

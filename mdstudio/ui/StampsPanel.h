@@ -74,6 +74,8 @@ private:
 		eModeSubstitute
 	};
 
+	void InitPanel();
+
 	//Paint all stamps using position map to canvas
 	void PaintStamps();
 

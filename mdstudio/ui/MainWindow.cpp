@@ -2568,13 +2568,10 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 					stamps.push_back(stamp.second);
 				}
 
-				// TODO: export stamps for each different palette slot id that they're used with (baked into tile data)
-				// and generate unique labels for map data.
-				// Probably want to warn when this happens, or error and prevent export entirely?
+				// TODO: check slot matched tileset default palette
 				std::string stampsetLabel = "stampset_" + stampSetName;
 				std::string stampsetFilename = fnamePrefix + "_GSTAMPS.BIN";
-				const Tileset& tileset = m_project->GetTileset(stampSet.second.GetTilesetId());
-				int paletteSlotIdx = m_project->GetEditingMap().GetPaletteFromSlot(tileset.GetPaletteId());
+				int paletteSlotIdx = stampSet.second.GetPaletteSlot();
 				if (tilesetExporter.ExportStamps(stampsetFilename, stamps, paletteSlotIdx))
 				{
 					includeFilenames.push_back(Project::IncludeFile{ stampsetLabel, stampsetFilename, Project::IncludeExportFlags::None });

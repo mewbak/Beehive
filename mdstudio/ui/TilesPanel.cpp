@@ -78,6 +78,8 @@ TilesPanel::~TilesPanel()
 void TilesPanel::SetTilesetId(TilesetId tilesetId)
 {
 	m_tilesetId = tilesetId;
+	ion::Vector2i canvasSize = CalcCanvasSize();
+	InitPanel(canvasSize.x, canvasSize.y);
 	Refresh();
 }
 
@@ -181,7 +183,8 @@ void TilesPanel::OnMouseTileEvent(ion::Vector2i mousePos, ion::Vector2i mouseDel
 	//If in range, get tile under mouse cursor
 	if(x >= 0 && y >= 0 && x < m_canvasSize.x && y < m_canvasSize.y)
 	{
-		selectedTile = (y * m_canvasSize.x) + x;
+		// TODO: tile ids are no longer indices, maintain an index map in Tileset
+		//selectedTile = (y * m_canvasSize.x) + x;
 	}
 
 	//Set mouse hover tile
@@ -270,29 +273,23 @@ void TilesPanel::OnRender(ion::render::Renderer& renderer, const ion::Matrix4& c
 	z += zOffset;
 
 	//Render selected tile
-	if(m_selectedTile)
+	if(m_selectedTile != InvalidTileId)
 	{
-		if(const Tile* tile = tileset.GetTile(m_selectedTile))
-		{
-			ion::debug::Assert(tile, "Invalid tile");
-			ion::Vector2 size(1, 1);
-			const ion::Colour& colour = m_renderResources->GetColour(RenderResources::eColourSelected);
-			RenderBox(m_selectedTilePos, size, colour, renderer, cameraInverseMtx, projectionMtx, z);
-		}
+		const Tile& tile = tileset.GetTile(m_selectedTile);
+		ion::Vector2 size(1, 1);
+		const ion::Colour& colour = m_renderResources->GetColour(RenderResources::eColourSelected);
+		RenderBox(m_selectedTilePos, size, colour, renderer, cameraInverseMtx, projectionMtx, z);
 	}
 
 	z += zOffset;
 
 	//Render mouse hover tile
-	if(m_hoverTile && m_hoverTile != m_selectedTile)
+	if(m_hoverTile != InvalidTileId && m_hoverTile != m_selectedTile)
 	{
-		if(const Tile* tile = tileset.GetTile(m_hoverTile))
-		{
-			ion::debug::Assert(tile, "Invalid tile");
-			ion::Vector2 size(1, 1);
-			const ion::Colour& colour = m_renderResources->GetColour(RenderResources::eColourHighlight);
-			RenderBox(m_hoverTilePos, size, colour, renderer, cameraInverseMtx, projectionMtx, z);
-		}
+		const Tile& tile = tileset.GetTile(m_hoverTile);
+		ion::Vector2 size(1, 1);
+		const ion::Colour& colour = m_renderResources->GetColour(RenderResources::eColourHighlight);
+		RenderBox(m_hoverTilePos, size, colour, renderer, cameraInverseMtx, projectionMtx, z);
 	}
 
 	z += zOffset;
@@ -360,12 +357,14 @@ void TilesPanel::PaintTiles()
 	TilesetId tilesetId = GetTilesetId();
 	const Tileset& tileset = m_project->GetTileset(tilesetId);
 
-	for(int i = 0; i < tileset.GetCount(); i++)
+	int i = 0;
+	for (const auto& it : tileset.GetTiles())
 	{
 		int x = ion::maths::Max(0, i % m_canvasSize.x);
 		int y = ion::maths::Max(0, m_canvasSize.y - 1 - (i / m_canvasSize.x));
+		i++;
 
-		PaintTile(tilesetId, i, x, y, 0);
+		PaintTile(tilesetId, it.first, x, y, 0);
 	}
 }
 

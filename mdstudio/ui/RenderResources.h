@@ -106,7 +106,9 @@ public:
 	void GetTerrainTileTexCoords(TerrainTileId tileId, ion::render::TexCoord texCoords[4]) const;
 
 	//Edit tileset texture pixel
+#if !BEEHIVE_PLUGIN_LUMINARY
 	void SetTilesetTexPixel(TilesetId tilesetId, TileId tileId, const ion::Vector2i& pixel, u8 colourIdx);
+#endif
 
 	//Edit terrain tileset texture height
 	void SetTerrainTileHeight(TerrainTileId terrainTileId, int x, s8 height);

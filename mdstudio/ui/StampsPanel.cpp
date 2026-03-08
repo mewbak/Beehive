@@ -71,6 +71,7 @@ StampsPanel::~StampsPanel()
 void StampsPanel::SetStampSetId(StampSetId stampSetId)
 {
 	m_stampSetId = stampSetId;
+	InitPanel();
 	Refresh();
 }
 
@@ -140,6 +141,29 @@ void StampsPanel::OnKeyboard(wxKeyEvent& event)
 	ViewPanel::OnKeyboard(event);
 }
 
+void StampsPanel::InitPanel()
+{
+	//Rearrange stamps (calculates canvas size)
+	ArrangeStamps(ion::Vector2(m_panelSize.x, m_panelSize.y));
+
+	//Recreate canvas
+	CreateCanvas(m_canvasSize.x, m_canvasSize.y);
+
+	//Fill with invalid tile
+	FillTiles(GetStampSet().GetTilesetId(), InvalidTileId, ion::Vector2i(0, 0), ion::Vector2i(m_canvasSize.x - 1, m_canvasSize.y - 1));
+
+	//Redraw stamps on canvas
+	PaintStamps();
+
+	//Recreate grid
+	CreateGrid(m_canvasSize.x, m_canvasSize.y, m_canvasSize.x / m_project->GetGridSize(), m_canvasSize.y / m_project->GetGridSize());
+
+	//Reset zoom/pan
+	ResetZoomPan();
+
+	Refresh();
+}
+
 void StampsPanel::OnResize(wxSizeEvent& event)
 {
 	if(!m_mainWindow->IsRefreshLocked())
@@ -151,25 +175,7 @@ void StampsPanel::OnResize(wxSizeEvent& event)
 
 			ViewPanel::OnResize(event);
 
-			//Rearrange stamps (calculates canvas size)
-			ArrangeStamps(ion::Vector2(m_panelSize.x, m_panelSize.y));
-
-			//Recreate canvas
-			CreateCanvas(m_canvasSize.x, m_canvasSize.y);
-
-			//Fill with invalid tile
-			FillTiles(GetStampSet().GetTilesetId(), InvalidTileId, ion::Vector2i(0, 0), ion::Vector2i(m_canvasSize.x - 1, m_canvasSize.y - 1));
-
-			//Redraw stamps on canvas
-			PaintStamps();
-
-			//Recreate grid
-			CreateGrid(m_canvasSize.x, m_canvasSize.y, m_canvasSize.x / m_project->GetGridSize(), m_canvasSize.y / m_project->GetGridSize());
-
-			//Reset zoom/pan
-			ResetZoomPan();
-
-			Refresh();
+			InitPanel();
 		}
 	}
 }

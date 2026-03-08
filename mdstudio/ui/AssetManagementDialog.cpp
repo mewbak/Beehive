@@ -21,6 +21,9 @@ DialogAssetManagement::DialogAssetManagement(MainWindow& mainWindow, Project& pr
 	: DialogAssetsBase((wxWindow*)&mainWindow)
 	, m_project(project)
 	, m_mainWindow(mainWindow)
+	, m_renderer(renderer)
+	, m_glContext(glContext)
+	, m_renderResources(renderResources)
 {
 	// Setup canvases
 	m_canvasTiles->SetProject(&project);
@@ -174,7 +177,7 @@ void DialogAssetManagement::SelectTileset(int index)
 		TilesetId tilesetId = m_populatedTilesets[index];
 		const Tileset& tileset = m_project.GetTileset(tilesetId);
 
-		PaletteId paletteId = tileset.GetPaletteId();
+		PaletteId paletteId = tileset.GetDefaultPaletteId();
 		const Palette palette = m_project.GetPalette(paletteId);
 
 		m_canvasTiles->SetTilesetId(tilesetId);
@@ -206,7 +209,7 @@ void DialogAssetManagement::SelectStampSet(int index)
 		TilesetId tilesetId = stampSet.GetTilesetId();
 		const Tileset& tileset = m_project.GetTileset(tilesetId);
 
-		PaletteId paletteId = tileset.GetPaletteId();
+		PaletteId paletteId = tileset.GetDefaultPaletteId();
 		const Palette& palette = m_project.GetPalette(paletteId);
 
 		m_canvasStamps->SetStampSetId(stampSetId);
@@ -494,15 +497,16 @@ void DialogAssetManagement::OnListTilesetPalette(wxCommandEvent& event)
 		{
 			std::string msg = "Palette " + palette.GetName() + " is incompatible with tileset " + tileset.GetName();
 			wxMessageBox(msg, "Error");
-			m_choiceTilesetPalette->SetSelection(ion::utils::stl::IndexOf(m_populatedPalettes, tileset.GetPaletteId()));
+			m_choiceTilesetPalette->SetSelection(ion::utils::stl::IndexOf(m_populatedPalettes, tileset.GetDefaultPaletteId()));
 			return;
 		}
 
 		m_paletteViewTiles->SetPalette(palette);
 		m_txtTilesetPalette->SetLabelText(palette.GetName());
-		tileset.SetPaletteId(paletteId);
+		tileset.SetDefaultPaletteId(paletteId);
 
 		m_mainWindow.RefreshTileset();
+		m_mainWindow.RefreshAll();
 
 		SelectTileset(m_listTilesets->GetSelection());
 		SelectStampSet(m_listStampSets->GetSelection());
@@ -539,7 +543,7 @@ void DialogAssetManagement::OnBtnNewTileset(wxCommandEvent& event)
 			return;
 		}
 
-		tileset.SetPaletteId(paletteId);
+		tileset.SetDefaultPaletteId(paletteId);
 
 		//Add new tilset
 		TilesetId tilesetId = m_project.AddTileset(tileset);
@@ -549,6 +553,7 @@ void DialogAssetManagement::OnBtnNewTileset(wxCommandEvent& event)
 
 		//Recreate render resources
 		m_mainWindow.RefreshTileset();
+		m_mainWindow.RefreshAll();
 
 		// Refresh
 		PopulatePalettes();
@@ -626,7 +631,7 @@ void DialogAssetManagement::OnBtnExportTileset(wxCommandEvent& event)
 	{
 		TilesetId tilesetId = m_populatedTilesets[index];
 		const Tileset& tileset = m_project.GetTileset(tilesetId);
-		PaletteId paletteId = tileset.GetPaletteId();
+		PaletteId paletteId = tileset.GetDefaultPaletteId();
 		const Palette& palette = m_project.GetPalette(paletteId);
 
 		std::string defaultFilename = tileset.GetName() + ".bmp";
@@ -651,11 +656,13 @@ void DialogAssetManagement::OnBtnExportTileset(wxCommandEvent& event)
 
 			writer.SetDimensions(numTilesSq * tileWidth, numTilesSq * tileHeight);
 
-			for (int i = 0; i < numTiles; i++)
+			int i = 0;
+			for (const auto& it : tileset.GetTiles())
 			{
-				const Tile* tile = tileset.GetTile(i);
+				const Tile& tile = it.second;
 				int tileX = i % numTilesSq;
 				int tileY = i / numTilesSq;
+				i++;
 
 				for (int pixelX = 0; pixelX < tileWidth; pixelX++)
 				{
@@ -663,7 +670,7 @@ void DialogAssetManagement::OnBtnExportTileset(wxCommandEvent& event)
 					{
 						int imageX = (tileX * tileWidth) + pixelX;
 						int imageY = (tileY * tileHeight) + pixelY;
-						writer.SetColourIndex(imageX, imageY, tile->GetPixelColour(pixelX, pixelY));
+						writer.SetColourIndex(imageX, imageY, tile.GetPixelColour(pixelX, pixelY));
 					}
 				}
 			}
@@ -702,7 +709,7 @@ void DialogAssetManagement::OnBrowseTilesImg(wxFileDirPickerEvent& event)
 void DialogAssetManagement::MergeTileset(const std::string filename, TilesetId tilesetId)
 {
 	Tileset& tileset = m_project.GetTileset(tilesetId);
-	PaletteId paletteId = tileset.GetPaletteId();
+	PaletteId paletteId = tileset.GetDefaultPaletteId();
 	Palette& palette = m_project.GetPalette(paletteId);
 
 	// Check palette is compatible
@@ -728,7 +735,7 @@ void DialogAssetManagement::MergeTileset(const std::string filename, TilesetId t
 
 	if (!paletteMatch)
 	{
-		MergePaleteDialog dlg(this, palette, importedPalette);
+		MergePaletteDialog dlg(this, palette, importedPalette);
 		if (dlg.ShowModal() != wxID_OK)
 			return;
 
@@ -753,6 +760,7 @@ void DialogAssetManagement::MergeTileset(const std::string filename, TilesetId t
 
 	//Recreate render resources
 	m_mainWindow.RefreshTileset();
+	m_mainWindow.RefreshAll();
 
 	// Refresh
 	PopulatePalettes();
@@ -764,6 +772,165 @@ void DialogAssetManagement::MergeTileset(const std::string filename, TilesetId t
 void DialogAssetManagement::OnListStampSet(wxCommandEvent& event)
 {
 	SelectStampSet(m_listStampSets->GetSelection());
+}
+
+void DialogAssetManagement::OnBtnNewStampSet(wxCommandEvent& event)
+{
+	//Open BMP
+	wxFileDialog fileDlg(this, _("Open image file"), "", "", "PNG files (*.png)|*.png|BMP files (*.bmp)|*.bmp", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+	if (fileDlg.ShowModal() == wxID_OK)
+	{
+		//Import stampset
+		std::string filename = fileDlg.GetPath().c_str().AsChar();
+		std::string name = ion::string::GetFilename(filename);
+		Palette palette;
+		Tileset tileset;
+		StampSet stampSet;
+		Project::ImportResult result = m_project.ImportStampsetFromImage(filename, palette, tileset, stampSet);
+
+		if (result != Project::ImportResult::Success)
+		{
+			ShowImportError(result, filename);
+			return;
+		}
+
+		//Match tileset with existing or create new
+		std::vector<std::pair<TilesetId, int>> matches;
+		for (const auto& tilesetIt : m_project.GetTilesets())
+		{
+			int matchingTiles = 0;
+
+			for (const auto& tileIt : tilesetIt.second.GetTiles())
+			{
+				const Tile& tile = tileIt.second;
+				u32 tileFlags = 0;
+				if (tileset.FindDuplicate(tile, tileFlags) != InvalidTileId)
+					matchingTiles++;
+			}
+
+			if (matchingTiles > 0)
+			{
+				matches.push_back(std::make_pair(tilesetIt.first, matchingTiles));
+			}
+		}
+
+		PaletteId paletteId = InvalidPaletteId;
+		TilesetId tilesetId = InvalidTilesetId;
+		
+		if (matches.size() > 0)
+		{
+			// Add temporarily so we can create render resources
+			PaletteId tmpPaletteId = m_project.AddPalette(palette);
+			tileset.SetDefaultPaletteId(tmpPaletteId);
+			TilesetId tmpTilesetId = m_project.AddTileset(tileset);
+			m_mainWindow.RefreshTileset();
+
+			MatchTilesetDialog dlg(m_mainWindow, m_project, tmpTilesetId, matches, m_renderer, m_glContext, m_renderResources);
+
+			if (dlg.ShowModal() == wxID_OK)
+			{
+				tilesetId = dlg.GetSelectedTileset();
+				Tileset& existingTileset = m_project.GetTileset(tilesetId);
+
+				// Merge missing tiles into existing tileset
+				for (const auto& it : tileset.GetTiles())
+				{
+					const Tile& tile = it.second;
+					u32 flags = 0;
+					if (existingTileset.FindDuplicate(tile, flags) == InvalidTileId)
+						existingTileset.AddTile(tile);
+				}
+
+				// Rearrange tile ids in all stamps to match existing tileset
+				for (auto& stamp : stampSet.GetStamps())
+				{
+					for (int x = 0; x < stamp.second.GetWidth(); x++)
+					{
+						for (int y = 0; y < stamp.second.GetHeight(); y++)
+						{
+							TileId oldId = stamp.second.GetTile(x, y);
+							const Tile& tile = tileset.GetTile(oldId);
+							u32 flags = 0;
+							TileId newId = existingTileset.FindDuplicate(tile, flags);
+
+							if(newId != oldId)
+								stamp.second.SetTile(x, y, newId);
+						}
+					}
+				}
+
+				// Get palette id
+				paletteId = existingTileset.GetDefaultPaletteId();
+			}
+
+			m_project.DeleteTileset(tmpTilesetId);
+			m_project.DeletePalette(tmpPaletteId);
+		}
+		
+		if (tilesetId == InvalidTilesetId)
+		{
+			// Match palette with existing or create new
+			MatchPaletteDialog matchDlg(this, m_project, palette, InvalidPaletteId, name);
+			matchDlg.ShowModal();
+			paletteId = matchDlg.m_selectedPaletteId;
+
+			if (paletteId == InvalidPaletteId)
+			{
+				wxMessageBox("Cannot import tileset, no matching palette selected", "Error");
+				return;
+			}
+
+			// Add tileset
+			tileset.SetDefaultPaletteId(paletteId);
+			tilesetId = m_project.AddTileset(tileset);
+		}
+
+		// Add stampset
+		stampSet.SetTilesetId(tilesetId);
+		StampSetId stampsetId = m_project.AddStampSet(stampSet);
+
+		// Recreate render resources
+		m_mainWindow.RefreshTileset();
+		m_mainWindow.RefreshAll();
+
+		// Refresh
+		PopulatePalettes();
+		PopulateTilesets();
+		PopulateStampSets();
+		SelectPaletteById(paletteId);
+		SelectTilesetById(tilesetId);
+		SelectStampSetById(stampsetId);
+	}
+}
+
+void DialogAssetManagement::OnBtnDeleteStampSet(wxCommandEvent& event)
+{
+
+}
+
+void DialogAssetManagement::OnBtnScanStampSet(wxCommandEvent& event)
+{
+
+}
+
+void DialogAssetManagement::OnBtnExportStampSet(wxCommandEvent& event)
+{
+
+}
+
+void DialogAssetManagement::OnBtnRenameStampSet(wxCommandEvent& event)
+{
+
+}
+
+void DialogAssetManagement::OnBtnCleanupStampSet(wxCommandEvent& event)
+{
+
+}
+
+void DialogAssetManagement::OnBrowseStampsImg(wxFileDirPickerEvent& event)
+{
+
 }
 
 void DialogAssetManagement::OnListMap(wxCommandEvent& event)
@@ -795,7 +962,7 @@ int DialogAssetManagement::GetPaletteUsage(PaletteId paletteId, std::vector<Tile
 {
 	for (const auto& tileset : m_project.GetTilesets())
 	{
-		if (tileset.second.GetPaletteId() == paletteId)
+		if (tileset.second.GetDefaultPaletteId() == paletteId)
 			tilesets.push_back(tileset.first);
 	}
 
@@ -850,6 +1017,9 @@ void DialogAssetManagement::ShowImportError(Project::ImportResult result, const 
 	{
 	case Project::ImportResult::Success:
 		return;
+	case Project::ImportResult::UnknownError:
+		msg += "An unknown error occured";
+		break;
 	case Project::ImportResult::FileNotFound:
 		msg += "File not found";
 		break;
@@ -864,6 +1034,13 @@ void DialogAssetManagement::ShowImportError(Project::ImportResult result, const 
 		break;
 	case Project::ImportResult::PaletteMismatch:
 		msg += "Palette does not match image to be replaced";
+		break;
+	case Project::ImportResult::InvalidDimensions:
+		msg += "Image size is not compatible with project settings:\n";
+		msg += "\n  Tile width: " + std::to_string(m_project.GetPlatformConfig().tileWidth);
+		msg += "\n  Tile height: " + std::to_string(m_project.GetPlatformConfig().tileHeight);
+		msg += "\n  Stamp width: " + std::to_string(m_project.GetPlatformConfig().stampWidth);
+		msg += "\n  Stamp height: " + std::to_string(m_project.GetPlatformConfig().stampHeight);
 		break;
 	}
 

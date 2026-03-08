@@ -53,6 +53,13 @@ public:
 
 	// Stamp sets tab
 	virtual void OnListStampSet(wxCommandEvent& event);
+	virtual void OnBtnNewStampSet(wxCommandEvent& event);
+	virtual void OnBtnDeleteStampSet(wxCommandEvent& event);
+	virtual void OnBtnScanStampSet(wxCommandEvent& event);
+	virtual void OnBtnExportStampSet(wxCommandEvent& event);
+	virtual void OnBtnRenameStampSet(wxCommandEvent& event);
+	virtual void OnBtnCleanupStampSet(wxCommandEvent& event);
+	virtual void OnBrowseStampsImg(wxFileDirPickerEvent& event);
 
 	// Maps tab
 	virtual void OnListMap(wxCommandEvent& event);
@@ -89,6 +96,9 @@ private:
 
 	Project& m_project;
 	MainWindow& m_mainWindow;
+	ion::render::Renderer& m_renderer;
+	wxGLContext& m_glContext;
+	RenderResources& m_renderResources;
 
 	std::vector<PaletteId> m_populatedPalettes;
 	std::vector<TilesetId> m_populatedTilesets;

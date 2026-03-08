@@ -13,6 +13,7 @@
 
 #include "Dialogs.h"
 #include "SpriteCanvas.h"
+#include "TilesPanel.h"
 
 #include <wx/msgdlg.h>
 
@@ -265,7 +266,7 @@ void MatchPaletteDialog::OnBtnNew(wxCommandEvent& event)
 	}
 }
 
-MergePaleteDialog::MergePaleteDialog(wxWindow* parent, const Palette& original, const Palette& imported)
+MergePaletteDialog::MergePaletteDialog(wxWindow* parent, const Palette& original, const Palette& imported)
 	: DialogMergePaletteBase(parent)
 	, m_original(original)
 	, m_imported(imported)
@@ -275,7 +276,7 @@ MergePaleteDialog::MergePaleteDialog(wxWindow* parent, const Palette& original, 
 	MergeUp();
 }
 
-void MergePaleteDialog::MergeUp()
+void MergePaletteDialog::MergeUp()
 {
 	// Take clashing colours from imported
 	m_merged = m_imported;
@@ -289,7 +290,7 @@ void MergePaleteDialog::MergeUp()
 	m_paletteViewMerged->SetPalette(m_merged);
 }
 
-void MergePaleteDialog::MergeDown()
+void MergePaletteDialog::MergeDown()
 {
 	// Take clashing colours from original
 	m_merged = m_original;
@@ -303,15 +304,64 @@ void MergePaleteDialog::MergeDown()
 	m_paletteViewMerged->SetPalette(m_merged);
 }
 
-void MergePaleteDialog::OnRadioOriginal(wxCommandEvent& event)
+void MergePaletteDialog::OnRadioOriginal(wxCommandEvent& event)
 {
 	m_radioImported->SetValue(false);
 	MergeDown();
 }
 
-void MergePaleteDialog::OnRadioImported(wxCommandEvent& event)
+void MergePaletteDialog::OnRadioImported(wxCommandEvent& event)
 {
 
 	m_radioOriginal->SetValue(false);
 	MergeUp();
+}
+
+MatchTilesetDialog::MatchTilesetDialog(MainWindow& mainWindow, Project& project, TilesetId tilesetToMatch, const std::vector<std::pair<TilesetId, int>>& matches, ion::render::Renderer& renderer, wxGLContext& glContext, RenderResources& renderResources)
+	: MatchTilesetDialogBase((wxWindow*)&mainWindow)
+	, m_matches(matches)
+{
+	m_canvasTilesImported->SetProject(&project);
+	m_canvasTilesImported->SetMainWindow(&mainWindow);
+	m_canvasTilesImported->SetupRendering(&renderer, &glContext, &renderResources);
+	m_canvasTilesImported->SetTilesetId(tilesetToMatch);
+
+	m_canvasTilesMatch->SetProject(&project);
+	m_canvasTilesMatch->SetMainWindow(&mainWindow);
+	m_canvasTilesMatch->SetupRendering(&renderer, &glContext, &renderResources);
+	m_canvasTilesMatch->SetTilesetId(matches[0].first);
+
+	for (const auto& match : matches)
+	{
+		const Tileset& tileset = project.GetTileset(match.first);
+		std::string entry = tileset.GetName() + " (" + std::to_string(match.second) + " matching tiles)";
+		m_choiceTileset->Append(entry);
+	}
+
+	m_choiceTileset->SetSelection(0);
+}
+
+void MatchTilesetDialog::PopulateView(TilesPanel* view, TilesetId tilesetId)
+{
+	view->SetTilesetId(tilesetId);
+}
+
+void MatchTilesetDialog::OnChoiceTileset(wxCommandEvent& event)
+{
+	PopulateView(m_canvasTilesMatch, m_matches[m_choiceTileset->GetSelection()].first);
+}
+
+void MatchTilesetDialog::OnBtnMatch(wxCommandEvent& event)
+{
+	EndModal(wxID_OK);
+}
+
+void MatchTilesetDialog::OnBtnNew(wxCommandEvent& event)
+{
+
+}
+
+TilesetId MatchTilesetDialog::GetSelectedTileset() const
+{
+	return m_matches[m_choiceTileset->GetSelection()].first;
 }

@@ -49,10 +49,10 @@ class TilesPanel;
 #include <wx/grid.h>
 #include <wx/slider.h>
 #include <wx/statline.h>
+#include <wx/statbox.h>
 #include <wx/treectrl.h>
 #include <wx/propgrid/propgrid.h>
 #include <wx/propgrid/advprops.h>
-#include <wx/statbox.h>
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -1287,6 +1287,35 @@ class DialogNewObjectTypeBase : public wxDialog
 };
 
 ///////////////////////////////////////////////////////////////////////////////
+/// Class MatchTilesetDialogBase
+///////////////////////////////////////////////////////////////////////////////
+class MatchTilesetDialogBase : public wxDialog
+{
+	private:
+
+	protected:
+		wxStaticText* m_staticText143;
+		wxChoice* m_choiceTileset;
+		TilesPanel* m_canvasTilesImported;
+		TilesPanel* m_canvasTilesMatch;
+		wxButton* m_btnMatch;
+		wxButton* m_btnNew;
+
+		// Virtual event handlers, override them in your derived class
+		virtual void OnChoiceTileset( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnBtnMatch( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnBtnNew( wxCommandEvent& event ) { event.Skip(); }
+
+
+	public:
+
+		MatchTilesetDialogBase( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("Match Tileset"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 1061,572 ), long style = wxDEFAULT_DIALOG_STYLE );
+
+		~MatchTilesetDialogBase();
+
+};
+
+///////////////////////////////////////////////////////////////////////////////
 /// Class SpriteAnimPanelBase
 ///////////////////////////////////////////////////////////////////////////////
 class SpriteAnimPanelBase : public wxPanel
@@ -1474,6 +1503,8 @@ class DialogAssetsBase : public wxDialog
 		wxStaticText* m_txtStampSetTileset;
 		wxStaticText* m_staticText9411;
 		wxStaticText* m_txtStampSetUsageCount;
+		wxStaticText* m_staticText144;
+		wxChoice* m_choicePaletteSlot;
 		wxStaticText* m_staticText127;
 		wxFilePickerCtrl* m_filePickerStampsImg;
 		wxStaticBoxSizer* m_sizerStamps;
@@ -1528,6 +1559,7 @@ class DialogAssetsBase : public wxDialog
 		virtual void OnBtnExportStampSet( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnRenameStampSet( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnCleanupStampSet( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnStampPaletteSlot( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBrowseStampsImg( wxFileDirPickerEvent& event ) { event.Skip(); }
 		virtual void OnListMap( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnImportMap( wxCommandEvent& event ) { event.Skip(); }

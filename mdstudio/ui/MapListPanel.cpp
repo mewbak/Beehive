@@ -72,6 +72,7 @@ void MapListPanel::OnMapSelected(wxListEvent& event)
 	}
 }
 
+#if !BEEHIVE_PLUGIN_LUMINARY
 void MapListPanel::OnMapRightClick(wxListEvent& event)
 {
 	m_rightClickMap = m_mapIds[event.GetIndex()];
@@ -184,7 +185,7 @@ void MapListPanel::OnToolRemoveMap(wxCommandEvent& event)
 	}
 }
 
-#if !BEEHIVE_PLUGIN_LUMINARY // TODO: needs a lot of work to support new palettes/stampset refactor
+// TODO: needs a lot of work to support new palettes/stampset refactor
 void MapListPanel::OnToolImportMap(wxCommandEvent& event)
 {
 	wxFileDialog dialog(this, _("Open BEE file"), "", "", "BEE files (*.bee)|*.bee", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
@@ -348,7 +349,6 @@ void MapListPanel::OnToolImportMap(wxCommandEvent& event)
 		}
 	}
 }
-#endif
 
 void MapListPanel::OnToolRenameMap(wxCommandEvent& event)
 {
@@ -359,3 +359,4 @@ void MapListPanel::OnToolRenameMap(wxCommandEvent& event)
 		Refresh(false, NULL);
 	}
 }
+#endif

@@ -131,8 +131,10 @@ public:
 	virtual void OnBtnNew(wxCommandEvent& event);
 
 	TilesetId GetSelectedTileset() const;
+	const std::string& GetNewName();
 
 private:
 	void PopulateView(TilesPanel* view, TilesetId tilesetId);
+	std::string m_newName;
 	const std::vector<std::pair<TilesetId, int>>& m_matches;
 };

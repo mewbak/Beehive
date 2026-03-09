@@ -59,6 +59,8 @@ public:
 	virtual void OnBtnExportStampSet(wxCommandEvent& event);
 	virtual void OnBtnRenameStampSet(wxCommandEvent& event);
 	virtual void OnBtnCleanupStampSet(wxCommandEvent& event);
+	virtual void OnStampPaletteSlot(wxCommandEvent& event);
+	virtual void OnStampTileset(wxCommandEvent& event);
 	virtual void OnBrowseStampsImg(wxFileDirPickerEvent& event);
 
 	// Maps tab
@@ -85,6 +87,7 @@ private:
 	void SelectMapById(MapId mapId);
 
 	void MergeTileset(const std::string filename, TilesetId tilesetId);
+	void MergeStampset(const std::string filename, StampSetId stampSetId);
 
 	void AssignPalette(int index, int slotIndex);
 

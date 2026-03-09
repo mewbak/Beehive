@@ -78,6 +78,8 @@ TilesPanel::~TilesPanel()
 void TilesPanel::SetTilesetId(TilesetId tilesetId)
 {
 	m_tilesetId = tilesetId;
+	m_selectedTile = InvalidTileId;
+	m_hoverTile = InvalidTileId;
 	ion::Vector2i canvasSize = CalcCanvasSize();
 	InitPanel(canvasSize.x, canvasSize.y);
 	Refresh();

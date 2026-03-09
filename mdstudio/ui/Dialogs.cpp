@@ -331,6 +331,9 @@ MatchTilesetDialog::MatchTilesetDialog(MainWindow& mainWindow, Project& project,
 	m_canvasTilesMatch->SetupRendering(&renderer, &glContext, &renderResources);
 	m_canvasTilesMatch->SetTilesetId(matches[0].first);
 
+	const Tileset& originalTileset = project.GetTileset(tilesetToMatch);
+	m_newName = originalTileset.GetName();
+
 	for (const auto& match : matches)
 	{
 		const Tileset& tileset = project.GetTileset(match.first);
@@ -358,10 +361,21 @@ void MatchTilesetDialog::OnBtnMatch(wxCommandEvent& event)
 
 void MatchTilesetDialog::OnBtnNew(wxCommandEvent& event)
 {
-
+	
+	wxTextEntryDialog dlg(this, "New tileset", "New tileset", m_newName);
+	if (dlg.ShowModal() == wxID_OK)
+	{
+		m_newName = dlg.GetValue().c_str().AsChar();
+		EndModal(wxID_ADD);
+	}
 }
 
 TilesetId MatchTilesetDialog::GetSelectedTileset() const
 {
 	return m_matches[m_choiceTileset->GetSelection()].first;
+}
+
+const std::string& MatchTilesetDialog::GetNewName()
+{
+	return m_newName;
 }

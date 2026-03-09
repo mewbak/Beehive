@@ -3272,10 +3272,12 @@ void MainWindow::OnBtnStampsCleanup(wxCommandEvent& event)
 {
 	if(m_project.get())
 	{
-		if(m_project->CleanupStamps())
+		for (const auto& it : m_project->GetStampSets())
 		{
-			RefreshAll();
+			m_project->CleanupStamps(it.first);
 		}
+
+		RefreshAll();
 	}
 }
 

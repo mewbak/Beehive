@@ -25,16 +25,16 @@ public:
 
 	virtual void Refresh(bool eraseBackground = true, const wxRect *rect = NULL);
 	virtual void OnMapSelected(wxListEvent& event);
+#if !BEEHIVE_PLUGIN_LUMINARY
 	virtual void OnMapRightClick(wxListEvent& event);
 	virtual void OnToolAddMap(wxCommandEvent& event);
 	virtual void OnToolRemoveMap(wxCommandEvent& event);
 	virtual void OnToolRenameMap(wxCommandEvent& event);
-
-#if !BEEHIVE_PLUGIN_LUMINARY
 	virtual void OnToolImportMap(wxCommandEvent& event);
 #endif
 
 protected:
+#if !BEEHIVE_PLUGIN_LUMINARY
 	enum ContextMenu
 	{
 		StampSet,
@@ -44,11 +44,14 @@ protected:
 	};
 
 	void OnContextMenuClick(wxCommandEvent& event);
+#endif
 
 private:
 	Project& m_project;
 	MainWindow* m_mainWindow;
 	std::vector<MapId> m_mapIds;
+#if !BEEHIVE_PLUGIN_LUMINARY
 	std::vector<StampSetId> m_stampSetIds;
 	MapId m_rightClickMap;
+#endif
 };

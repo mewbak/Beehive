@@ -71,6 +71,8 @@ StampsPanel::~StampsPanel()
 void StampsPanel::SetStampSetId(StampSetId stampSetId)
 {
 	m_stampSetId = stampSetId;
+	m_selectedStamp = InvalidStampId;
+	m_hoverStamp = InvalidStampId;
 	InitPanel();
 	Refresh();
 }

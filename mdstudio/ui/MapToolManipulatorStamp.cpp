@@ -50,10 +50,13 @@ std::string MapToolManipulatorStamp::GetTooltipText(const MapObjIdentifierStamp&
 	int stampY = ion::maths::Clamp(cursorPosTl.y % object.stamp->GetHeight(), 0, object.stamp->GetHeight());
 	TileId tileId = object.stamp->GetTile(stampX, stampY);
 
-	TerrainTileId terrainTileId0 = object.stamp->GetTerrainTile(stampX, stampY, 0);
-	TerrainTileId terrainTileId1 = object.stamp->GetTerrainTile(stampX, stampY, 1);
-	u16 collisionFlags0 = object.stamp->GetCollisionTileFlags(stampX, stampY, 0);
-	u16 collisionFlags1 = object.stamp->GetCollisionTileFlags(stampX, stampY, 1);
+	bool hasTerrain0 = object.stamp->GetNumTerrainLayers() > 0;
+	bool hasTerrain1 = object.stamp->GetNumTerrainLayers() > 1;
+
+	TerrainTileId terrainTileId0 = hasTerrain0 ? object.stamp->GetTerrainTile(stampX, stampY, 0) : InvalidTerrainTileId;
+	TerrainTileId terrainTileId1 = hasTerrain1 ? object.stamp->GetTerrainTile(stampX, stampY, 1) : InvalidTerrainTileId;
+	u16 collisionFlags0 = hasTerrain0 ? object.stamp->GetCollisionTileFlags(stampX, stampY, 0) : InvalidTerrainTileId;
+	u16 collisionFlags1 = hasTerrain1 ? object.stamp->GetCollisionTileFlags(stampX, stampY, 1) : InvalidTerrainTileId;
 	u8 terrainAngleByte0 = 0;
 	u8 terrainAngleByte1 = 0;
 	ion::Vector2 terrainNormal0;

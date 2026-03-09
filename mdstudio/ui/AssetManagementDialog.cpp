@@ -79,14 +79,12 @@ void DialogAssetManagement::PopulateTilesets()
 
 	m_populatedTilesets.clear();
 	m_listTilesets->Clear();
-	m_choiceStampTilset->Clear();
 
 	const auto& tilesets = m_project.GetTilesets();
 
 	for (const auto& tileset : tilesets)
 	{
 		m_listTilesets->Append(tileset.second.GetName());
-		m_choiceStampTilset->Append(tileset.second.GetName());
 		m_populatedTilesets.push_back(tileset.first);
 	}
 
@@ -195,6 +193,24 @@ void DialogAssetManagement::SelectTileset(int index)
 		std::vector<StampSetId> stampSets;
 		m_txtTilesetUsageCount->SetLabelText(std::to_string(GetTilesetUsage(tilesetId, stampSets)));
 
+		if (tileset.GetOwningStampSet() == InvalidStampSetId)
+		{
+			m_txtTilesetOwner->SetLabelText("None");
+			m_btnDeleteTileset->Enable();
+			m_btnScanTileset->Enable();
+			m_btnCleanupTileset->Enable();
+			m_filePickerTilesImg->Enable();
+		}
+		else
+		{
+			const StampSet& owner = m_project.GetStampSet(tileset.GetOwningStampSet());
+			m_txtTilesetOwner->SetLabelText(owner.GetName());
+			m_btnDeleteTileset->Disable();
+			m_btnScanTileset->Disable();
+			m_btnCleanupTileset->Disable();
+			m_filePickerTilesImg->Disable();
+		}
+
 		Refresh();
 	}
 }
@@ -246,15 +262,6 @@ void DialogAssetManagement::SelectStampSet(int index)
 		}
 
 		m_choicePaletteSlot->SetSelection(stampSet.GetPaletteSlot());
-
-		for (int i = 0; i < m_populatedTilesets.size(); i++)
-		{
-			if (m_populatedTilesets[i] == tilesetId)
-			{
-				m_choiceStampTilset->SetSelection(i);
-				break;
-			}
-		}
 
 		m_filePickerStampsImg->SetPath(m_project.m_settings.GetAbsolutePath(stampSetId));
 
@@ -828,115 +835,26 @@ void DialogAssetManagement::OnBtnNewStampSet(wxCommandEvent& event)
 			ShowImportError(result, filename);
 			return;
 		}
-
-		//Match tileset with existing or create new
-		std::vector<std::pair<TilesetId, int>> matches;
-		for (const auto& tilesetIt : m_project.GetTilesets())
-		{
-			int matchingTiles = 0;
-
-			for (const auto& tileIt : tilesetIt.second.GetTiles())
-			{
-				const Tile& tile = tileIt.second;
-				u32 tileFlags = 0;
-				if (tileset.FindDuplicate(tile, tileFlags) != InvalidTileId && tileFlags == 0)
-					matchingTiles++;
-			}
-
-			if (matchingTiles > 0)
-			{
-				matches.push_back(std::make_pair(tilesetIt.first, matchingTiles));
-			}
-		}
-
-		PaletteId paletteId = InvalidPaletteId;
-		TilesetId tilesetId = InvalidTilesetId;
 		
-		if (matches.size() > 0)
+		// Match palette with existing or create new
+		MatchPaletteDialog matchDlg(this, m_project, palette, InvalidPaletteId, name);
+		matchDlg.ShowModal();
+		PaletteId paletteId = matchDlg.m_selectedPaletteId;
+
+		if (paletteId == InvalidPaletteId)
 		{
-			// Add temporarily so we can create render resources
-			PaletteId tmpPaletteId = m_project.AddPalette(palette);
-			tileset.SetDefaultPaletteId(tmpPaletteId);
-			TilesetId tmpTilesetId = m_project.AddTileset(tileset);
-			m_mainWindow.RefreshTileset();
-
-			MatchTilesetDialog dlg(m_mainWindow, m_project, tmpTilesetId, matches, m_renderer, m_glContext, m_renderResources);
-
-			int dlgResult = dlg.ShowModal();
-			if (dlgResult == wxID_OK)
-			{
-				tilesetId = dlg.GetSelectedTileset();
-				Tileset& existingTileset = m_project.GetTileset(tilesetId);
-				int mergeCount = 0;
-
-				// Merge missing tiles into existing tileset
-				for (const auto& it : tileset.GetTiles())
-				{
-					const Tile& tile = it.second;
-					u32 tileFlags = 0;
-					if (existingTileset.FindDuplicate(tile, tileFlags) == InvalidTileId && tileFlags == 0)
-					{
-						existingTileset.AddTile(tile);
-						mergeCount++;
-					}
-				}
-
-				wxMessageBox("Merged " + std::to_string(mergeCount) + " tiles into tileset '" + existingTileset.GetName() + "'", "Stampset merge");
-
-				// Rearrange tile ids in all stamps to match existing tileset
-				for (auto& stamp : stampSet.GetStamps())
-				{
-					for (int x = 0; x < stamp.second.GetWidth(); x++)
-					{
-						for (int y = 0; y < stamp.second.GetHeight(); y++)
-						{
-							TileId oldId = stamp.second.GetTile(x, y);
-							const Tile& tile = tileset.GetTile(oldId);
-							u32 tileFlags = 0;
-							TileId newId = existingTileset.FindDuplicate(tile, tileFlags);
-
-							if (newId != oldId)
-							{
-								stamp.second.SetTile(x, y, newId);
-								stamp.second.SetTileFlags(x, y, tileFlags);
-							}
-						}
-					}
-				}
-
-				// Get palette id
-				paletteId = existingTileset.GetDefaultPaletteId();
-			}
-			else if (dlgResult == wxID_ADD)
-			{
-				name = dlg.GetNewName();
-			}
-
-			m_project.DeleteTileset(tmpTilesetId);
-			m_project.DeletePalette(tmpPaletteId);
+			wxMessageBox("Cannot import tileset, no matching palette selected", "Error");
+			return;
 		}
-		
-		if (tilesetId == InvalidTilesetId)
-		{
-			// Match palette with existing or create new
-			MatchPaletteDialog matchDlg(this, m_project, palette, InvalidPaletteId, name);
-			matchDlg.ShowModal();
-			paletteId = matchDlg.m_selectedPaletteId;
 
-			if (paletteId == InvalidPaletteId)
-			{
-				wxMessageBox("Cannot import tileset, no matching palette selected", "Error");
-				return;
-			}
-
-			// Add tileset
-			tileset.SetDefaultPaletteId(paletteId);
-			tilesetId = m_project.AddTileset(tileset);
-		}
+		// Add tileset
+		tileset.SetDefaultPaletteId(paletteId);
+		TilesetId tilesetId = m_project.AddTileset(tileset);
 
 		// Add stampset
 		stampSet.SetTilesetId(tilesetId);
 		StampSetId stampsetId = m_project.AddStampSet(stampSet);
+		tileset.SetOwningStampSet(stampsetId);
 
 		//Remember source path
 		m_project.m_settings.SetAbsolutePath(stampsetId, filename);
@@ -962,6 +880,7 @@ void DialogAssetManagement::OnBtnDeleteStampSet(wxCommandEvent& event)
 	{
 		StampSetId stampSetId = m_populatedStampSets[index];
 		const StampSet& stampSet = m_project.GetStampSet(stampSetId);
+		TilesetId tilesetId = stampSet.GetTilesetId();
 
 		std::vector<MapId> maps;
 		int usageCount = GetStampSetUsage(stampSetId, maps);
@@ -983,8 +902,11 @@ void DialogAssetManagement::OnBtnDeleteStampSet(wxCommandEvent& event)
 		}
 
 		m_project.DeleteStampSet(stampSetId);
+		m_project.DeleteTileset(tilesetId);
 		PopulateStampSets();
+		PopulateTilesets();
 		SelectStampSet(0);
+		SelectTileset(0);
 	}
 }
 
@@ -1097,7 +1019,10 @@ void DialogAssetManagement::OnBtnCleanupStampSet(wxCommandEvent& event)
 	if (index >= 0 && index < m_populatedStampSets.size())
 	{
 		StampSetId stampSetId = m_populatedStampSets[index];
-		m_project.CleanupStamps(stampSetId);
+		const StampSet& stampSet = m_project.GetStampSet(stampSetId);
+		int cleaned = m_project.CleanupStamps(stampSetId);
+		wxMessageBox("Removed " + std::to_string(cleaned) + " unused stamps from stampset '" + stampSet.GetName() + "'", "Cleanup");
+		SelectStampSet(index);
 	}
 }
 
@@ -1116,33 +1041,6 @@ void DialogAssetManagement::OnStampPaletteSlot(wxCommandEvent& event)
 	}
 }
 
-void DialogAssetManagement::OnStampTileset(wxCommandEvent& event)
-{
-	int stampSetIdx = m_listStampSets->GetSelection();
-	if (stampSetIdx >= 0 && stampSetIdx < m_populatedStampSets.size())
-	{
-		StampSetId stampSetId = m_populatedStampSets[stampSetIdx];
-		StampSet& stampSet = m_project.GetStampSet(stampSetId);
-
-		int tilesetIdx = m_choiceStampTilset->GetSelection();
-		if (tilesetIdx >= 0 && tilesetIdx < m_populatedTilesets.size())
-		{
-			TilesetId tilesetId = m_populatedTilesets[tilesetIdx];
-			const Tileset& tileset = m_project.GetTileset(tilesetId);
-			if (!m_project.CheckCompatibilityTilesetStampset(tilesetId, stampSetId))
-			{
-				wxMessageBox("Tileset '" + tileset.GetName() + "' is incompatible with stampset '" + stampSet.GetName() + "'", "Error");
-				return;
-			}
-
-			stampSet.SetTilesetId(tilesetId);
-
-			m_mainWindow.RefreshTileset();
-			m_mainWindow.RefreshAll();
-		}
-	}
-}
-
 void DialogAssetManagement::OnBrowseStampsImg(wxFileDirPickerEvent& event)
 {
 	int stampSetIdx = m_listStampSets->GetSelection();
@@ -1156,24 +1054,61 @@ void DialogAssetManagement::OnBrowseStampsImg(wxFileDirPickerEvent& event)
 
 void DialogAssetManagement::MergeStampset(const std::string filename, StampSetId stampSetId)
 {
-	// Tileset first
-	StampSet& stampSet = m_project.GetStampSet(stampSetId);
-	MergeTileset(filename, stampSet.GetTilesetId());
-
-	// Keep original name
-	std::string name = stampSet.GetName();
-
-	// Merge stampset
+	// Import stampset
 	Palette importedPalette;
 	Tileset importedTileset;
-	Project::ImportResult result = m_project.ImportStampsetFromImage(filename, importedPalette, importedTileset, stampSet);
+	StampSet importedStampSet;
+	Project::ImportResult result = m_project.ImportStampsetFromImage(filename, importedPalette, importedTileset, importedStampSet);
 	if (result != Project::ImportResult::Success)
 	{
 		ShowImportError(result, filename);
 		return;
 	}
 
-	stampSet.SetName(name);
+	// Check if any stamps have been removed
+	StampSet& stampSet = m_project.GetStampSet(stampSetId);
+	TilesetId tilesetId = stampSet.GetTilesetId();
+	Tileset& tileset = m_project.GetTileset(tilesetId);
+	std::vector<StampId> removed;
+	for (const auto& stamp : stampSet.GetStamps())
+	{
+		if (!importedStampSet.StampExists(stamp.first))
+			removed.push_back(stamp.first);
+	}
+
+	if (removed.size() > 0)
+	{
+		if (wxMessageBox(std::to_string(removed.size()) + " stamps removed, this will reset any placements to default. Are you sure?", "Warning", wxOK | wxCANCEL | wxICON_WARNING) == wxID_CANCEL)
+			return;
+
+		// Clear any used from all maps
+		for (auto& map : m_project.GetMaps())
+		{
+			for (auto& placement : map.second.GetStamps())
+			{
+				if (ion::utils::stl::Find(removed, placement.m_id))
+					placement.m_id = InvalidStampId;
+			}
+		}
+	}
+
+	// Set new
+	tileset.GetTiles() = importedTileset.GetTiles();
+	stampSet.GetStamps() = importedStampSet.GetStamps();
+	tileset.RebuildHashMap();
+
+	// Match palette with existing or create new
+	MatchPaletteDialog matchDlg(this, m_project, importedPalette, tileset.GetDefaultPaletteId(), stampSet.GetName());
+	matchDlg.ShowModal();
+	PaletteId paletteId = matchDlg.m_selectedPaletteId;
+
+	if (paletteId == InvalidPaletteId)
+	{
+		wxMessageBox("Cannot import tileset, no matching palette selected", "Error");
+		return;
+	}
+
+	tileset.SetDefaultPaletteId(paletteId);
 
 	//Remember source path
 	m_project.m_settings.SetAbsolutePath(stampSetId, filename);
@@ -1183,7 +1118,11 @@ void DialogAssetManagement::MergeStampset(const std::string filename, StampSetId
 	m_mainWindow.RefreshAll();
 
 	// Refresh
+	PopulatePalettes();
+	PopulateTilesets();
 	PopulateStampSets();
+	SelectPaletteById(paletteId);
+	SelectTilesetById(tilesetId);
 	SelectStampSetById(stampSetId);
 }
 

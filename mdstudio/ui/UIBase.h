@@ -1474,6 +1474,8 @@ class DialogAssetsBase : public wxDialog
 		wxStaticText* m_txtTilesetCount;
 		wxStaticText* m_staticText9211;
 		wxStaticText* m_txtTilesetPalette;
+		wxStaticText* m_staticText92112;
+		wxStaticText* m_txtTilesetOwner;
 		wxStaticText* m_staticText92111;
 		wxStaticText* m_txtTilesetUsageCount;
 		wxStaticText* m_staticText1271;
@@ -1505,8 +1507,6 @@ class DialogAssetsBase : public wxDialog
 		wxStaticText* m_txtStampSetUsageCount;
 		wxStaticText* m_staticText144;
 		wxChoice* m_choicePaletteSlot;
-		wxStaticText* m_staticText145;
-		wxChoice* m_choiceStampTilset;
 		wxStaticText* m_staticText127;
 		wxFilePickerCtrl* m_filePickerStampsImg;
 		wxStaticBoxSizer* m_sizerStamps;
@@ -1562,7 +1562,6 @@ class DialogAssetsBase : public wxDialog
 		virtual void OnBtnRenameStampSet( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnCleanupStampSet( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnStampPaletteSlot( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnStampTileset( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBrowseStampsImg( wxFileDirPickerEvent& event ) { event.Skip(); }
 		virtual void OnListMap( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnImportMap( wxCommandEvent& event ) { event.Skip(); }

@@ -60,7 +60,6 @@ public:
 	virtual void OnBtnRenameStampSet(wxCommandEvent& event);
 	virtual void OnBtnCleanupStampSet(wxCommandEvent& event);
 	virtual void OnStampPaletteSlot(wxCommandEvent& event);
-	virtual void OnStampTileset(wxCommandEvent& event);
 	virtual void OnBrowseStampsImg(wxFileDirPickerEvent& event);
 
 	// Maps tab

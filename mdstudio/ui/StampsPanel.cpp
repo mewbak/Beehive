@@ -536,7 +536,7 @@ void StampsPanel::OnRender(ion::render::Renderer& renderer, const ion::Matrix4& 
 	z += zOffset;
 
 	//Render selected stamp
-	if(m_selectedStamp)
+	if(m_selectedStamp != InvalidStampId)
 	{
 		const Stamp& stamp = stampSet.GetStamp(m_selectedStamp);
 		ion::Vector2 size(stamp.GetWidth(), stamp.GetHeight());
@@ -547,7 +547,7 @@ void StampsPanel::OnRender(ion::render::Renderer& renderer, const ion::Matrix4& 
 	z += zOffset;
 
 	//Render mouse hover stamp
-	if(m_hoverStamp && m_hoverStamp != m_selectedStamp)
+	if(m_hoverStamp != InvalidStampId && m_hoverStamp != m_selectedStamp)
 	{
 		const Stamp& stamp = GetStampSet().GetStamp(m_hoverStamp);
 		ion::Vector2 size(stamp.GetWidth(), stamp.GetHeight());

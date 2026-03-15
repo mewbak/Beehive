@@ -1274,7 +1274,42 @@ void DialogAssetManagement::OnBtnDeleteMap(wxCommandEvent& event)
 
 void DialogAssetManagement::OnBtnImportMap(wxCommandEvent& event)
 {
+	int index = m_listMaps->GetSelection();
+	if (index >= 0 && index < m_populatedMaps.size())
+	{
+		MapId mapId = m_populatedMaps[index];
+		Map& map = m_project.GetMap(mapId);
 
+		std::string defaultFilename = map.GetName() + ".bmp";
+		wxFileDialog fileDlg(this, _("Open image file"), "", "", "PNG files (*.png)|*.png|BMP files (*.bmp)|*.bmp", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+		if (fileDlg.ShowModal() == wxID_OK)
+		{
+			StampSetId stampsetId = map.GetStampSetId();
+			const StampSet& stampset = m_project.GetStampSet(stampsetId);
+			TilesetId tilesetId = stampset.GetTilesetId();
+			const Tileset& tileset = m_project.GetTileset(tilesetId);
+			std::string filename = fileDlg.GetPath().c_str().AsChar();
+
+			Map importedMap;
+			Project::ImportResult result = m_project.ImportMapFromImage(filename, tileset, stampset, importedMap);
+			if (result != Project::ImportResult::Success)
+			{
+				ShowImportError(result, filename, m_project);
+				return;
+			}
+
+			CollisionMap& collisionMap = m_project.GetCollisionMap(mapId);
+			collisionMap.Resize(importedMap.GetWidth(), importedMap.GetHeight(), false, false);
+
+			map.Clear();
+			map.Resize(importedMap.GetWidth(), importedMap.GetHeight(), false, false);
+			TStampPosMap& stamps = map.GetStamps();
+			stamps = importedMap.GetStamps();
+
+			m_project.InvalidateMap(true);
+			m_mainWindow.RefreshPanel(MainWindow::Panel::ePanelMap);
+		}
+	}
 }
 
 void DialogAssetManagement::ExportMap(const std::string filename, MapId mapId)
@@ -1485,6 +1520,12 @@ void DialogAssetManagement::ShowImportError(Project::ImportResult result, const 
 		msg += "\n  Tile height: " + std::to_string(project.GetPlatformConfig().tileHeight);
 		msg += "\n  Stamp width: " + std::to_string(project.GetPlatformConfig().stampWidth);
 		msg += "\n  Stamp height: " + std::to_string(project.GetPlatformConfig().stampHeight);
+		break;
+	case Project::ImportResult::MissingTile:
+		msg += "Imported map contains tiles not present in the tileset, import the correct stampset first";
+		break;
+	case Project::ImportResult::MissingStamp:
+		msg += "Imported map contains stamps not present in the stampset, import the correct stampset first";
 		break;
 	}
 

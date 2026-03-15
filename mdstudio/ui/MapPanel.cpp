@@ -2584,10 +2584,10 @@ void MapPanel::PaintMap(const Map& map)
 	}
 
 	//Paint all stamps
-	for(TStampPosMap::const_iterator it = map.StampsBegin(), end = map.StampsEnd(); it != end; ++it)
+	for (const auto& it : map.GetStamps())
 	{
-		const Stamp& stamp = stampSet.GetStamp(it->m_id);
-		PaintStamp(tilesetId, stamp, it->m_position.x, it->m_position.y, it->m_flags);
+		const Stamp& stamp = stampSet.GetStamp(it.m_id);
+		PaintStamp(tilesetId, stamp, it.m_position.x, it.m_position.y, it.m_flags);
 	}
 }
 
@@ -2617,10 +2617,10 @@ void MapPanel::PaintCollisionMap(const Map& map, const CollisionMap& collisionMa
 	//Paint all stamps
 	StampSet& stampSet = m_project->GetStampSet(map.GetStampSetId());
 
-	for (TStampPosMap::const_iterator it = map.StampsBegin(), end = map.StampsEnd(); it != end; ++it)
+	for (const auto& it : map.GetStamps())
 	{
-		const Stamp& stamp = stampSet.GetStamp(it->m_id);
-		PaintStampCollision(stamp, it->m_position.x, it->m_position.y, it->m_flags);
+		const Stamp& stamp = stampSet.GetStamp(it.m_id);
+		PaintStampCollision(stamp, it.m_position.x, it.m_position.y, it.m_flags);
 	}
 #endif
 }

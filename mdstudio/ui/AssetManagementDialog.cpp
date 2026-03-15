@@ -121,14 +121,18 @@ void DialogAssetManagement::PopulateMaps()
 
 	m_populatedMaps.clear();
 	m_listMaps->Clear();
+	m_choiceBgMap->Clear();
 
 	const auto& maps = m_project.GetMaps();
 
 	for (const auto& map : maps)
 	{
 		m_listMaps->Append(map.second.GetName());
+		m_choiceBgMap->Append(map.second.GetName());
 		m_populatedMaps.push_back(map.first);
 	}
+
+	m_choiceBgMap->Append("[None]");
 
 	if (index >= 0 && index < m_populatedMaps.size())
 	{
@@ -278,6 +282,26 @@ void DialogAssetManagement::SelectMap(int index)
 
 		MapId mapId = m_populatedMaps[index];
 		const Map& map = m_project.GetMap(mapId);
+		StampSetId stampSetId = map.GetStampSetId();
+		const StampSet& stampSet = m_project.GetStampSet(stampSetId);
+		TilesetId tilesetId = stampSet.GetTilesetId();
+		const Tileset& tileset = m_project.GetTileset(tilesetId);
+
+		bool isBackgroundMap = false;
+
+		for (const auto& it : m_project.GetMaps())
+		{
+			if (it.second.GetBackgroundMapId() == mapId)
+			{
+				isBackgroundMap = true;
+				break;
+			}
+		}
+
+		if (isBackgroundMap)
+			m_choiceBgMap->Disable();
+		else
+			m_choiceBgMap->Enable();
 
 		PaletteViewCtrl* views[4] = { m_paletteViewSlot0, m_paletteViewSlot1, m_paletteViewSlot2, m_paletteViewSlot3 };
 		wxChoice* lists[4] = { m_choiceSlot0, m_choiceSlot1, m_choiceSlot2, m_choiceSlot3 };
@@ -286,7 +310,7 @@ void DialogAssetManagement::SelectMap(int index)
 		{
 			lists[i]->Clear();
 
-			if (map.IsBackgroundMap())
+			if (isBackgroundMap)
 			{
 				lists[i]->Disable();
 			}
@@ -314,6 +338,18 @@ void DialogAssetManagement::SelectMap(int index)
 				}
 			}
 		}
+
+		MapId bgMapId = map.GetBackgroundMapId();
+		if (bgMapId == InvalidMapId)
+			m_choiceBgMap->SetSelection(m_populatedMaps.size());
+		else
+			m_choiceBgMap->SetSelection(ion::utils::stl::IndexOf(m_populatedMaps, bgMapId));
+
+		m_txtMapName->SetLabelText(map.GetName());
+		m_txtMapId->SetLabelText(std::to_string(mapId));
+		m_txtMapStampSet->SetLabelText(stampSet.GetName());
+		m_txtMapTileset->SetLabelText(tileset.GetName());
+		m_txtMapType->SetLabelText(isBackgroundMap ? "Background" : "Foreground");
 	}
 }
 
@@ -1414,7 +1450,26 @@ void DialogAssetManagement::OnBtnRenameMap(wxCommandEvent& event)
 
 void DialogAssetManagement::OnListBackgroundMap(wxCommandEvent& event)
 {
+	int fgIndex = m_listMaps->GetSelection();
+	int bgIndex = m_choiceBgMap->GetSelection();
+	if (   fgIndex >= 0 && fgIndex < m_populatedMaps.size())
+	{
+		MapId fgMapId = m_populatedMaps[fgIndex];
+		MapId bgMapId = InvalidMapId;
 
+		if (bgIndex >= 0 && bgIndex < m_populatedMaps.size())
+			bgMapId = m_populatedMaps[bgIndex];
+
+		if (fgMapId == bgMapId)
+		{
+			wxMessageBox("Map cannot use itself as a background map", "Error");
+			SelectMap(fgIndex);
+			return;
+		}
+
+		Map& fgMap = m_project.GetMap(fgMapId);
+		fgMap.SetBackgroundMap(bgMapId);
+	}
 }
 
 void DialogAssetManagement::OnListSlot0(wxCommandEvent& event)

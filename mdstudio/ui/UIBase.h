@@ -1549,6 +1549,8 @@ class DialogAssetsBase : public wxDialog
 		wxStaticText* m_txtMapName;
 		wxStaticText* m_staticText902;
 		wxStaticText* m_txtMapId;
+		wxStaticText* m_staticText158;
+		wxStaticText* m_txtMapType;
 		wxStaticText* m_staticText922;
 		wxStaticText* m_txtMapTileset;
 		wxStaticText* m_staticText942;

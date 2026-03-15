@@ -2602,15 +2602,16 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 				}
 			}
 
-			//Find background map
-			MapId backgroundMapId = InvalidMapId;
+			//Find background maps for each map
+			std::set<MapId> isBgMap;
+			std::map<MapId, MapId> bgMaps;
 
-			for (TMapMap::iterator it = m_project->MapsBegin(), end = m_project->MapsEnd(); it != end && backgroundMapId == InvalidMapId; ++it)
+			for (const auto& it : m_project->GetMaps())
 			{
-				if (it->second.IsBackgroundMap())
-				{
-					backgroundMapId = it->first;
-				}
+				MapId bgMapId = it.second.GetBackgroundMapId();
+				if(bgMapId != InvalidMapId)
+					isBgMap.insert(bgMapId);
+				bgMaps.insert(std::make_pair(it.first, bgMapId));
 			}
 
 			//Export Luminary scenes
@@ -2624,9 +2625,11 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 				std::string tilesetLabel = "tileset_" + stampSet.GetName();
 				std::string terrainStampsetLabel = "collision_stampset_" + stampSet.GetName();
 
-				//Ignore background map
-				if (it->first != backgroundMapId)
+				//Ignore background maps
+				if (isBgMap.find(it->first) == isBgMap.end())
 				{
+					const auto& bgMapIt = bgMaps.find(it->first);
+					MapId backgroundMapId = (bgMapIt == bgMaps.end()) ? InvalidMapId : bgMapIt->second;
 					const Map& mapFg = m_project->GetMap(it->first);
 					const Map* mapBg = (backgroundMapId == InvalidMapId) ? nullptr : &m_project->GetMap(backgroundMapId);
 					const TGameObjectPosMap& gameObjMap = mapFg.GetGameObjects();

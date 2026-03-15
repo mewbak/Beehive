@@ -4775,6 +4775,14 @@ DialogAssetsBase::DialogAssetsBase( wxWindow* parent, wxWindowID id, const wxStr
 	m_txtMapId->Wrap( -1 );
 	fgSizer762->Add( m_txtMapId, 0, wxALL, 5 );
 
+	m_staticText158 = new wxStaticText( sbSizer22->GetStaticBox(), wxID_ANY, wxT("Type:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText158->Wrap( -1 );
+	fgSizer762->Add( m_staticText158, 0, wxALL, 5 );
+
+	m_txtMapType = new wxStaticText( sbSizer22->GetStaticBox(), wxID_ANY, wxT("[None]"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_txtMapType->Wrap( -1 );
+	fgSizer762->Add( m_txtMapType, 0, wxALL, 5 );
+
 	m_staticText922 = new wxStaticText( sbSizer22->GetStaticBox(), wxID_ANY, wxT("Tileset:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText922->Wrap( -1 );
 	fgSizer762->Add( m_staticText922, 0, wxALL, 5 );

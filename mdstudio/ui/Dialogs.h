@@ -138,3 +138,21 @@ private:
 	std::string m_newName;
 	const std::vector<std::pair<TilesetId, int>>& m_matches;
 };
+
+class NewMapDialog : public DialogNewMapBase
+{
+public:
+	NewMapDialog(MainWindow& mainWindow, wxWindow* parent, Project& project);
+
+	virtual void OnBtnNewStampSet(wxCommandEvent& event);
+
+	std::string GetMapName() const;
+	ion::Vector2i GetMapSize() const;
+	StampSetId GetMapStampSetId() const;
+
+private:
+	MainWindow& m_mainWindow;
+	Project& m_project;
+	std::vector<StampSetId> m_populatedStampSets;
+	StampSetId m_selectedStampSet;
+};

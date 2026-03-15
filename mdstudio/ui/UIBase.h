@@ -40,7 +40,6 @@ class TilesPanel;
 #include <wx/choice.h>
 #include "PaletteViewCtrl.h"
 #include <wx/radiobut.h>
-#include <wx/toolbar.h>
 #include <wx/listctrl.h>
 #include <wx/listbox.h>
 #include <wx/scrolwin.h>
@@ -48,6 +47,7 @@ class TilesPanel;
 #include <wx/clrpicker.h>
 #include <wx/grid.h>
 #include <wx/slider.h>
+#include <wx/toolbar.h>
 #include <wx/statline.h>
 #include <wx/statbox.h>
 #include <wx/treectrl.h>
@@ -706,18 +706,9 @@ class MapListPanelBase : public wxPanel
 	private:
 
 	protected:
-		wxToolBar* m_toolBar1;
-		wxToolBarToolBase* m_toolAddMap;
-		wxToolBarToolBase* m_toolRemoveMap;
-		wxToolBarToolBase* m_toolRename;
-		wxToolBarToolBase* m_toolImport;
 		wxListCtrl* m_listMaps;
 
 		// Virtual event handlers, override them in your derived class
-		virtual void OnToolAddMap( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnToolRemoveMap( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnToolRenameMap( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnToolImportMap( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnMapRightClick( wxListEvent& event ) { event.Skip(); }
 		virtual void OnMapSelected( wxListEvent& event ) { event.Skip(); }
 
@@ -1316,6 +1307,41 @@ class MatchTilesetDialogBase : public wxDialog
 };
 
 ///////////////////////////////////////////////////////////////////////////////
+/// Class DialogNewMapBase
+///////////////////////////////////////////////////////////////////////////////
+class DialogNewMapBase : public wxDialog
+{
+	private:
+
+	protected:
+		wxStaticText* m_staticText153;
+		wxTextCtrl* m_txtName;
+		wxStaticText* m_staticText155;
+		wxSpinCtrl* m_spinWidth;
+		wxStaticText* m_staticText156;
+		wxSpinCtrl* m_spinHeight;
+		wxStaticText* m_staticText157;
+		wxStaticText* m_staticText154;
+		wxChoice* m_choiceStampSet;
+		wxButton* m_btnNewStampSet;
+		wxStdDialogButtonSizer* m_sdbSizer12;
+		wxButton* m_sdbSizer12OK;
+		wxButton* m_sdbSizer12Cancel;
+
+		// Virtual event handlers, override them in your derived class
+		virtual void OnChoiceStampSet( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnBtnNewStampSet( wxCommandEvent& event ) { event.Skip(); }
+
+
+	public:
+
+		DialogNewMapBase( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("New Map"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 477,171 ), long style = wxDEFAULT_DIALOG_STYLE );
+
+		~DialogNewMapBase();
+
+};
+
+///////////////////////////////////////////////////////////////////////////////
 /// Class SpriteAnimPanelBase
 ///////////////////////////////////////////////////////////////////////////////
 class SpriteAnimPanelBase : public wxPanel
@@ -1514,10 +1540,11 @@ class DialogAssetsBase : public wxDialog
 		wxPanel* m_tabMaps;
 		wxStaticText* m_staticText1811;
 		wxListBox* m_listMaps;
+		wxButton* m_btnNewMap;
+		wxButton* m_btnDeleteMap;
 		wxButton* m_btnImportMap;
 		wxButton* m_btnExportMap;
 		wxButton* m_btnRenameMap;
-		wxButton* m_btnDeleteMap;
 		wxStaticText* m_staticText882;
 		wxStaticText* m_txtMapName;
 		wxStaticText* m_staticText902;
@@ -1564,11 +1591,13 @@ class DialogAssetsBase : public wxDialog
 		virtual void OnStampPaletteSlot( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBrowseStampsImg( wxFileDirPickerEvent& event ) { event.Skip(); }
 		virtual void OnListMap( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnListMapDClick( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnBtnNewMap( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnBtnDeleteMap( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnImportMap( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnExportMap( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnRenameMap( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnBtnDeleteMap( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnBackgroundMap( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnListBackgroundMap( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnListSlot0( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnListSlot1( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnListSlot2( wxCommandEvent& event ) { event.Skip(); }

@@ -249,26 +249,31 @@ void ViewPanel::CreateGrid(int width, int height, int cellsX, int cellsY)
 
 void ViewPanel::PaintTile(TilesetId tilesetId, TileId tileId, int x, int y, u32 flipFlags)
 {
-	if (tileId == InvalidTileId)
-		tileId = 0;
+	ion::render::TexCoord coords[4];
 
 	//Set texture coords for cell
-	ion::render::TexCoord coords[4];
-	m_renderResources->GetTileTexCoords(tilesetId, tileId, coords, flipFlags);
+	if (tileId != InvalidTileId)
+		m_renderResources->GetTileTexCoords(tilesetId, tileId, coords, flipFlags);
+
 	m_canvasPrimitive->SetTexCoords((y * m_canvasSize.x) + x, coords);
 	m_canvasPrimitiveDirty = true;
 }
 
 void ViewPanel::PaintCollisionTile(TerrainTileId terrainTileId, int x, int y, u16 collisionFlags)
 {
+	ion::render::TexCoord coords[4] = { ion::Vector2(0.0f, 0.0f) };
+
 	//Set texture coords for terrain cell
-	ion::render::TexCoord coords[4];
-	m_renderResources->GetTerrainTileTexCoords(terrainTileId, coords);
+	if (terrainTileId != InvalidTerrainTileId)
+		m_renderResources->GetTerrainTileTexCoords(terrainTileId, coords);
+
 	m_terrainCanvasPrimitive->SetTexCoords((y * m_canvasSize.x) + x, coords);
 	m_terrainCanvasDirty = true;
 
 	//Set texture coords for collision cell
-	m_renderResources->GetCollisionTypeTexCoords(collisionFlags, coords);
+	if (terrainTileId != InvalidTerrainTileId)
+		m_renderResources->GetCollisionTypeTexCoords(collisionFlags, coords);
+
 	m_collisionCanvasPrimitive->SetTexCoords((y * m_canvasSize.x) + x, coords);
 	m_collisionCanvasDirty = true;
 }

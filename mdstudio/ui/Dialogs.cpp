@@ -14,6 +14,8 @@
 #include "Dialogs.h"
 #include "SpriteCanvas.h"
 #include "TilesPanel.h"
+#include "AssetManagementDialog.h"
+#include "MainWindow.h"
 
 #include <wx/msgdlg.h>
 
@@ -378,4 +380,104 @@ TilesetId MatchTilesetDialog::GetSelectedTileset() const
 const std::string& MatchTilesetDialog::GetNewName()
 {
 	return m_newName;
+}
+
+NewMapDialog::NewMapDialog(MainWindow& mainWindow, wxWindow* parent, Project& project)
+	: DialogNewMapBase(parent)
+	, m_mainWindow(mainWindow)
+	, m_project(project)
+	, m_selectedStampSet(InvalidStampSetId)
+{
+	for (const auto& it : project.GetStampSets())
+	{
+		m_choiceStampSet->Append(it.second.GetName());
+		m_populatedStampSets.push_back(it.first);
+	}
+}
+
+void NewMapDialog::OnBtnNewStampSet(wxCommandEvent& event)
+{
+	//Open BMP
+	wxFileDialog fileDlg(this, _("Open image file"), "", "", "PNG files (*.png)|*.png|BMP files (*.bmp)|*.bmp", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+	if (fileDlg.ShowModal() == wxID_OK)
+	{
+		//Import stampset
+		std::string filename = fileDlg.GetPath().c_str().AsChar();
+		std::string name = ion::string::GetFilename(filename);
+		Palette palette;
+		Tileset tileset;
+		StampSet stampSet;
+		Project::ImportResult result = m_project.ImportStampsetFromImage(filename, palette, tileset, stampSet);
+
+		if (result != Project::ImportResult::Success)
+		{
+			DialogAssetManagement::ShowImportError(result, filename, m_project);
+			return;
+		}
+
+		// Match palette with existing or create new
+		MatchPaletteDialog matchDlg(this, m_project, palette, InvalidPaletteId, name);
+		matchDlg.ShowModal();
+		PaletteId paletteId = matchDlg.m_selectedPaletteId;
+
+		if (paletteId == InvalidPaletteId)
+		{
+			wxMessageBox("Cannot import tileset, no matching palette selected", "Error");
+			return;
+		}
+
+		// Add tileset
+		tileset.SetDefaultPaletteId(paletteId);
+		TilesetId tilesetId = m_project.AddTileset(tileset);
+		Tileset& newTileset = m_project.GetTileset(tilesetId);
+
+		// Add stampset
+		stampSet.SetTilesetId(tilesetId);
+		StampSetId stampsetId = m_project.AddStampSet(stampSet);
+		newTileset.SetOwningStampSet(stampsetId);
+
+		//Remember source path
+		m_project.m_settings.SetAbsolutePath(stampsetId, filename);
+
+		// Recreate render resources
+		m_mainWindow.RefreshTileset();
+		m_mainWindow.RefreshAll();
+
+		// Repopulate list
+		m_choiceStampSet->Clear();
+		m_populatedStampSets.clear();
+
+		for (const auto& it : m_project.GetStampSets())
+		{
+			m_choiceStampSet->Append(it.second.GetName());
+
+			if (it.first == stampsetId)
+				m_choiceStampSet->SetSelection(m_populatedStampSets.size());
+
+			m_populatedStampSets.push_back(it.first);
+		}
+
+		Refresh();
+	}
+}
+
+std::string NewMapDialog::GetMapName() const
+{
+	return m_txtName->GetValue();
+}
+
+ion::Vector2i NewMapDialog::GetMapSize() const
+{
+	return ion::Vector2i(m_spinWidth->GetValue(), m_spinHeight->GetValue());
+}
+
+StampSetId NewMapDialog::GetMapStampSetId() const
+{
+	int index = m_choiceStampSet->GetSelection();
+	if (index >= 0 && index < m_populatedStampSets.size())
+	{
+		return m_populatedStampSets[index];
+	}
+
+	return InvalidStampSetId;
 }

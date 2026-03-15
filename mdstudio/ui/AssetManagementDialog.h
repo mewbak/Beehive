@@ -64,10 +64,19 @@ public:
 
 	// Maps tab
 	virtual void OnListMap(wxCommandEvent& event);
+	virtual void OnListMapDClick(wxCommandEvent& event);
+	virtual void OnBtnNewMap(wxCommandEvent& event);
+	virtual void OnBtnDeleteMap(wxCommandEvent& event);
+	virtual void OnBtnImportMap(wxCommandEvent& event);
+	virtual void OnBtnExportMap(wxCommandEvent& event);
+	virtual void OnBtnRenameMap(wxCommandEvent& event);
+	virtual void OnListBackgroundMap(wxCommandEvent& event);
 	virtual void OnListSlot0(wxCommandEvent& event);
 	virtual void OnListSlot1(wxCommandEvent& event);
 	virtual void OnListSlot2(wxCommandEvent& event);
 	virtual void OnListSlot3(wxCommandEvent& event);
+
+	static void ShowImportError(Project::ImportResult result, const std::string& filenam, const Project& project);
 
 private:
 	void PopulatePalettes();
@@ -96,8 +105,6 @@ private:
 	int GetPaletteUsage(PaletteId paletteId, std::vector<TilesetId>& tilesets, std::vector<std::pair<ActorId,SpriteSheetId>>& spriteSheets, std::vector<MapId>& maps) const;
 	int GetTilesetUsage(TilesetId tilesetId, std::vector<StampSetId>& stampSets) const;
 	int GetStampSetUsage(StampSetId stampSetId, std::vector<MapId>& maps) const;
-
-	void ShowImportError(Project::ImportResult result, const std::string& filename) const;
 
 	Project& m_project;
 	MainWindow& m_mainWindow;

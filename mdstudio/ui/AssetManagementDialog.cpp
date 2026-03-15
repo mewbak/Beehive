@@ -380,7 +380,7 @@ void DialogAssetManagement::OnBtnImportPalette(wxCommandEvent& event)
 
 		if (result != Project::ImportResult::Success)
 		{
-			ShowImportError(result, filename);
+			ShowImportError(result, filename, m_project);
 			return;
 		}
 
@@ -452,6 +452,7 @@ void DialogAssetManagement::OnBtnRenamePalette(wxCommandEvent& event)
 		{
 			palette.SetName(dlg.GetValue().c_str().AsChar());
 			PopulatePalettes();
+			SelectPaletteById(paletteId);
 		}
 	}
 }
@@ -571,7 +572,7 @@ void DialogAssetManagement::OnBtnNewTileset(wxCommandEvent& event)
 
 		if (result != Project::ImportResult::Success)
 		{
-			ShowImportError(result, filename);
+			ShowImportError(result, filename, m_project);
 			return;
 		}
 
@@ -652,6 +653,7 @@ void DialogAssetManagement::OnBtnRenameTileset(wxCommandEvent& event)
 		{
 			tileset.SetName(dlg.GetValue().c_str().AsChar());
 			PopulateTilesets();
+			SelectTilesetById(tilesetId);
 		}
 	}
 }
@@ -780,7 +782,7 @@ void DialogAssetManagement::MergeTileset(const std::string filename, TilesetId t
 	Project::ImportResult paletteResult = m_project.ImportPaletteFromImage(filename, importedPalette);
 	if (paletteResult != Project::ImportResult::Success)
 	{
-		ShowImportError(paletteResult, filename);
+		ShowImportError(paletteResult, filename, m_project);
 		return;
 	}
 
@@ -812,7 +814,7 @@ void DialogAssetManagement::MergeTileset(const std::string filename, TilesetId t
 	Project::ImportResult tilesetResult = m_project.ImportTilesetFromImage(filename, importedPalette, tileset);
 	if (tilesetResult != Project::ImportResult::Success)
 	{
-		ShowImportError(tilesetResult, filename);
+		ShowImportError(tilesetResult, filename, m_project);
 		return;
 	}
 
@@ -853,7 +855,7 @@ void DialogAssetManagement::OnBtnNewStampSet(wxCommandEvent& event)
 
 		if (result != Project::ImportResult::Success)
 		{
-			ShowImportError(result, filename);
+			ShowImportError(result, filename, m_project);
 			return;
 		}
 		
@@ -1038,6 +1040,7 @@ void DialogAssetManagement::OnBtnRenameStampSet(wxCommandEvent& event)
 		{
 			stampSet.SetName(dlg.GetValue().c_str().AsChar());
 			PopulateStampSets();
+			SelectStampSetById(stampSetId);
 		}
 	}
 }
@@ -1121,7 +1124,7 @@ void DialogAssetManagement::MergeStampset(const std::string filename, StampSetId
 	Project::ImportResult result = m_project.ImportStampsetFromImage(filename, importedPalette, importedTileset, importedStampSet);
 	if (result != Project::ImportResult::Success)
 	{
-		ShowImportError(result, filename);
+		ShowImportError(result, filename, m_project);
 		return;
 	}
 
@@ -1175,6 +1178,7 @@ void DialogAssetManagement::MergeStampset(const std::string filename, StampSetId
 
 	//Recreate render resources
 	m_mainWindow.RefreshTileset();
+	m_mainWindow.RefreshTerrainTileset();
 	m_mainWindow.RefreshAll();
 
 	// Refresh
@@ -1189,6 +1193,116 @@ void DialogAssetManagement::MergeStampset(const std::string filename, StampSetId
 void DialogAssetManagement::OnListMap(wxCommandEvent& event)
 {
 	SelectMap(m_listMaps->GetSelection());
+}
+
+void DialogAssetManagement::OnListMapDClick(wxCommandEvent& event)
+{
+	int index = m_listMaps->GetSelection();
+	if (index >= 0 && index < m_populatedMaps.size())
+	{
+		m_listMaps->SetSelection(index);
+
+		MapId mapId = m_populatedMaps[index];
+
+		if (mapId != m_project.GetEditingMapId())
+		{
+			m_project.SetEditingMap(mapId);
+			m_project.SetEditingCollisionMap(mapId);
+
+			m_project.InvalidateMap(true);
+			m_project.InvalidateStamps(true);
+			m_project.InvalidateCamera(true);
+			m_project.InvalidateMap(false);
+			m_project.InvalidateCamera(false);
+		}
+
+		SelectMap(index);
+		m_mainWindow.RefreshAll();
+	}
+}
+
+void DialogAssetManagement::OnBtnNewMap(wxCommandEvent& event)
+{
+	NewMapDialog dlg(m_mainWindow, this, m_project);
+	if (dlg.ShowModal() == wxID_OK)
+	{
+		std::string name = dlg.GetMapName();
+		StampSetId stampSetId = dlg.GetMapStampSetId();
+		ion::Vector2i size = dlg.GetMapSize();
+
+		if (!name.empty() && stampSetId != InvalidStampSetId && size.x > 0 && size.y > 0)
+		{
+			MapId mapId = m_project.CreateMap(name, stampSetId, size.x, size.y);
+			const Map& map = m_project.GetMap(mapId);
+
+			m_project.CreateCollisionMap(mapId, map.GetWidth(), map.GetHeight());
+
+			const StampSet& stampSet = m_project.GetStampSet(stampSetId);
+			TilesetId tilesetId = stampSet.GetTilesetId();
+			const Tileset& tileset = m_project.GetTileset(tilesetId);
+			PaletteId paletteId = tileset.GetDefaultPaletteId();
+
+			// Refresh
+			PopulatePalettes();
+			PopulateTilesets();
+			PopulateStampSets();
+			PopulateMaps();
+			SelectPaletteById(paletteId);
+			SelectTilesetById(tilesetId);
+			SelectStampSetById(stampSetId);
+			SelectMapById(mapId);
+		}
+	}
+}
+
+void DialogAssetManagement::OnBtnDeleteMap(wxCommandEvent& event)
+{
+	int index = m_listMaps->GetSelection();
+	if (index >= 0 && index < m_populatedMaps.size())
+	{
+		MapId mapId = m_populatedMaps[index];
+		if (mapId == m_project.GetEditingMapId())
+		{
+			wxMessageBox("Cannot delete currently editing map", "Error");
+			return;
+		}
+
+		m_project.DeleteMap(mapId);
+		PopulateMaps();
+	}
+}
+
+void DialogAssetManagement::OnBtnImportMap(wxCommandEvent& event)
+{
+
+}
+
+void DialogAssetManagement::OnBtnExportMap(wxCommandEvent& event)
+{
+
+}
+
+void DialogAssetManagement::OnBtnRenameMap(wxCommandEvent& event)
+{
+	int index = m_listMaps->GetSelection();
+	if (index >= 0 && index < m_populatedMaps.size())
+	{
+		MapId mapId = m_populatedMaps[index];
+		Map& map = m_project.GetMap(mapId);
+
+		wxTextEntryDialog dlg(this, "Rename map", "Rename map", map.GetName());
+		if (dlg.ShowModal() == wxID_OK)
+		{
+			map.SetName(dlg.GetValue().c_str().AsChar());
+			PopulateMaps();
+			SelectMapById(mapId);
+		}
+	}
+}
+
+void DialogAssetManagement::OnListBackgroundMap(wxCommandEvent& event)
+{
+
 }
 
 void DialogAssetManagement::OnListSlot0(wxCommandEvent& event)
@@ -1262,7 +1376,7 @@ int DialogAssetManagement::GetStampSetUsage(StampSetId stampSetId, std::vector<M
 	return maps.size();
 }
 
-void DialogAssetManagement::ShowImportError(Project::ImportResult result, const std::string& filename) const
+void DialogAssetManagement::ShowImportError(Project::ImportResult result, const std::string& filename, const Project& project)
 {
 	std::string msg = "Error importing file '" + filename + "'\n\n";
 
@@ -1290,10 +1404,10 @@ void DialogAssetManagement::ShowImportError(Project::ImportResult result, const 
 		break;
 	case Project::ImportResult::InvalidDimensions:
 		msg += "Image size is not compatible with project settings:\n";
-		msg += "\n  Tile width: " + std::to_string(m_project.GetPlatformConfig().tileWidth);
-		msg += "\n  Tile height: " + std::to_string(m_project.GetPlatformConfig().tileHeight);
-		msg += "\n  Stamp width: " + std::to_string(m_project.GetPlatformConfig().stampWidth);
-		msg += "\n  Stamp height: " + std::to_string(m_project.GetPlatformConfig().stampHeight);
+		msg += "\n  Tile width: " + std::to_string(project.GetPlatformConfig().tileWidth);
+		msg += "\n  Tile height: " + std::to_string(project.GetPlatformConfig().tileHeight);
+		msg += "\n  Stamp width: " + std::to_string(project.GetPlatformConfig().stampWidth);
+		msg += "\n  Stamp height: " + std::to_string(project.GetPlatformConfig().stampHeight);
 		break;
 	}
 

@@ -99,6 +99,7 @@ private:
 
 	void ExportTileset(const std::string filename, TilesetId tilesetId);
 	void ExportStampset(const std::string filename, StampSetId stampSetId);
+	void ExportMap(const std::string filename, MapId mapId);
 
 	void AssignPalette(int index, int slotIndex);
 

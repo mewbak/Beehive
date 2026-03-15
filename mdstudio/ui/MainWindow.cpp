@@ -311,7 +311,6 @@ void MainWindow::SetProject(Project* project)
 #if !BEEHIVE_PLUGIN_LUMINARY
 			//Open bottom panels
 			ShowPanelPalettes();
-			ShowPanelMapList();
 #endif
 
 #if !BEEHIVE_PLUGIN_LUMINARY //No tile/collision editing in fixed mode
@@ -323,7 +322,7 @@ void MainWindow::SetProject(Project* project)
 
 			//Open left panels
 			ShowPanelSceneExplorer();
-			ShowPanelProperties();
+			ShowPanelMapList();
 			ShowToolboxStamps();
 			ShowToolboxObjects();
 
@@ -333,6 +332,7 @@ void MainWindow::SetProject(Project* project)
 #endif
 
 			//Open right panels
+			ShowPanelProperties();
 			ShowPanelStamps();
 
 			//Open centre panels
@@ -1223,8 +1223,7 @@ void MainWindow::ShowPanelMapList()
 			paneInfo.Dockable(true);
 			paneInfo.DockFixed(false);
 			paneInfo.BestSize(PANEL_SIZE_X(20), PANEL_SIZE_Y(10));
-			paneInfo.Right();
-			paneInfo.Row(1);
+			paneInfo.Left();
 			paneInfo.Caption("Maps");
 			paneInfo.CaptionVisible(true);
 
@@ -1251,7 +1250,6 @@ void MainWindow::ShowToolboxTiles()
 		paneInfo.DockFixed(false);
 		paneInfo.BestSize(PANEL_SIZE_X(10), PANEL_SIZE_Y(10));
 		paneInfo.Left();
-		paneInfo.Row(1);
 		paneInfo.Caption("Tile Tools");
 		paneInfo.CaptionVisible(true);
 
@@ -1314,7 +1312,6 @@ void MainWindow::ShowToolboxCollision()
 		paneInfo.DockFixed(false);
 		paneInfo.BestSize(PANEL_SIZE_X(10), PANEL_SIZE_X(10));
 		paneInfo.Left();
-		paneInfo.Row(2);
 		paneInfo.Caption("Collision Tools");
 		paneInfo.CaptionVisible(true);
 
@@ -1356,7 +1353,6 @@ void MainWindow::ShowToolboxStamps()
 		paneInfo.DockFixed(false);
 		paneInfo.BestSize(PANEL_SIZE_X(10), PANEL_SIZE_Y(10));
 		paneInfo.Left();
-		paneInfo.Row(0);
 		paneInfo.Caption("Stamp Tools");
 		paneInfo.CaptionVisible(true);
 
@@ -1403,12 +1399,6 @@ void MainWindow::ShowToolboxObjects()
 		paneInfo.Left();
 		paneInfo.Caption("Entity Tools");
 		paneInfo.CaptionVisible(true);
-
-#if BEEHIVE_PLUGIN_LUMINARY //No tile editing in fixed mode, fewer toolboxes
-		paneInfo.Row(0);
-#else
-		paneInfo.Row(2);
-#endif
 
 		m_toolboxPanelGameObjs = new MapToolboxGameObjs(m_dockArea, NewControlId());
 		m_auiManager.AddPane(m_toolboxPanelGameObjs, paneInfo);

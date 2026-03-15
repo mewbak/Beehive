@@ -1277,9 +1277,86 @@ void DialogAssetManagement::OnBtnImportMap(wxCommandEvent& event)
 
 }
 
+void DialogAssetManagement::ExportMap(const std::string filename, MapId mapId)
+{
+	const Map& map = m_project.GetMap(mapId);
+	StampSetId stampSetId = map.GetStampSetId();
+	const StampSet& stampSet = m_project.GetStampSet(stampSetId);
+	TilesetId tilesetId = stampSet.GetTilesetId();
+	const Tileset& tileset = m_project.GetTileset(tilesetId);
+	PaletteId paletteId = tileset.GetDefaultPaletteId();
+	const Palette& palette = m_project.GetPalette(paletteId);
+
+	ion::ImageFormatBMP writer(ion::ImageFormat::BitFormat::eIndexed16Colour);
+
+	for (int i = 0; i < Palette::coloursPerPalette; i++)
+	{
+		Colour colour(0, 0, 0);
+		if (palette.IsColourUsed(i))
+			colour = palette.GetColour(i);
+		writer.SetPaletteEntry(i, ion::ImageFormat::Colour(colour.GetRed(), colour.GetGreen(), colour.GetBlue()));
+	}
+
+	const int tileWidth = m_project.GetPlatformConfig().tileWidth;
+	const int tileHeight = m_project.GetPlatformConfig().tileHeight;
+	const int stampWidth = m_project.GetPlatformConfig().stampWidth;
+	const int stampHeight = m_project.GetPlatformConfig().stampHeight;
+	const int mapWidthTiles = map.GetWidth();
+	const int mapHeightTiles = map.GetHeight();
+	const int mapWidthStamps = mapWidthTiles / stampWidth;
+	const int mapHeightStamps = mapHeightTiles / stampHeight;
+
+	writer.SetDimensions(mapWidthTiles * tileWidth, mapHeightTiles * tileHeight);
+
+	for(const auto& stampPlacement : map.GetStamps())
+	{
+		const Stamp& stamp = stampSet.GetStamp(stampPlacement.m_id);
+		int stampX = stampPlacement.m_position.x / stampWidth;
+		int stampY = stampPlacement.m_position.y / stampHeight;
+
+		for (int tileX = 0; tileX < stampWidth; tileX++)
+		{
+			for (int tileY = 0; tileY < stampHeight; tileY++)
+			{
+				TileId tileId = stamp.GetTile(tileX, tileY);
+				u32 tileFlags = stamp.GetTileFlags(tileX, tileY);
+				const Tile& tile = tileset.GetTile(tileId);
+				for (int pixelX = 0; pixelX < tileWidth; pixelX++)
+				{
+					for (int pixelY = 0; pixelY < tileHeight; pixelY++)
+					{
+						int flipPixelX = (tileFlags & Map::eFlipX) ? (tileWidth - 1 - pixelX) : pixelX;
+						int flipPixelY = (tileFlags & Map::eFlipY) ? (tileHeight - 1 - pixelY) : pixelY;
+
+						int imageX = (((stampX * stampWidth) + tileX) * tileWidth) + flipPixelX;
+						int imageY = (((stampY * stampHeight) + tileY) * tileHeight) + flipPixelY;
+
+						writer.SetColourIndex(imageX, imageY, tile.GetPixelColour(pixelX, pixelY));
+					}
+				}
+			}
+		}
+	}
+
+	if (!writer.Write(filename))
+		wxMessageBox("Error exporting map to image '" + filename + "'", "Error");
+}
+
 void DialogAssetManagement::OnBtnExportMap(wxCommandEvent& event)
 {
+	int index = m_listMaps->GetSelection();
+	if (index >= 0 && index < m_populatedMaps.size())
+	{
+		MapId mapId = m_populatedMaps[index];
+		Map& map = m_project.GetMap(mapId);
 
+		std::string defaultFilename = map.GetName() + ".bmp";
+		wxFileDialog fileDlg(this, _("Save BMP file"), "", defaultFilename, "BMP files (*.bmp)|*.bmp", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
+		if (fileDlg.ShowModal() == wxID_OK)
+		{
+			ExportMap(fileDlg.GetPath().c_str().AsChar(), mapId);
+		}
+	}
 }
 
 void DialogAssetManagement::OnBtnRenameMap(wxCommandEvent& event)

@@ -4495,15 +4495,15 @@ DialogAssetsBase::DialogAssetsBase( wxWindow* parent, wxWindowID id, const wxStr
 	m_txtStampSetId->Wrap( -1 );
 	fgSizer761->Add( m_txtStampSetId, 0, wxALL, 5 );
 
-	m_staticText961 = new wxStaticText( sbSizer21->GetStaticBox(), wxID_ANY, wxT("Size:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText961 = new wxStaticText( sbSizer21->GetStaticBox(), wxID_ANY, wxT("Stamps:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText961->Wrap( -1 );
 	fgSizer761->Add( m_staticText961, 0, wxALL, 5 );
 
-	m_txtStampSetSize = new wxStaticText( sbSizer21->GetStaticBox(), wxID_ANY, wxT("[None]"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_txtStampSetSize->Wrap( -1 );
-	m_txtStampSetSize->SetMinSize( wxSize( 200,-1 ) );
+	m_txtStampCount = new wxStaticText( sbSizer21->GetStaticBox(), wxID_ANY, wxT("[None]"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_txtStampCount->Wrap( -1 );
+	m_txtStampCount->SetMinSize( wxSize( 200,-1 ) );
 
-	fgSizer761->Add( m_txtStampSetSize, 0, wxALL, 5 );
+	fgSizer761->Add( m_txtStampCount, 0, wxALL, 5 );
 
 	m_staticText921 = new wxStaticText( sbSizer21->GetStaticBox(), wxID_ANY, wxT("Palette:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText921->Wrap( -1 );

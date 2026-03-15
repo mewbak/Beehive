@@ -88,6 +88,9 @@ private:
 	void MergeTileset(const std::string filename, TilesetId tilesetId);
 	void MergeStampset(const std::string filename, StampSetId stampSetId);
 
+	void ExportTileset(const std::string filename, TilesetId tilesetId);
+	void ExportStampset(const std::string filename, StampSetId stampSetId);
+
 	void AssignPalette(int index, int slotIndex);
 
 	int GetPaletteUsage(PaletteId paletteId, std::vector<TilesetId>& tilesets, std::vector<std::pair<ActorId,SpriteSheetId>>& spriteSheets, std::vector<MapId>& maps) const;

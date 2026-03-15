@@ -235,6 +235,7 @@ void DialogAssetManagement::SelectStampSet(int index)
 
 		m_txtStampSetName->SetLabelText(stampSet.GetName());
 		m_txtStampSetId->SetLabelText(std::to_string(stampSetId));
+		m_txtStampCount->SetLabelText(std::to_string(stampSet.GetStampCount()));
 		m_txtStampSetPalette->SetLabelText(palette.GetName());
 		m_txtStampSetTileset->SetLabelText(tileset.GetName());
 
@@ -666,6 +667,53 @@ void DialogAssetManagement::OnBtnScanTileset(wxCommandEvent& event)
 	}
 }
 
+void DialogAssetManagement::ExportTileset(const std::string filename, TilesetId tilesetId)
+{
+	const Tileset& tileset = m_project.GetTileset(tilesetId);
+	PaletteId paletteId = tileset.GetDefaultPaletteId();
+	const Palette& palette = m_project.GetPalette(paletteId);
+
+	ion::ImageFormatBMP writer(ion::ImageFormat::BitFormat::eIndexed16Colour);
+
+	for (int i = 0; i < Palette::coloursPerPalette; i++)
+	{
+		Colour colour(0, 0, 0);
+		if (palette.IsColourUsed(i))
+			colour = palette.GetColour(i);
+		writer.SetPaletteEntry(i, ion::ImageFormat::Colour(colour.GetRed(), colour.GetGreen(), colour.GetBlue()));
+	}
+
+	const int numTiles = tileset.GetCount();
+	const int numTilesSq = (int)ion::maths::Ceil(ion::maths::Sqrt(numTiles));
+	const int tilesPerRow = numTilesSq;
+	const int tileWidth = m_project.GetPlatformConfig().tileWidth;
+	const int tileHeight = m_project.GetPlatformConfig().tileHeight;
+
+	writer.SetDimensions(numTilesSq * tileWidth, numTilesSq * tileHeight);
+
+	int i = 0;
+	for (const auto& it : tileset.GetTiles())
+	{
+		const Tile& tile = it.second;
+		int tileX = i % numTilesSq;
+		int tileY = i / numTilesSq;
+		i++;
+
+		for (int pixelX = 0; pixelX < tileWidth; pixelX++)
+		{
+			for (int pixelY = 0; pixelY < tileHeight; pixelY++)
+			{
+				int imageX = (tileX * tileWidth) + pixelX;
+				int imageY = (tileY * tileHeight) + pixelY;
+				writer.SetColourIndex(imageX, imageY, tile.GetPixelColour(pixelX, pixelY));
+			}
+		}
+	}
+
+	if (!writer.Write(filename))
+		wxMessageBox("Error exporting tileset to image '" + filename + "'", "Error");
+}
+
 void DialogAssetManagement::OnBtnExportTileset(wxCommandEvent& event)
 {
 	int index = m_listTilesets->GetSelection();
@@ -673,53 +721,13 @@ void DialogAssetManagement::OnBtnExportTileset(wxCommandEvent& event)
 	{
 		TilesetId tilesetId = m_populatedTilesets[index];
 		const Tileset& tileset = m_project.GetTileset(tilesetId);
-		PaletteId paletteId = tileset.GetDefaultPaletteId();
-		const Palette& palette = m_project.GetPalette(paletteId);
 
-		std::string defaultFilename = tileset.GetName() + ".bmp";
+		std::string storedFilename = m_project.m_settings.GetAbsolutePath(tilesetId);
+		std::string defaultFilename = storedFilename.empty() ? tileset.GetName() + ".bmp" : storedFilename;
 		wxFileDialog fileDlg(this, _("Save BMP file"), "", defaultFilename, "BMP files (*.bmp)|*.bmp", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
 		if (fileDlg.ShowModal() == wxID_OK)
 		{
-			ion::ImageFormatBMP writer(ion::ImageFormat::BitFormat::eIndexed16Colour);
-
-			for (int i = 0; i < Palette::coloursPerPalette; i++)
-			{
-				Colour colour(0, 0, 0);
-				if (palette.IsColourUsed(i))
-					colour = palette.GetColour(i);
-				writer.SetPaletteEntry(i, ion::ImageFormat::Colour(colour.GetRed(), colour.GetGreen(), colour.GetBlue()));
-			}
-
-			const int numTiles = tileset.GetCount();
-			const int numTilesSq = (int)ion::maths::Ceil(ion::maths::Sqrt(numTiles));
-			const int tilesPerRow = numTilesSq;
-			const int tileWidth = m_project.GetPlatformConfig().tileWidth;
-			const int tileHeight = m_project.GetPlatformConfig().tileHeight;
-
-			writer.SetDimensions(numTilesSq * tileWidth, numTilesSq * tileHeight);
-
-			int i = 0;
-			for (const auto& it : tileset.GetTiles())
-			{
-				const Tile& tile = it.second;
-				int tileX = i % numTilesSq;
-				int tileY = i / numTilesSq;
-				i++;
-
-				for (int pixelX = 0; pixelX < tileWidth; pixelX++)
-				{
-					for (int pixelY = 0; pixelY < tileHeight; pixelY++)
-					{
-						int imageX = (tileX * tileWidth) + pixelX;
-						int imageY = (tileY * tileHeight) + pixelY;
-						writer.SetColourIndex(imageX, imageY, tile.GetPixelColour(pixelX, pixelY));
-					}
-				}
-			}
-
-			std::string filename = fileDlg.GetPath().c_str().AsChar();
-			if (!writer.Write(filename))
-				wxMessageBox("Error exporting tileset to image '" + filename + "'", "Error");
+			ExportTileset(fileDlg.GetPath().c_str().AsChar(), tilesetId);
 		}
 	}
 }
@@ -732,7 +740,10 @@ void DialogAssetManagement::OnBtnCleanupTileset(wxCommandEvent& event)
 		TilesetId tilesetId = m_populatedTilesets[index];
 		const Tileset& tileset = m_project.GetTileset(tilesetId);
 		int cleaned = m_project.CleanupTileset(tilesetId);
-		wxMessageBox("Removed " + std::to_string(cleaned) + " unused tiles from tileset '" + tileset.GetName() + "'", "Cleanup");
+		if (wxMessageBox("Removed " + std::to_string(cleaned) + " unused tiles from tileset '" + tileset.GetName() + "'.\n\nTileset should be re-exported to source image before editing, export now?", "Cleanup", wxYES | wxNO | wxICON_WARNING) == wxID_YES)
+		{
+			ExportTileset(m_project.m_settings.GetAbsolutePath(tilesetId), tilesetId);
+		}
 		SelectTileset(index);
 	}
 }
@@ -743,6 +754,16 @@ void DialogAssetManagement::OnBrowseTilesImg(wxFileDirPickerEvent& event)
 	if (index >= 0 && index < m_populatedTilesets.size())
 	{
 		TilesetId tilesetId = m_populatedTilesets[index];
+		const Tileset& tileset = m_project.GetTileset(tilesetId);
+
+		if (tileset.GetCount() > 0)
+		{
+			if (wxMessageBox("Tileset " + tileset.GetName() + " already contains tiles, ensure the imported image is based on a previous export as a template. Continue?", "Warning", wxOK | wxCANCEL | wxICON_WARNING) == wxID_CANCEL)
+			{
+				return;
+			}
+		}
+
 		std::string filename = m_filePickerTilesImg->GetPath();
 		MergeTileset(filename, tilesetId);
 	}
@@ -850,11 +871,12 @@ void DialogAssetManagement::OnBtnNewStampSet(wxCommandEvent& event)
 		// Add tileset
 		tileset.SetDefaultPaletteId(paletteId);
 		TilesetId tilesetId = m_project.AddTileset(tileset);
+		Tileset& newTileset = m_project.GetTileset(tilesetId);
 
 		// Add stampset
 		stampSet.SetTilesetId(tilesetId);
 		StampSetId stampsetId = m_project.AddStampSet(stampSet);
-		tileset.SetOwningStampSet(stampsetId);
+		newTileset.SetOwningStampSet(stampsetId);
 
 		//Remember source path
 		m_project.m_settings.SetAbsolutePath(stampsetId, filename);
@@ -921,6 +943,70 @@ void DialogAssetManagement::OnBtnScanStampSet(wxCommandEvent& event)
 	}
 }
 
+void DialogAssetManagement::ExportStampset(const std::string filename, StampSetId stampSetId)
+{
+	const StampSet& stampSet = m_project.GetStampSet(stampSetId);
+	TilesetId tilesetId = stampSet.GetTilesetId();
+	const Tileset& tileset = m_project.GetTileset(tilesetId);
+	PaletteId paletteId = tileset.GetDefaultPaletteId();
+	const Palette& palette = m_project.GetPalette(paletteId);
+
+	ion::ImageFormatBMP writer(ion::ImageFormat::BitFormat::eIndexed16Colour);
+
+	for (int i = 0; i < Palette::coloursPerPalette; i++)
+	{
+		Colour colour(0, 0, 0);
+		if (palette.IsColourUsed(i))
+			colour = palette.GetColour(i);
+		writer.SetPaletteEntry(i, ion::ImageFormat::Colour(colour.GetRed(), colour.GetGreen(), colour.GetBlue()));
+	}
+
+	const int numStamps = stampSet.GetStampCount();
+	const int numStampsSq = (int)ion::maths::Ceil(ion::maths::Sqrt(numStamps));
+	const int stampsPerRow = numStampsSq;
+	const int tileWidth = m_project.GetPlatformConfig().tileWidth;
+	const int tileHeight = m_project.GetPlatformConfig().tileHeight;
+	const int stampWidth = m_project.GetPlatformConfig().stampWidth;
+	const int stampHeight = m_project.GetPlatformConfig().stampHeight;
+
+	writer.SetDimensions(numStampsSq * stampWidth * tileWidth, numStampsSq * stampHeight * tileHeight);
+
+	int i = 0;
+	for (const auto& it : stampSet.GetStamps())
+	{
+		const Stamp& stamp = it.second;
+		int stampX = i % numStampsSq;
+		int stampY = i / numStampsSq;
+		i++;
+
+		for (int tileX = 0; tileX < stampWidth; tileX++)
+		{
+			for (int tileY = 0; tileY < stampHeight; tileY++)
+			{
+				TileId tileId = stamp.GetTile(tileX, tileY);
+				u32 tileFlags = stamp.GetTileFlags(tileX, tileY);
+				const Tile& tile = tileset.GetTile(tileId);
+				for (int pixelX = 0; pixelX < tileWidth; pixelX++)
+				{
+					for (int pixelY = 0; pixelY < tileHeight; pixelY++)
+					{
+						int flipPixelX = (tileFlags & Map::eFlipX) ? (tileWidth - 1 - pixelX) : pixelX;
+						int flipPixelY = (tileFlags & Map::eFlipY) ? (tileHeight - 1 - pixelY) : pixelY;
+
+						int imageX = (((stampX * stampWidth) + tileX) * tileWidth) + flipPixelX;
+						int imageY = (((stampY * stampHeight) + tileY) * tileHeight) + flipPixelY;
+
+						writer.SetColourIndex(imageX, imageY, tile.GetPixelColour(pixelX, pixelY));
+					}
+				}
+			}
+		}
+	}
+
+	if (!writer.Write(filename))
+		wxMessageBox("Error exporting stampset to image '" + filename + "'", "Error");
+}
+
 void DialogAssetManagement::OnBtnExportStampSet(wxCommandEvent& event)
 {
 	int index = m_listStampSets->GetSelection();
@@ -928,70 +1014,13 @@ void DialogAssetManagement::OnBtnExportStampSet(wxCommandEvent& event)
 	{
 		StampSetId stampSetId = m_populatedStampSets[index];
 		const StampSet& stampSet = m_project.GetStampSet(stampSetId);
-		TilesetId tilesetId = stampSet.GetTilesetId();
-		const Tileset& tileset = m_project.GetTileset(tilesetId);
-		PaletteId paletteId = tileset.GetDefaultPaletteId();
-		const Palette& palette = m_project.GetPalette(paletteId);
 
-		std::string defaultFilename = stampSet.GetName() + ".bmp";
+		std::string storedFilename = m_project.m_settings.GetAbsolutePath(stampSetId);
+		std::string defaultFilename = storedFilename.empty() ? stampSet.GetName() + ".bmp" : storedFilename;
 		wxFileDialog fileDlg(this, _("Save BMP file"), "", defaultFilename, "BMP files (*.bmp)|*.bmp", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
 		if (fileDlg.ShowModal() == wxID_OK)
 		{
-			ion::ImageFormatBMP writer(ion::ImageFormat::BitFormat::eIndexed16Colour);
-
-			for (int i = 0; i < Palette::coloursPerPalette; i++)
-			{
-				Colour colour(0, 0, 0);
-				if (palette.IsColourUsed(i))
-					colour = palette.GetColour(i);
-				writer.SetPaletteEntry(i, ion::ImageFormat::Colour(colour.GetRed(), colour.GetGreen(), colour.GetBlue()));
-			}
-
-			const int numStamps = stampSet.GetStampCount();
-			const int numStampsSq = (int)ion::maths::Ceil(ion::maths::Sqrt(numStamps));
-			const int stampsPerRow = numStampsSq;
-			const int tileWidth = m_project.GetPlatformConfig().tileWidth;
-			const int tileHeight = m_project.GetPlatformConfig().tileHeight;
-			const int stampWidth = m_project.GetPlatformConfig().stampWidth;
-			const int stampHeight = m_project.GetPlatformConfig().stampHeight;
-
-			writer.SetDimensions(numStampsSq * stampWidth * tileWidth, numStampsSq * stampHeight * tileHeight);
-
-			int i = 0;
-			for (const auto& it : stampSet.GetStamps())
-			{
-				const Stamp& stamp = it.second;
-				int stampX = i % numStampsSq;
-				int stampY = i / numStampsSq;
-				i++;
-
-				for (int tileX = 0; tileX < stampWidth; tileX++)
-				{
-					for (int tileY = 0; tileY < stampHeight; tileY++)
-					{
-						TileId tileId = stamp.GetTile(tileX, tileY);
-						u32 tileFlags = stamp.GetTileFlags(tileX, tileY);
-						const Tile& tile = tileset.GetTile(tileId);
-						for (int pixelX = 0; pixelX < tileWidth; pixelX++)
-						{
-							for (int pixelY = 0; pixelY < tileHeight; pixelY++)
-							{
-								int flipPixelX = (tileFlags & Map::eFlipX) ? (tileWidth - 1 - pixelX) : pixelX;
-								int flipPixelY = (tileFlags & Map::eFlipY) ? (tileHeight - 1 - pixelY) : pixelY;
-
-								int imageX = (((stampX * stampWidth) + tileX) * tileWidth) + flipPixelX;
-								int imageY = (((stampY * stampHeight) + tileY) * tileHeight) + flipPixelY;
-
-								writer.SetColourIndex(imageX, imageY, tile.GetPixelColour(pixelX, pixelY));
-							}
-						}
-					}
-				}
-			}
-
-			std::string filename = fileDlg.GetPath().c_str().AsChar();
-			if (!writer.Write(filename))
-				wxMessageBox("Error exporting stampset to image '" + filename + "'", "Error");
+			ExportStampset(fileDlg.GetPath().c_str().AsChar(), stampSetId);
 		}
 	}
 }
@@ -1020,9 +1049,26 @@ void DialogAssetManagement::OnBtnCleanupStampSet(wxCommandEvent& event)
 	{
 		StampSetId stampSetId = m_populatedStampSets[index];
 		const StampSet& stampSet = m_project.GetStampSet(stampSetId);
-		int cleaned = m_project.CleanupStamps(stampSetId);
-		wxMessageBox("Removed " + std::to_string(cleaned) + " unused stamps from stampset '" + stampSet.GetName() + "'", "Cleanup");
-		SelectStampSet(index);
+		int cleanedStamps = m_project.CleanupStamps(stampSetId);
+
+		TilesetId tilesetId = stampSet.GetTilesetId();
+		const Tileset& tileset = m_project.GetTileset(tilesetId);
+		int cleanedTiles = m_project.CleanupTileset(tilesetId);
+
+		std::string msg = "Removed " + std::to_string(cleanedStamps) + " unused stamps from stampset '" + stampSet.GetName() + "'\n";
+		msg += "Removed " + std::to_string(cleanedTiles) + " unused tiles from tileset '" + tileset.GetName() + "'\n\Stamp set should be re-exported to source image before editing, export now?";
+		wxMessageBox(msg, "Cleanup");
+
+		if (wxMessageBox(msg, "Cleanup", wxYES | wxNO | wxICON_WARNING) == wxID_YES)
+		{
+			ExportStampset(m_project.m_settings.GetAbsolutePath(stampSetId), stampSetId);
+		}
+
+		m_mainWindow.RefreshTileset();
+		m_mainWindow.RefreshAll();
+
+		SelectStampSetById(stampSetId);
+		SelectTilesetById(tilesetId);
 	}
 }
 
@@ -1047,6 +1093,16 @@ void DialogAssetManagement::OnBrowseStampsImg(wxFileDirPickerEvent& event)
 	if (stampSetIdx >= 0 && stampSetIdx < m_populatedStampSets.size())
 	{
 		StampSetId stampSetId = m_populatedStampSets[stampSetIdx];
+		const StampSet& stampSet = m_project.GetStampSet(stampSetId);
+		
+		if (stampSet.GetStampCount() > 0)
+		{
+			if (wxMessageBox("Stamp set " + stampSet.GetName() + " already contains stamps, ensure the imported image is based on a previous export as a template. Continue?", "Warning", wxOK | wxCANCEL | wxICON_WARNING) == wxID_CANCEL)
+			{
+				return;
+			}
+		}
+
 		std::string filename = m_filePickerStampsImg->GetPath();
 		MergeStampset(filename, stampSetId);
 	}
@@ -1054,10 +1110,14 @@ void DialogAssetManagement::OnBrowseStampsImg(wxFileDirPickerEvent& event)
 
 void DialogAssetManagement::MergeStampset(const std::string filename, StampSetId stampSetId)
 {
+	const int tileWidth = m_project.GetPlatformConfig().tileWidth;
+	const int tileHeight = m_project.GetPlatformConfig().tileHeight;
+
 	// Import stampset
 	Palette importedPalette;
 	Tileset importedTileset;
 	StampSet importedStampSet;
+
 	Project::ImportResult result = m_project.ImportStampsetFromImage(filename, importedPalette, importedTileset, importedStampSet);
 	if (result != Project::ImportResult::Success)
 	{

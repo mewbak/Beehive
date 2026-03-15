@@ -1498,7 +1498,7 @@ class DialogAssetsBase : public wxDialog
 		wxStaticText* m_staticText901;
 		wxStaticText* m_txtStampSetId;
 		wxStaticText* m_staticText961;
-		wxStaticText* m_txtStampSetSize;
+		wxStaticText* m_txtStampCount;
 		wxStaticText* m_staticText921;
 		wxStaticText* m_txtStampSetPalette;
 		wxStaticText* m_staticText941;

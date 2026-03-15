@@ -178,35 +178,32 @@ void RenderResources::CreateTilesetTextures()
 		{
 			const Tile& tile = it.second;
 
-			if (tile.GetHash() != 0)
+			u32 x = i % tilesetResources.tilesetSizeSq;
+			u32 y = i / tilesetResources.tilesetSizeSq;
+			i++;
+
+			for (int pixelY = 0; pixelY < tileHeight; pixelY++)
 			{
-				u32 x = i % tilesetResources.tilesetSizeSq;
-				u32 y = i / tilesetResources.tilesetSizeSq;
-				i++;
-
-				for (int pixelY = 0; pixelY < tileHeight; pixelY++)
+				for (int pixelX = 0; pixelX < tileWidth; pixelX++)
 				{
-					for (int pixelX = 0; pixelX < tileWidth; pixelX++)
+					//Invert Y for OpenGL
+					int pixelY_OGL = tileHeight - 1 - pixelY;
+
+					u8 colourIdx = tile.GetPixelColour(pixelX, pixelY_OGL);
+
+					//Protect against blank tiles
+					if (palette.IsColourUsed(colourIdx))
 					{
-						//Invert Y for OpenGL
-						int pixelY_OGL = tileHeight - 1 - pixelY;
+						const Colour& colour = palette.GetColour(colourIdx);
 
-						u8 colourIdx = tile.GetPixelColour(pixelX, pixelY_OGL);
-
-						//Protect against blank tiles
-						if (palette.IsColourUsed(colourIdx))
-						{
-							const Colour& colour = palette.GetColour(colourIdx);
-
-							int destPixelX = (x * tileWidth) + pixelX;
-							int destPixelY = (y * tileHeight) + pixelY;
-							u32 pixelIdx = (destPixelY * textureWidth) + destPixelX;
-							u32 dataOffset = pixelIdx * bytesPerPixel;
-							ion::debug::Assert(dataOffset + 2 < textureSize, "eOut of bounds");
-							data[dataOffset] = colour.GetRed();
-							data[dataOffset + 1] = colour.GetGreen();
-							data[dataOffset + 2] = colour.GetBlue();
-						}
+						int destPixelX = (x * tileWidth) + pixelX;
+						int destPixelY = (y * tileHeight) + pixelY;
+						u32 pixelIdx = (destPixelY * textureWidth) + destPixelX;
+						u32 dataOffset = pixelIdx * bytesPerPixel;
+						ion::debug::Assert(dataOffset + 2 < textureSize, "eOut of bounds");
+						data[dataOffset] = colour.GetRed();
+						data[dataOffset + 1] = colour.GetGreen();
+						data[dataOffset + 2] = colour.GetBlue();
 					}
 				}
 			}
@@ -531,6 +528,7 @@ void RenderResources::GetTileTexCoords(TilesetId tilesetId, TileId tileId, ion::
 {
 	const int tileWidth = m_project.GetPlatformConfig().tileWidth;
 	const int tileHeight = m_project.GetPlatformConfig().tileHeight;
+	const Tileset& tileset = m_project.GetTileset(tilesetId);
 	const TilesetResources& tilesetResource = GetTilesetResources(tilesetId);
 
 	if(tileId == InvalidTileId)
@@ -572,8 +570,9 @@ void RenderResources::GetTileTexCoords(TilesetId tilesetId, TileId tileId, ion::
 	else
 	{
 		//Map tile to X/Y on tileset texture
-		int tilesetX = (tileId % tilesetResource.tilesetSizeSq);
-		int tilesetY = (tileId / tilesetResource.tilesetSizeSq);
+		int tileIdx = tileset.FindTileIndex(tileId);
+		int tilesetX = (tileIdx % tilesetResource.tilesetSizeSq);
+		int tilesetY = (tileIdx / tilesetResource.tilesetSizeSq);
 		ion::Vector2 textureBottomLeft(tilesetResource.cellSizeTexSpaceSq * tilesetX, tilesetResource.cellSizeTexSpaceSq * tilesetY);
 
 		bool flipX = (flipFlags & Map::eFlipX) != 0;

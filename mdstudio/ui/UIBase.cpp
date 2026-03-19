@@ -2135,36 +2135,6 @@ ProjectSettingsDialogBase::ProjectSettingsDialogBase( wxWindow* parent, wxWindow
 
 	fgSizer40->Add( 0, 0, 1, wxEXPAND, 5 );
 
-	m_staticText5111 = new wxStaticText( this, wxID_ANY, wxT("Stamps dir:"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText5111->Wrap( -1 );
-	fgSizer40->Add( m_staticText5111, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 5 );
-
-	m_dirPickerStamps = new wxDirPickerCtrl( this, wxID_ANY, wxEmptyString, wxT("Select a folder"), wxDefaultPosition, wxDefaultSize, wxDIRP_DEFAULT_STYLE );
-	fgSizer40->Add( m_dirPickerStamps, 0, wxALL|wxEXPAND, 5 );
-
-
-	fgSizer40->Add( 0, 0, 1, wxEXPAND, 5 );
-
-	m_staticText51 = new wxStaticText( this, wxID_ANY, wxT("Sprites definition file:"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText51->Wrap( -1 );
-	fgSizer40->Add( m_staticText51, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 5 );
-
-	m_filePickerSpritesProj = new wxFilePickerCtrl( this, wxID_ANY, wxEmptyString, wxT("Select a file"), wxT("*.bee_sprites"), wxDefaultPosition, wxDefaultSize, wxFLP_DEFAULT_STYLE );
-	fgSizer40->Add( m_filePickerSpritesProj, 0, wxALL|wxEXPAND, 5 );
-
-
-	fgSizer40->Add( 0, 0, 1, wxEXPAND, 5 );
-
-	m_staticText53 = new wxStaticText( this, wxID_ANY, wxT("Game Objects definition file:"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText53->Wrap( -1 );
-	fgSizer40->Add( m_staticText53, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 5 );
-
-	m_filePickerGameObjTypesFile = new wxFilePickerCtrl( this, wxID_ANY, wxEmptyString, wxT("Select a file"), wxT("*.bee_gameobj"), wxDefaultPosition, wxDefaultSize, wxFLP_DEFAULT_STYLE );
-	fgSizer40->Add( m_filePickerGameObjTypesFile, 0, wxALL|wxEXPAND, 5 );
-
-
-	fgSizer40->Add( 0, 0, 1, wxEXPAND, 5 );
-
 	m_staticText531 = new wxStaticText( this, wxID_ANY, wxT("Reference image:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText531->Wrap( -1 );
 	fgSizer40->Add( m_staticText531, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 5 );
@@ -2201,26 +2171,6 @@ ProjectSettingsDialogBase::ProjectSettingsDialogBase( wxWindow* parent, wxWindow
 
 	m_filePickerEmulator = new wxFilePickerCtrl( this, wxID_ANY, wxEmptyString, wxT("Select a file"), wxT("*.exe"), wxDefaultPosition, wxDefaultSize, wxFLP_DEFAULT_STYLE );
 	fgSizer40->Add( m_filePickerEmulator, 0, wxALL|wxEXPAND, 5 );
-
-
-	fgSizer40->Add( 0, 0, 1, wxEXPAND, 5 );
-
-	m_staticText68 = new wxStaticText( this, wxID_ANY, wxT("Stamp width (tiles):"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText68->Wrap( -1 );
-	fgSizer40->Add( m_staticText68, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 5 );
-
-	m_spinStampWidth = new wxSpinCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 1024, 16 );
-	fgSizer40->Add( m_spinStampWidth, 0, wxALL, 5 );
-
-
-	fgSizer40->Add( 0, 0, 1, wxEXPAND, 5 );
-
-	m_staticText69 = new wxStaticText( this, wxID_ANY, wxT("Stamp height (tiles):"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText69->Wrap( -1 );
-	fgSizer40->Add( m_staticText69, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 5 );
-
-	m_spinStampHeight = new wxSpinCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 1024, 16 );
-	fgSizer40->Add( m_spinStampHeight, 0, wxALL, 5 );
 
 
 	bSizer69->Add( fgSizer40, 1, wxEXPAND, 5 );
@@ -4271,7 +4221,7 @@ DialogAssetsBase::DialogAssetsBase( wxWindow* parent, wxWindowID id, const wxStr
 	m_tabPalettes->Layout();
 	fgSizer71->Fit( m_tabPalettes );
 	m_tabs->AddPage( m_tabPalettes, wxT("Palettes"), false );
-	m_panelTilesets = new wxPanel( m_tabs, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	m_tabTilesets = new wxPanel( m_tabs, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxFlexGridSizer* fgSizer7111;
 	fgSizer7111 = new wxFlexGridSizer( 2, 1, 0, 0 );
 	fgSizer7111->AddGrowableCol( 0 );
@@ -4290,11 +4240,11 @@ DialogAssetsBase::DialogAssetsBase( wxWindow* parent, wxWindowID id, const wxStr
 	fgSizer901->SetFlexibleDirection( wxBOTH );
 	fgSizer901->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 
-	m_staticText1261 = new wxStaticText( m_panelTilesets, wxID_ANY, wxT("Tilesets:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText1261 = new wxStaticText( m_tabTilesets, wxID_ANY, wxT("Tilesets:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText1261->Wrap( -1 );
 	fgSizer901->Add( m_staticText1261, 0, wxALL, 5 );
 
-	m_listTilesets = new wxListBox( m_panelTilesets, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
+	m_listTilesets = new wxListBox( m_tabTilesets, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
 	m_listTilesets->SetMinSize( wxSize( 230,250 ) );
 
 	fgSizer901->Add( m_listTilesets, 0, wxALL|wxEXPAND, 5 );
@@ -4314,7 +4264,7 @@ DialogAssetsBase::DialogAssetsBase( wxWindow* parent, wxWindowID id, const wxStr
 	fgSizer7411->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 
 	wxStaticBoxSizer* sbSizer311;
-	sbSizer311 = new wxStaticBoxSizer( new wxStaticBox( m_panelTilesets, wxID_ANY, wxT("Manage") ), wxVERTICAL );
+	sbSizer311 = new wxStaticBoxSizer( new wxStaticBox( m_tabTilesets, wxID_ANY, wxT("Manage") ), wxVERTICAL );
 
 	wxFlexGridSizer* fgSizer7511;
 	fgSizer7511 = new wxFlexGridSizer( 0, 2, 0, 0 );
@@ -4346,7 +4296,7 @@ DialogAssetsBase::DialogAssetsBase( wxWindow* parent, wxWindowID id, const wxStr
 	fgSizer7411->Add( sbSizer311, 1, wxALL, 5 );
 
 	wxStaticBoxSizer* sbSizer211;
-	sbSizer211 = new wxStaticBoxSizer( new wxStaticBox( m_panelTilesets, wxID_ANY, wxT("Details") ), wxVERTICAL );
+	sbSizer211 = new wxStaticBoxSizer( new wxStaticBox( m_tabTilesets, wxID_ANY, wxT("Details") ), wxVERTICAL );
 
 	wxFlexGridSizer* fgSizer7611;
 	fgSizer7611 = new wxFlexGridSizer( 0, 2, 0, 0 );
@@ -4423,21 +4373,21 @@ DialogAssetsBase::DialogAssetsBase( wxWindow* parent, wxWindowID id, const wxStr
 	fgSizer911->SetFlexibleDirection( wxBOTH );
 	fgSizer911->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 
-	m_staticText1271 = new wxStaticText( m_panelTilesets, wxID_ANY, wxT("Image File:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText1271 = new wxStaticText( m_tabTilesets, wxID_ANY, wxT("Image File:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText1271->Wrap( -1 );
 	fgSizer911->Add( m_staticText1271, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 5 );
 
-	m_filePickerTilesImg = new wxFilePickerCtrl( m_panelTilesets, wxID_ANY, wxEmptyString, wxT("Select a file"), wxT("*.bmp;*.png"), wxDefaultPosition, wxDefaultSize, wxFLP_DEFAULT_STYLE );
+	m_filePickerTilesImg = new wxFilePickerCtrl( m_tabTilesets, wxID_ANY, wxEmptyString, wxT("Select a file"), wxT("*.bmp;*.png"), wxDefaultPosition, wxDefaultSize, wxFLP_DEFAULT_STYLE );
 	m_filePickerTilesImg->SetMinSize( wxSize( 360,-1 ) );
 
 	fgSizer911->Add( m_filePickerTilesImg, 0, wxALL, 5 );
 
-	m_staticText212 = new wxStaticText( m_panelTilesets, wxID_ANY, wxT("Default Palette:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText212 = new wxStaticText( m_tabTilesets, wxID_ANY, wxT("Default Palette:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText212->Wrap( -1 );
 	fgSizer911->Add( m_staticText212, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 5 );
 
 	wxArrayString m_choiceTilesetPaletteChoices;
-	m_choiceTilesetPalette = new wxChoice( m_panelTilesets, wxID_ANY, wxDefaultPosition, wxDefaultSize, m_choiceTilesetPaletteChoices, 0 );
+	m_choiceTilesetPalette = new wxChoice( m_tabTilesets, wxID_ANY, wxDefaultPosition, wxDefaultSize, m_choiceTilesetPaletteChoices, 0 );
 	m_choiceTilesetPalette->SetSelection( 0 );
 	m_choiceTilesetPalette->SetMinSize( wxSize( 360,-1 ) );
 
@@ -4455,7 +4405,7 @@ DialogAssetsBase::DialogAssetsBase( wxWindow* parent, wxWindowID id, const wxStr
 
 	fgSizer7111->Add( fgSizer7211, 1, wxEXPAND, 5 );
 
-	m_sizerTiles = new wxStaticBoxSizer( new wxStaticBox( m_panelTilesets, wxID_ANY, wxT("Tiles") ), wxVERTICAL );
+	m_sizerTiles = new wxStaticBoxSizer( new wxStaticBox( m_tabTilesets, wxID_ANY, wxT("Tiles") ), wxVERTICAL );
 
 	m_paletteViewTiles = new PaletteViewCtrl( m_sizerTiles->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, 0 );
 	m_paletteViewTiles->SetMinSize( wxSize( 32,32 ) );
@@ -4471,10 +4421,10 @@ DialogAssetsBase::DialogAssetsBase( wxWindow* parent, wxWindowID id, const wxStr
 	fgSizer7111->Add( m_sizerTiles, 1, wxALL|wxEXPAND, 5 );
 
 
-	m_panelTilesets->SetSizer( fgSizer7111 );
-	m_panelTilesets->Layout();
-	fgSizer7111->Fit( m_panelTilesets );
-	m_tabs->AddPage( m_panelTilesets, wxT("Tilesets"), false );
+	m_tabTilesets->SetSizer( fgSizer7111 );
+	m_tabTilesets->Layout();
+	fgSizer7111->Fit( m_tabTilesets );
+	m_tabs->AddPage( m_tabTilesets, wxT("Tilesets"), false );
 	m_tabStamps = new wxPanel( m_tabs, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxFlexGridSizer* fgSizer711;
 	fgSizer711 = new wxFlexGridSizer( 2, 1, 0, 0 );

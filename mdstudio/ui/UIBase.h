@@ -816,17 +816,10 @@ class ProjectSettingsDialogBase : public wxDialog
 		wxStaticText* m_staticText51112;
 		wxButton* m_btnParseProject;
 		wxStaticText* m_staticText511;
-		wxStaticText* m_staticText5111;
-		wxStaticText* m_staticText51;
-		wxStaticText* m_staticText53;
 		wxStaticText* m_staticText531;
 		wxStaticText* m_staticText5311;
 		wxStaticText* m_staticText53111;
 		wxStaticText* m_staticText531111;
-		wxStaticText* m_staticText68;
-		wxSpinCtrl* m_spinStampWidth;
-		wxStaticText* m_staticText69;
-		wxSpinCtrl* m_spinStampHeight;
 		wxStdDialogButtonSizer* m_sdbSizer7;
 		wxButton* m_sdbSizer7OK;
 		wxButton* m_sdbSizer7Cancel;
@@ -839,15 +832,12 @@ class ProjectSettingsDialogBase : public wxDialog
 	public:
 		wxDirPickerCtrl* m_dirPickerEngine;
 		wxDirPickerCtrl* m_dirPickerProject;
-		wxDirPickerCtrl* m_dirPickerStamps;
-		wxFilePickerCtrl* m_filePickerSpritesProj;
-		wxFilePickerCtrl* m_filePickerGameObjTypesFile;
 		wxFilePickerCtrl* m_filePickerReference;
 		wxFilePickerCtrl* m_filePickerAssembler;
 		wxFilePickerCtrl* m_filePickerAssemblyFile;
 		wxFilePickerCtrl* m_filePickerEmulator;
 
-		ProjectSettingsDialogBase( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("Project Settings"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 879,506 ), long style = wxCAPTION|wxRESIZE_BORDER );
+		ProjectSettingsDialogBase( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("Project Settings"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 879,315 ), long style = wxCAPTION|wxRESIZE_BORDER );
 
 		~ProjectSettingsDialogBase();
 
@@ -1483,7 +1473,7 @@ class DialogAssetsBase : public wxDialog
 		wxStaticText* m_txtPaletteActiveSlot;
 		wxStaticText* m_staticText94;
 		wxStaticText* m_txtPaletteUsageCount;
-		wxPanel* m_panelTilesets;
+		wxPanel* m_tabTilesets;
 		wxStaticText* m_staticText1261;
 		wxListBox* m_listTilesets;
 		wxButton* m_btnNewTileset;

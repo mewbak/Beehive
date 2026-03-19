@@ -196,7 +196,7 @@ void StampsPanel::OnMouseTileEvent(ion::Vector2i mousePos, ion::Vector2i mouseDe
 		//Brute force search for stamp ID
 		ion::Vector2i mousePos(x, y);
 
-		for(int i = 0; i < m_stampPosMap.size() && !selectedStamp; i++)
+		for(int i = 0; i < m_stampPosMap.size() && selectedStamp == InvalidStampId; i++)
 		{
 			StampId stampId = m_stampPosMap[i].first;
 			if (stampId != InvalidStampId)

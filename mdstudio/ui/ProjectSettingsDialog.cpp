@@ -38,6 +38,7 @@ ProjectSettingsDialog::ProjectSettingsDialog(MainWindow& mainWindow, Project& pr
 	m_filePickerAssemblyFile->SetPath(m_project.m_settings.Get("assemblyFile"));
 	m_filePickerEmulator->SetPath(m_project.m_settings.Get("emulator"));
 
+#if !BEEHIVE_PLUGIN_LUMINARY
 	//Relative paths
 	m_dirPickerStamps->SetPath(m_project.m_settings.GetAbsolutePath("stampsDir"));
 	m_filePickerGameObjTypesFile->SetPath(m_project.m_settings.GetAbsolutePath("gameObjectsExternalFile"));
@@ -45,6 +46,7 @@ ProjectSettingsDialog::ProjectSettingsDialog(MainWindow& mainWindow, Project& pr
 
 	m_spinStampWidth->SetValue(m_project.GetPlatformConfig().stampWidth);
 	m_spinStampHeight->SetValue(m_project.GetPlatformConfig().stampHeight);
+#endif
 
 	Connect(wxID_OK, wxEVT_BUTTON, wxCommandEventHandler(ProjectSettingsDialog::OnBtnOK));
 	Connect(wxID_CANCEL, wxEVT_BUTTON, wxCommandEventHandler(ProjectSettingsDialog::OnBtnCancel));
@@ -94,6 +96,7 @@ void ProjectSettingsDialog::OnBtnOK(wxCommandEvent& event)
 		}
 	}
 
+#if !BEEHIVE_PLUGIN_LUMINARY
 	//Relative paths (to project directory)
 	std::string stampsDir = m_dirPickerStamps->GetPath().c_str().AsChar();
 	std::string gameObjectsFile = m_filePickerGameObjTypesFile->GetPath().c_str().AsChar();
@@ -155,6 +158,7 @@ void ProjectSettingsDialog::OnBtnOK(wxCommandEvent& event)
 	{
 		m_renderResources.CreateSpriteSheetResources(m_project);
 	}
+#endif
 
 	EndModal(wxID_OK);
 }

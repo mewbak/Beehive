@@ -2586,8 +2586,11 @@ void MapPanel::PaintMap(const Map& map)
 	//Paint all stamps
 	for (const auto& it : map.GetStamps())
 	{
-		const Stamp& stamp = stampSet.GetStamp(it.m_id);
-		PaintStamp(tilesetId, stamp, it.m_position.x, it.m_position.y, it.m_flags);
+		if (it.m_id != InvalidStampId)
+		{
+			const Stamp& stamp = stampSet.GetStamp(it.m_id);
+			PaintStamp(tilesetId, stamp, it.m_position.x, it.m_position.y, it.m_flags);
+		}
 	}
 }
 
@@ -2619,8 +2622,11 @@ void MapPanel::PaintCollisionMap(const Map& map, const CollisionMap& collisionMa
 
 	for (const auto& it : map.GetStamps())
 	{
-		const Stamp& stamp = stampSet.GetStamp(it.m_id);
-		PaintStampCollision(stamp, it.m_position.x, it.m_position.y, it.m_flags);
+		if (it.m_id != InvalidStampId)
+		{
+			const Stamp& stamp = stampSet.GetStamp(it.m_id);
+			PaintStampCollision(stamp, it.m_position.x, it.m_position.y, it.m_flags);
+		}
 	}
 #endif
 }

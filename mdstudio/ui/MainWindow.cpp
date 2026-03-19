@@ -2445,6 +2445,23 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 				m_project->WriteIncludeFile(projectRootDir, scriptsExportDir, "SCRIPTS.ASM", scriptIncludes, true);
 			}
 
+			//Find background maps for each map
+			std::set<MapId> isBgMap;
+			std::map<MapId, MapId> bgMaps;
+
+			for (const auto& it : m_project->GetMaps())
+			{
+				MapId bgMapId = it.second.GetBackgroundMapId();
+				if (bgMapId != InvalidMapId)
+					isBgMap.insert(bgMapId);
+				bgMaps.insert(std::make_pair(it.first, bgMapId));
+			}
+
+			auto IsBackgroundMap = [&](MapId mapId)
+				{
+					return isBgMap.find(mapId) != isBgMap.end();
+				};
+
 			//Export entity archetypes
 			std::vector<luminary::Archetype> archetypes;
 
@@ -2497,31 +2514,20 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 			// TODO: Luminary (binary) data formats
 			m_project->ExportSpriteSheets(spritesExportDir, Project::ExportFormat::BinaryCompressed);
 			m_project->ExportSpriteAnims(animsExportDir, Project::ExportFormat::BinaryCompressed);
-			m_project->ExportSpritePalettes(palettesExportDir);
 
-			//Export luminary palettes
-			int numPalettes = 0;
+			//Export all palettes
+			std::vector<Palette> palettes;
+
+			for (const auto& palette : m_project->GetPalettes())
+			{
+				palettes.push_back(palette.second);
+			}
+
 			std::string palettesLabel = std::string("palettes_") + m_project->GetName();
 			std::string palettesFilename = scenesExportDir + "\\" + "PALETTES.ASM";
-			if (m_project->GetEditingMap().GetNumPaletteSlots() > 0)
+			if (paletteExporter.ExportPalettes(palettesFilename, palettes))
 			{
-				std::vector<Palette> palettes;
-
-				for (int i = 0; i < m_project->GetEditingMap().GetNumPaletteSlots(); i++)
-				{
-					const Palette& palette = m_project->GetPalette(m_project->GetEditingMap().GetPaletteFromSlot(i));
-					if (palette.GetUsedColourMask() > 0)
-					{
-						palettes.push_back(palette);
-					}
-				}
-
-				if (paletteExporter.ExportPalettes(palettesFilename, palettes))
-				{
-					includeFilenames.push_back(Project::IncludeFile{ palettesLabel, palettesFilename, Project::IncludeExportFlags::None });
-				}
-
-				numPalettes = palettes.size();
+				includeFilenames.push_back(Project::IncludeFile{ palettesLabel, palettesFilename, Project::IncludeExportFlags::None});
 			}
 
 			//Export Luminary terrain tileset
@@ -2548,6 +2554,35 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 
 			for (const auto& stampSet : m_project->GetStampSets())
 			{
+				// Find map using this stampset
+				// TODO: find all fg maps that share this stampset, check all palette slots match
+
+				std::vector<int> paletteSlotRemap(4);
+				for (const auto& map : m_project->GetMaps())
+				{
+					if (!IsBackgroundMap(map.first))
+					{
+						MapId bgMapId = map.second.GetBackgroundMapId();
+						const Map* bgMap = (bgMapId != InvalidMapId) ? &m_project->GetMap(bgMapId) : nullptr;
+						if (map.second.GetStampSetId() == stampSet.first
+							|| (bgMap && bgMap->GetStampSetId() == stampSet.first))
+						{
+							int numScenePalettes = 0;
+							int paletteIdx = 0;
+
+							for (int i = 0; i < map.second.GetNumPaletteSlots(); i++)
+							{
+								PaletteId paletteId = map.second.GetPaletteFromSlot(i);
+								if (paletteId != InvalidPaletteId)
+								{
+									numScenePalettes++;
+									paletteSlotRemap[i] == paletteIdx++;
+								}
+							}
+						}
+					}
+				}
+
 				std::string stampSetName = stampSet.second.GetName();
 				std::string fnamePrefix = ion::string::ToUpper(scenesExportDir + "\\" + stampSet.second.GetName());
 
@@ -2561,7 +2596,7 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 				// TODO: check slot matched tileset default palette
 				std::string stampsetLabel = "stampset_" + stampSetName;
 				std::string stampsetFilename = fnamePrefix + "_GSTAMPS.BIN";
-				int paletteSlotIdx = stampSet.second.GetPaletteSlot();
+				int paletteSlotIdx = paletteSlotRemap[stampSet.second.GetPaletteSlot()];
 				if (tilesetExporter.ExportStamps(stampsetFilename, stamps, paletteSlotIdx))
 				{
 					includeFilenames.push_back(Project::IncludeFile{ stampsetLabel, stampsetFilename, Project::IncludeExportFlags::None });
@@ -2602,31 +2637,11 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 				}
 			}
 
-			//Find background maps for each map
-			std::set<MapId> isBgMap;
-			std::map<MapId, MapId> bgMaps;
-
-			for (const auto& it : m_project->GetMaps())
-			{
-				MapId bgMapId = it.second.GetBackgroundMapId();
-				if(bgMapId != InvalidMapId)
-					isBgMap.insert(bgMapId);
-				bgMaps.insert(std::make_pair(it.first, bgMapId));
-			}
-
 			//Export Luminary scenes
 			for (TMapMap::iterator it = m_project->MapsBegin(), end = m_project->MapsEnd(); it != end; ++it)
 			{
-				const Map& map = m_project->GetMap(it->first);
-				const StampSet& stampSet = m_project->GetStampSet(map.GetStampSetId());
-				const Tileset& tileSet = m_project->GetTileset(stampSet.GetTilesetId());
-
-				std::string stampsetLabel = "stampset_" + stampSet.GetName();
-				std::string tilesetLabel = "tileset_" + stampSet.GetName();
-				std::string terrainStampsetLabel = "collision_stampset_" + stampSet.GetName();
-
 				//Ignore background maps
-				if (isBgMap.find(it->first) == isBgMap.end())
+				if (!IsBackgroundMap(it->first))
 				{
 					const auto& bgMapIt = bgMaps.find(it->first);
 					MapId backgroundMapId = (bgMapIt == bgMaps.end()) ? InvalidMapId : bgMapIt->second;
@@ -2634,6 +2649,30 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 					const Map* mapBg = (backgroundMapId == InvalidMapId) ? nullptr : &m_project->GetMap(backgroundMapId);
 					const TGameObjectPosMap& gameObjMap = mapFg.GetGameObjects();
 					int entityIdx = 0;
+
+					const StampSet& stampSetFg = m_project->GetStampSet(mapFg.GetStampSetId());
+					const StampSet* stampSetBg = mapBg ? &m_project->GetStampSet(mapBg->GetStampSetId()) : nullptr;
+					const Tileset& tileSetFg = m_project->GetTileset(stampSetFg.GetTilesetId());
+					const Tileset* tileSetBg = stampSetBg ? &m_project->GetTileset(stampSetBg->GetTilesetId()) : nullptr;
+
+					std::string stampsetFgLabel = "stampset_" + stampSetFg.GetName();
+					std::string stampsetBgLabel = stampSetBg ? ("stampset_" + stampSetBg->GetName()) : "0x00000000";
+					std::string tilesetFgLabel = "tileset_" + stampSetFg.GetName();
+					std::string tilesetBgLabel = stampSetBg ? ("tileset_" + stampSetBg->GetName()) : "0x00000000";
+					std::string terrainStampsetLabel = "collision_stampset_" + stampSetFg.GetName();
+
+					std::vector<std::string> paletteLabels(4);
+
+					for (int i = 0; i < mapFg.GetNumPaletteSlots(); i++)
+					{
+						PaletteId paletteId = mapFg.GetPaletteFromSlot(i);
+						if (paletteId != InvalidPaletteId)
+						{
+							const Palette& palette = m_project->GetPalette(paletteId);
+							std::string paletteLabel = "palette_" + palette.GetName();
+							paletteLabels[i] = paletteLabel;
+						}
+					}
 
 					luminary::SceneExporter::SceneData sceneData;
 
@@ -2665,19 +2704,22 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 						}
 					}
 
-					sceneData.palettesLabel = palettesLabel;
-					sceneData.numPalettes = numPalettes;
+					sceneData.palettes = paletteLabels;
 
 					sceneData.mapFgLabel = std::string("map_") + m_project->GetName() + "_" + mapFg.GetName();
 					sceneData.mapBgLabel = mapBg ? (std::string("map_") + m_project->GetName() + "_" + mapBg->GetName()) : "0";
-					sceneData.stampsetLabel = stampsetLabel;
-					sceneData.tilesetLabel = tilesetLabel;
+					sceneData.stampsetFgLabel = stampsetFgLabel;
+					sceneData.stampsetBgLabel = stampsetBgLabel;
+					sceneData.tilesetFgLabel = tilesetFgLabel;
+					sceneData.tilesetBgLabel = tilesetBgLabel;
 					sceneData.collisionMapLabel = std::string("collision_map_") + m_project->GetName() + "_" + mapFg.GetName();
 					sceneData.collisionStampsetLabel = terrainStampsetLabel;
 					sceneData.collisionTilesetLabel = terrainTilesetLabel;
 
-					sceneData.numTiles = tileSet.GetCount();
-					sceneData.numStamps = stampSet.GetStampCount();
+					sceneData.numTilesFg = tileSetFg.GetCount();
+					sceneData.numTilesBg = tileSetBg ? tileSetBg->GetCount() : 0;
+					sceneData.numStampsFg = stampSetFg.GetStampCount();
+					sceneData.numStampsBg = stampSetBg ? stampSetBg->GetStampCount() : 0;
 					sceneData.mapFgWidthStamps = mapFg.GetWidth() / m_project->GetPlatformConfig().stampWidth;
 					sceneData.mapFgHeightStamps = mapFg.GetHeight() / m_project->GetPlatformConfig().stampHeight;
 					sceneData.mapBgWidthStamps = mapBg ? (mapBg->GetWidth() / m_project->GetPlatformConfig().stampWidth) : 0;

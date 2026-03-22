@@ -329,12 +329,13 @@ void DialogAssetManagement::SelectMap(int index)
 					views[i]->SetPalette(palette);
 				}
 
-				for (PaletteId paletteId : m_populatedPalettes)
+				for(int j = 0; j < m_populatedPalettes.size(); j++)
 				{
+					PaletteId paletteId = m_populatedPalettes[j];
 					const Palette& palette = m_project.GetPalette(paletteId);
 					lists[i]->Append(palette.GetName());
 					if (paletteId == id)
-						lists[i]->SetSelection(i);
+						lists[i]->SetSelection(j);
 				}
 			}
 		}

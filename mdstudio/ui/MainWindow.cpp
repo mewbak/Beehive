@@ -1419,6 +1419,38 @@ void MainWindow::ShowToolboxObjects()
 	m_auiManager.Update();
 }
 
+void MainWindow::ShowPanelGameObjectTypes()
+{
+	if (m_project.get())
+	{
+		if (m_gameObjectTypePanel)
+		{
+			m_auiManager.GetPane("Objects").Show();
+		}
+		else
+		{
+			wxSize clientSize = GetClientSize();
+
+			wxAuiPaneInfo paneInfo;
+			paneInfo.Name("Objects");
+			paneInfo.Dockable(true);
+			paneInfo.Float();
+			paneInfo.DockFixed(false);
+			paneInfo.BestSize(PANEL_SIZE_X(30), PANEL_SIZE_Y(30));
+			paneInfo.Bottom();
+			paneInfo.Caption("Entity Types");
+			paneInfo.CaptionVisible(true);
+
+			m_gameObjectTypePanel = new GameObjectTypesPanel(this, *m_project.get(), m_dockArea, NewControlId());
+			m_auiManager.AddPane(m_gameObjectTypePanel, paneInfo);
+			paneInfo.Show();
+
+		}
+
+		m_auiManager.Update();
+	}
+}
+
 #if !BEEHIVE_PLUGIN_LUMINARY
 void MainWindow::ShowPanelTileEditor()
 {
@@ -1473,38 +1505,6 @@ void MainWindow::ShowPanelTerrainEditor()
 
 			m_TerrainTileEditorPanel = new TerrainTileEditorPanel(this, *m_project, *m_renderer, m_context, s_glAttributes, *m_renderResources, m_dockArea, NewControlId());
 			m_auiManager.AddPane(m_TerrainTileEditorPanel, paneInfo);
-			paneInfo.Show();
-			
-		}
-
-		m_auiManager.Update();
-	}
-}
-
-void MainWindow::ShowPanelGameObjectTypes()
-{
-	if(m_project.get())
-	{
-		if (m_gameObjectTypePanel)
-		{
-			m_auiManager.GetPane("Objects").Show();
-		}
-		else
-		{
-			wxSize clientSize = GetClientSize();
-
-			wxAuiPaneInfo paneInfo;
-			paneInfo.Name("Objects");
-			paneInfo.Dockable(true);
-			paneInfo.Float();
-			paneInfo.DockFixed(false);
-			paneInfo.BestSize(PANEL_SIZE_X(30), PANEL_SIZE_Y(30));
-			paneInfo.Bottom();
-			paneInfo.Caption("Entity Types");
-			paneInfo.CaptionVisible(true);
-
-			m_gameObjectTypePanel = new GameObjectTypesPanel(this, *m_project.get(), m_dockArea, NewControlId());
-			m_auiManager.AddPane(m_gameObjectTypePanel, paneInfo);
 			paneInfo.Show();
 			
 		}
@@ -2692,29 +2692,29 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 
 					luminary::SceneExporter::SceneData sceneData;
 
-					for (TGameObjectPosMap::const_iterator it = gameObjMap.begin(), end = gameObjMap.end(); it != end; ++it)
+					for (TGameObjectPosMap::const_iterator objIt = gameObjMap.begin(), end = gameObjMap.end(); objIt != end; ++objIt)
 					{
-						const GameObjectType* gameObjectType = m_project->GetGameObjectType(it->first);
+						const GameObjectType* gameObjectType = m_project->GetGameObjectType(objIt->first);
 						if (gameObjectType)
 						{
 							if (gameObjectType->IsStaticType())
 							{
-								for (int i = 0; i < it->second.size(); i++, entityIdx++)
+								for (int i = 0; i < objIt->second.size(); i++, entityIdx++)
 								{
-									const GameObject& gameObject = it->second[i].m_gameObject;
+									const GameObject& gameObject = objIt->second[i].m_gameObject;
 									sceneData.staticEntities.push_back(luminary::Entity());
 									luminary::Entity& entity = sceneData.staticEntities.back();
-									luminary::beehive::ConvertEntityInstance(*m_project, *gameObjectType, gameObject, scriptAddresses, entity);
+									luminary::beehive::ConvertEntityInstance(*m_project, mapFg, *gameObjectType, gameObject, scriptAddresses, entity);
 								}
 							}
 							else
 							{
-								for (int i = 0; i < it->second.size(); i++, entityIdx++)
+								for (int i = 0; i < objIt->second.size(); i++, entityIdx++)
 								{
-									const GameObject& gameObject = it->second[i].m_gameObject;
+									const GameObject& gameObject = objIt->second[i].m_gameObject;
 									sceneData.dynamicEntities.push_back(luminary::Entity());
 									luminary::Entity& entity = sceneData.dynamicEntities.back();
-									luminary::beehive::ConvertEntityInstance(*m_project, *gameObjectType, gameObject, scriptAddresses, entity);
+									luminary::beehive::ConvertEntityInstance(*m_project, mapFg, *gameObjectType, gameObject, scriptAddresses, entity);
 								}
 							}
 						}
@@ -3541,12 +3541,12 @@ void MainWindow::OnBtnToolsPalettes( wxCommandEvent& event )
 	ShowPanelPalettes();
 }
 
-#if !BEEHIVE_PLUGIN_LUMINARY
 void MainWindow::OnBtnToolsGameObjs(wxCommandEvent& event)
 {
 	ShowPanelGameObjectTypes();
 }
 
+#if !BEEHIVE_PLUGIN_LUMINARY
 void MainWindow::OnBtnToolsGameObjParams(wxCommandEvent& event)
 {
 	ShowPanelGameObjectParams();

@@ -424,6 +424,20 @@ void PropertyPanel::SetObjectProperty(GameObjectVariable* variable, const std::s
 				}
 			}
 		}
+#if !PALETTE_SLOT_LIST // TODO: consider allowing palette to be overridden per object
+		else if (variable->HasTag("PALETTE_SLOT"))
+		{
+			int slotIdx = 0;
+			std::string slotStr = value;
+			if (slotStr[0] != '?')
+			{
+				slotStr = slotStr.substr(0, slotStr.find(':'));
+				slotIdx = atoi(slotStr.c_str());
+			}
+
+			variable->m_value = std::to_string(slotIdx);
+		}
+#endif
 		else
 		{
 			variable->m_value = value;

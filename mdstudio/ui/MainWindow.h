@@ -89,11 +89,11 @@ public:
 	void ShowPanelMapList();
 	void ShowPanelTerrainTiles();
 	void ShowPanelTerrainEditor();
+	void ShowPanelGameObjectTypes();
 	void ShowPanelTimeline();
 
 #if !BEEHIVE_PLUGIN_LUMINARY
 	void ShowPanelBlocks();
-	void ShowPanelGameObjectTypes();
 	void ShowPanelGameObjectParams();
 	void ShowPanelTileEditor();
 #endif
@@ -192,6 +192,7 @@ protected:
 	virtual void OnBtnToolsStamps(wxCommandEvent& event);
 	virtual void OnBtnToolsPalettes(wxCommandEvent& event);
 	virtual void OnBtnToolsTimeline(wxCommandEvent& event);
+	virtual void OnBtnToolsGameObjs(wxCommandEvent& event);
 	virtual void OnBtnMapNew(wxCommandEvent& event);
 	virtual void OnBtnMapCopy(wxCommandEvent& event);
 	virtual void OnBtnMapDelete(wxCommandEvent& event);
@@ -212,7 +213,6 @@ protected:
 	virtual void OnBtnColTilesCleanup(wxCommandEvent& event);
 	virtual void OnBtnStampsImport(wxCommandEvent& event);
 	virtual void OnBtnTerrainTileEdit(wxCommandEvent& event);
-	virtual void OnBtnToolsGameObjs(wxCommandEvent& event);
 	virtual void OnBtnToolsGameObjParams(wxCommandEvent& event);
 	virtual void OnBtnGameObjTypes(wxCommandEvent& event);
 	virtual void OnBtnMapImport(wxCommandEvent& event);
@@ -267,12 +267,12 @@ private:
 	wxWeakRef<TilesPanel> m_tilesPanel;
 	wxWeakRef<StampsPanel> m_stampsPanel;
 	wxWeakRef<TerrainTilesPanel> m_terrainTilesPanel;
+	wxWeakRef<GameObjectTypesPanel> m_gameObjectTypePanel;
 	wxWeakRef<TimelinePanel> m_timelinePanel;
 
 #if !BEEHIVE_PLUGIN_LUMINARY
 	wxWeakRef<TileEditorPanel> m_tileEditorPanel;
 	wxWeakRef<TerrainTileEditorPanel> m_TerrainTileEditorPanel;
-	wxWeakRef<GameObjectTypesPanel> m_gameObjectTypePanel;
 	wxWeakRef<GameObjectParamsPanel> m_gameObjectParamsPanel;
 	wxWeakRef<BlocksPanel> m_blocksPanel;
 #endif

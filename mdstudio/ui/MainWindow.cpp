@@ -2592,7 +2592,7 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 								if (paletteId != InvalidPaletteId)
 								{
 									numScenePalettes++;
-									paletteSlotRemap[i] == paletteIdx++;
+									paletteSlotRemap[i] = paletteIdx++;
 								}
 							}
 						}

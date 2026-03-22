@@ -164,9 +164,9 @@ void DialogAssetManagement::SelectPalette(int index)
 		}
 
 		std::vector<TilesetId> tilesets;
-		std::vector<std::pair<ActorId, SpriteSheetId>> spriteSheets;
+		std::vector<ActorId> actors;
 		std::vector<MapId> maps;
-		m_txtPaletteUsageCount->SetLabelText(std::to_string(GetPaletteUsage(paletteId, tilesets, spriteSheets, maps)));
+		m_txtPaletteUsageCount->SetLabelText(std::to_string(GetPaletteUsage(paletteId, tilesets, actors, maps)));
 
 		Refresh();
 	}
@@ -502,9 +502,9 @@ void DialogAssetManagement::OnBtnDeletePalette(wxCommandEvent& event)
 		const Palette& palette = m_project.GetPalette(paletteId);
 
 		std::vector<TilesetId> tilesets;
-		std::vector<std::pair<ActorId, SpriteSheetId>> spriteSheets;
+		std::vector<ActorId> actors;
 		std::vector<MapId> maps;
-		int usageCount = GetPaletteUsage(paletteId, tilesets, spriteSheets, maps);
+		int usageCount = GetPaletteUsage(paletteId, tilesets, actors, maps);
 
 		if (usageCount > 0)
 		{
@@ -519,19 +519,16 @@ void DialogAssetManagement::OnBtnDeletePalette(wxCommandEvent& event)
 					const Tileset& tileset = m_project.GetTileset(tilesetId);
 					msg += " " + tileset.GetName() + "\n";
 				}
-
-				
 			}
 
-			if (spriteSheets.size() > 0)
+			if (actors.size() > 0)
 			{
-				msg += "\nUsed by sprite sheet(s):\n\n";
+				msg += "\nUsed by sprite actors(s):\n\n";
 
-				for (const auto& it : spriteSheets)
+				for (const auto& it : actors)
 				{
-					const Actor* actor = m_project.GetActor(it.first);
-					const SpriteSheet* spriteSheet = actor->GetSpriteSheet(it.second);
-					msg += " " + spriteSheet->GetName() + "\n";
+					const Actor* actor = m_project.GetActor(it);
+					msg += " " + actor->GetName() + "\n";
 				}
 			}
 
@@ -1191,6 +1188,18 @@ void DialogAssetManagement::MergeStampset(const std::string filename, StampSetId
 		}
 	}
 
+	// Copy collision and animation
+	for (auto& lhs: importedStampSet.GetStamps())
+	{
+		auto& rhs = stampSet.GetStamps().find(lhs.first);
+		if (rhs != stampSet.GetStamps().end())
+		{
+			lhs.second.GetTerrainBeziers() = rhs->second.GetTerrainBeziers();
+			lhs.second.GetCollisionTiles() = rhs->second.GetCollisionTiles();
+			lhs.second.GetStampAnimSheets() = rhs->second.GetStampAnimSheets();
+		}
+	}
+
 	// Set new
 	tileset.GetTiles() = importedTileset.GetTiles();
 	stampSet.GetStamps() = importedStampSet.GetStamps();
@@ -1248,8 +1257,6 @@ void DialogAssetManagement::OnListMapDClick(wxCommandEvent& event)
 			m_project.InvalidateMap(true);
 			m_project.InvalidateStamps(true);
 			m_project.InvalidateCamera(true);
-			m_project.InvalidateMap(false);
-			m_project.InvalidateCamera(false);
 		}
 
 		SelectMap(index);
@@ -1492,7 +1499,7 @@ void DialogAssetManagement::OnListSlot3(wxCommandEvent& event)
 	AssignPalette(m_choiceSlot3->GetSelection(), 3);
 }
 
-int DialogAssetManagement::GetPaletteUsage(PaletteId paletteId, std::vector<TilesetId>& tilesets, std::vector<std::pair<ActorId, SpriteSheetId>>& spriteSheets, std::vector<MapId>& maps) const
+int DialogAssetManagement::GetPaletteUsage(PaletteId paletteId, std::vector<TilesetId>& tilesets, std::vector<ActorId>& actors, std::vector<MapId>& maps) const
 {
 	for (const auto& tileset : m_project.GetTilesets())
 	{
@@ -1502,10 +1509,9 @@ int DialogAssetManagement::GetPaletteUsage(PaletteId paletteId, std::vector<Tile
 
 	for (const auto& actor : m_project.GetActors())
 	{
-		for (const auto& spriteSheet : actor.second.GetSpriteSheets())
+		if (actor.second.GetPaletteId() == paletteId)
 		{
-			if (spriteSheet.second.GetPaletteId() == paletteId)
-				spriteSheets.push_back(std::make_pair(actor.first, spriteSheet.first));
+			actors.push_back(actor.first);
 		}
 	}
 
@@ -1518,7 +1524,7 @@ int DialogAssetManagement::GetPaletteUsage(PaletteId paletteId, std::vector<Tile
 		}
 	}
 
-	return tilesets.size() + spriteSheets.size() + maps.size();
+	return tilesets.size() + actors.size() + maps.size();
 }
 
 int DialogAssetManagement::GetTilesetUsage(TilesetId tilesetId, std::vector<StampSetId>& stampSets) const

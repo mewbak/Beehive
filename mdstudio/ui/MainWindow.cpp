@@ -2276,13 +2276,12 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 		const std::string scriptsSourceDir = projectRootDir + "\\SCRIPTS\\";
 		const std::string scriptsEngineIncludes = engineRootDir + "\\INCLUDE\\";
 
-		const std::string animsExportDir = projectRootDir + "\\DATA\\ANIMS\\";
-		const std::string entitiesExportDir = projectRootDir + "\\DATA\\ENTITIES\\";
-		const std::string palettesExportDir = projectRootDir + "\\DATA\\PALETTES\\";
-		const std::string scenesRootDir = projectRootDir + "\\DATA\\SCENES\\";
-		const std::string scenesExportDir = scenesRootDir + m_project->GetName();
-		const std::string scriptsExportDir = projectRootDir + "\\DATA\\SCRIPTS\\";
-		const std::string spritesExportDir = projectRootDir + "\\DATA\\SPRITES\\";
+		const std::string dataExportDir = projectRootDir + "\\DATA\\";
+		const std::string animsExportDir = dataExportDir + "ANIMS\\";
+		const std::string entitiesExportDir = dataExportDir + "ENTITIES\\";
+		const std::string scenesExportDir = dataExportDir + "SCENES\\";
+		const std::string scriptsExportDir = dataExportDir + "\\SCRIPTS\\";
+		const std::string spritesExportDir = dataExportDir + "SPRITES\\";
 
 		if (exportProj)
 		{
@@ -2295,15 +2294,13 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 			luminary::ScriptTranspiler scriptTranspiler;
 			luminary::ScriptCompiler scriptCompiler;
 
-			const std::string scenesExportDirRelative = "data/scenes/" + m_project->GetName() + "/";
-
 			const std::string scriptsOffsetsTableFilename = scriptsExportDir + "OFFSETS.ASM";
 
 			if (ion::io::FileDevice* fileDevice = ion::io::FileDevice::GetDefault())
 			{
+				fileDevice->DeleteDirectory(dataExportDir);
 				fileDevice->CreateDirectory(animsExportDir);
 				fileDevice->CreateDirectory(entitiesExportDir);
-				fileDevice->CreateDirectory(palettesExportDir);
 				fileDevice->CreateDirectory(scenesExportDir);
 				fileDevice->CreateDirectory(scriptsExportDir);
 				fileDevice->CreateDirectory(spritesExportDir);
@@ -2322,7 +2319,7 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 			//Generate global function call table
 			std::vector<luminary::ScriptFunc> globalOffsetsTable;
 			scriptTranspiler.GenerateGlobalOffsetTable(entitiesWithScripts, components, globalOffsetsTable, scriptsOffsetsTableFilename);
-			scriptIncludes.push_back(Project::IncludeFile{ "script_global_offsets_table", scriptsOffsetsTableFilename });
+			scriptIncludes.push_back(Project::IncludeFile{ "data_script_global_offsets_table", scriptsOffsetsTableFilename });
 
 			//Global offset table size as binary (longword per entry)
 			u16 globalOffsetTableSize = globalOffsetsTable.size() * sizeof(u32);
@@ -2393,7 +2390,7 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 						if (ion::io::FileDevice::GetDefault()->GetFileExists(scriptDataFullPath))
 						{
 							//Add binaries to include files
-							std::string scriptLabel = std::string("scriptdata_") + gameObjType->GetName();
+							std::string scriptLabel = std::string("data_script_") + gameObjType->GetName();
 							std::string scriptFilenameRelease = scriptOutFullPathRelease + ".bin";
 							scriptIncludes.push_back(Project::IncludeFile{ scriptLabel, scriptFilenameRelease, Project::IncludeExportFlags::ReleaseOnly });
 
@@ -2442,7 +2439,9 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 
 			if (scriptIncludes.size() > 0)
 			{
+				std::string scriptsFilename = scriptsExportDir + "SCRIPTS.ASM";
 				m_project->WriteIncludeFile(projectRootDir, scriptsExportDir, "SCRIPTS.ASM", scriptIncludes, true);
+				includeFilenames.push_back(Project::IncludeFile{ "data_scripts", scriptsFilename, Project::IncludeExportFlags::None });
 			}
 
 			//Find background maps for each map
@@ -2476,7 +2475,10 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 			}
 
 			std::string archetypesFilename = entitiesExportDir + "ARCHTYPS.ASM";
-			entityExporter.ExportArchetypes(archetypesFilename, archetypes);
+			if (entityExporter.ExportArchetypes(archetypesFilename, archetypes))
+			{
+				includeFilenames.push_back(Project::IncludeFile{ "data_archetypes", archetypesFilename, Project::IncludeExportFlags::None });
+			}
 
 			//Export entity prefabs
 			std::vector<luminary::Prefab> prefabs;
@@ -2493,7 +2495,10 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 			}
 
 			std::string prefabsFilename = entitiesExportDir + "PREFABS.ASM";
-			entityExporter.ExportPrefabs(prefabsFilename, prefabs);
+			if (entityExporter.ExportPrefabs(prefabsFilename, prefabs))
+			{
+				includeFilenames.push_back(Project::IncludeFile{ "data_prefas", prefabsFilename, Project::IncludeExportFlags::None });
+			}
 
 			//Export prefab animations
 			std::vector<luminary::Animation> prefabAnimations;
@@ -2508,12 +2513,24 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 			}
 
 			std::string animsFilename = entitiesExportDir + "ANIMS.ASM";
-			entityExporter.ExportAnimations(animsFilename, prefabAnimations);
+			if (entityExporter.ExportAnimations(animsFilename, prefabAnimations))
+			{
+				includeFilenames.push_back(Project::IncludeFile{ "data_prefabanims", animsFilename, Project::IncludeExportFlags::None });
+			}
 
 			//Export sprite data
 			// TODO: Luminary (binary) data formats
-			m_project->ExportSpriteSheets(spritesExportDir, Project::ExportFormat::BinaryCompressed);
-			m_project->ExportSpriteAnims(animsExportDir, Project::ExportFormat::BinaryCompressed);
+			if (m_project->ExportSpriteSheets(spritesExportDir, Project::ExportFormat::BinaryCompressed))
+			{
+				std::string spritesFilename = spritesExportDir + "SPRITES.ASM";
+				includeFilenames.push_back(Project::IncludeFile{ "data_sprites", spritesFilename, Project::IncludeExportFlags::None});
+			}
+
+			if (m_project->ExportSpriteAnims(animsExportDir, Project::ExportFormat::BinaryCompressed))
+			{
+				std::string spritesAnimsFilename = animsExportDir + "SPRTANMS.ASM";
+				includeFilenames.push_back(Project::IncludeFile{ "data_sprite_anims", spritesAnimsFilename, Project::IncludeExportFlags::None });
+			}
 
 			//Export all palettes
 			std::vector<Palette> palettes;
@@ -2523,15 +2540,14 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 				palettes.push_back(palette.second);
 			}
 
-			std::string palettesLabel = std::string("palettes_") + m_project->GetName();
 			std::string palettesFilename = scenesExportDir + "\\" + "PALETTES.ASM";
 			if (paletteExporter.ExportPalettes(palettesFilename, palettes))
 			{
-				includeFilenames.push_back(Project::IncludeFile{ palettesLabel, palettesFilename, Project::IncludeExportFlags::None});
+				includeFilenames.push_back(Project::IncludeFile{ "data_palettes", palettesFilename, Project::IncludeExportFlags::None});
 			}
 
 			//Export Luminary terrain tileset
-			std::string terrainTilesetLabel = std::string("collision_tileset_") + m_project->GetName();
+			std::string terrainTilesetLabel = "data_collision_tileset";
 			std::string terrainTilesetFilename = scenesExportDir + "\\" + "CTILES.BIN";
 			if (terrainExporter.ExportTerrainTileset(terrainTilesetFilename, m_project->GetTerrainTileset(), m_project->GetPlatformConfig().tileWidth))
 			{
@@ -2544,7 +2560,7 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 				std::string tileSetName = tileset.second.GetName();
 				std::string fnamePrefix = ion::string::ToUpper(scenesExportDir + "\\" + tileset.second.GetName());
 
-				std::string tilesetLabel = "tileset_" + tileset.second.GetName();
+				std::string tilesetLabel = "data_tileset_" + tileset.second.GetName();
 				std::string tilesetFilename = fnamePrefix + "_GTILES.BIN";
 				if (tilesetExporter.ExportTileset(tilesetFilename, tileset.second))
 				{
@@ -2593,8 +2609,8 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 					stamps.push_back(stamp.second);
 				}
 
-				// TODO: check slot matched tileset default palette
-				std::string stampsetLabel = "stampset_" + stampSetName;
+				// TODO: check slot matches tileset default palette
+				std::string stampsetLabel = "data_stampset_" + stampSetName;
 				std::string stampsetFilename = fnamePrefix + "_GSTAMPS.BIN";
 				int paletteSlotIdx = paletteSlotRemap[stampSet.second.GetPaletteSlot()];
 				if (tilesetExporter.ExportStamps(stampsetFilename, stamps, paletteSlotIdx))
@@ -2603,7 +2619,7 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 				}
 
 				//Export Luminary terrain stamps
-				std::string terrainStampsetLabel = "collision_stampset_" + stampSetName;
+				std::string terrainStampsetLabel = "data_collision_stampset_" + stampSetName;
 				std::string terrainStampsetFilename = fnamePrefix + "_CSTAMPS.BIN";
 				if (terrainExporter.ExportTerrainStamps(terrainStampsetFilename, stamps, m_project->GetTerrainTileset(), m_project->GetDefaultTerrainTile()))
 				{
@@ -2616,7 +2632,7 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 			{
 				const Map& map = m_project->GetMap(it->first);
 				const StampSet& stampSet = m_project->GetStampSet(map.GetStampSetId());
-				std::string mapLabel = std::string("map_") + m_project->GetName() + "_" + map.GetName();
+				std::string mapLabel = std::string("data_map_") + map.GetName();
 				std::string mapFilename = scenesExportDir + "\\G" + ion::string::ToUpper(map.GetName()) + ".BIN";
 				StampId backgroundStamp = stampSet.GetBackgroundStamp() == InvalidStampId ? 0 : stampSet.GetBackgroundStamp();
 				if (mapExporter.ExportMap(mapFilename, map, m_project->GetPlatformConfig().stampWidth, m_project->GetPlatformConfig().stampHeight, backgroundStamp))
@@ -2629,7 +2645,7 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 			for (TMapMap::iterator it = m_project->MapsBegin(), end = m_project->MapsEnd(); it != end; ++it)
 			{
 				const Map& map = m_project->GetMap(it->first);
-				std::string terrainMapLabel = std::string("collision_map_") + m_project->GetName() + "_" + map.GetName();
+				std::string terrainMapLabel = std::string("data_collision_map_") + map.GetName();
 				std::string terrainMapFilename = scenesExportDir + "\\C" + ion::string::ToUpper(map.GetName()) + ".BIN";
 				if (terrainExporter.ExportTerrainMap(terrainMapFilename, map, m_project->GetPlatformConfig().stampWidth, m_project->GetPlatformConfig().stampHeight))
 				{
@@ -2655,11 +2671,11 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 					const Tileset& tileSetFg = m_project->GetTileset(stampSetFg.GetTilesetId());
 					const Tileset* tileSetBg = stampSetBg ? &m_project->GetTileset(stampSetBg->GetTilesetId()) : nullptr;
 
-					std::string stampsetFgLabel = "stampset_" + stampSetFg.GetName();
-					std::string stampsetBgLabel = stampSetBg ? ("stampset_" + stampSetBg->GetName()) : "0x00000000";
-					std::string tilesetFgLabel = "tileset_" + stampSetFg.GetName();
-					std::string tilesetBgLabel = stampSetBg ? ("tileset_" + stampSetBg->GetName()) : "0x00000000";
-					std::string terrainStampsetLabel = "collision_stampset_" + stampSetFg.GetName();
+					std::string stampsetFgLabel = "data_stampset_" + stampSetFg.GetName();
+					std::string stampsetBgLabel = stampSetBg ? ("data_stampset_" + stampSetBg->GetName()) : "0x00000000";
+					std::string tilesetFgLabel = "data_tileset_" + stampSetFg.GetName();
+					std::string tilesetBgLabel = stampSetBg ? ("data_tileset_" + stampSetBg->GetName()) : "0x00000000";
+					std::string terrainStampsetLabel = "data_collision_stampset_" + stampSetFg.GetName();
 
 					std::vector<std::string> paletteLabels(4);
 
@@ -2706,13 +2722,13 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 
 					sceneData.palettes = paletteLabels;
 
-					sceneData.mapFgLabel = std::string("map_") + m_project->GetName() + "_" + mapFg.GetName();
-					sceneData.mapBgLabel = mapBg ? (std::string("map_") + m_project->GetName() + "_" + mapBg->GetName()) : "0";
+					sceneData.mapFgLabel = std::string("data_map_") + mapFg.GetName();
+					sceneData.mapBgLabel = mapBg ? (std::string("data_map_") + mapBg->GetName()) : "0";
 					sceneData.stampsetFgLabel = stampsetFgLabel;
 					sceneData.stampsetBgLabel = stampsetBgLabel;
 					sceneData.tilesetFgLabel = tilesetFgLabel;
 					sceneData.tilesetBgLabel = tilesetBgLabel;
-					sceneData.collisionMapLabel = std::string("collision_map_") + m_project->GetName() + "_" + mapFg.GetName();
+					sceneData.collisionMapLabel = std::string("data_collision_map_") + mapFg.GetName();
 					sceneData.collisionStampsetLabel = terrainStampsetLabel;
 					sceneData.collisionTilesetLabel = terrainTilesetLabel;
 
@@ -2729,12 +2745,11 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 					sceneData.collisionMapWidthStamps = mapFg.GetWidth() / m_project->GetPlatformConfig().stampWidth;
 					sceneData.collisionMapHeightStamps = mapFg.GetHeight() / m_project->GetPlatformConfig().stampHeight;
 
-					std::string sceneName = m_project->GetName() + "_" + mapFg.GetName();
 					std::string sceneFilename = scenesExportDir + "\\" + ion::string::ToUpper(mapFg.GetName()) + ".ASM";
 					std::string animsFilename = scenesExportDir + "\\" + ion::string::ToUpper(mapFg.GetName()) + "_anims.ASM";
-					if (sceneExporter.ExportScene(sceneFilename, sceneName, sceneData))
+					if (sceneExporter.ExportScene(sceneFilename, mapFg.GetName(), sceneData))
 					{
-						includeFilenames.push_back(Project::IncludeFile{ std::string("scene_") + sceneName, sceneFilename, Project::IncludeExportFlags::None });
+						includeFilenames.push_back(Project::IncludeFile{ std::string("data_scene_") + mapFg.GetName(), sceneFilename, Project::IncludeExportFlags::None });
 					}
 				}
 			}
@@ -2742,11 +2757,8 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 			//Generate uber include file
 			if (includeFilenames.size() > 0)
 			{
-				m_project->WriteIncludeFile(projectRootDir, scenesExportDir, "INCLUDE.ASM", includeFilenames, true);
+				m_project->WriteIncludeFile(projectRootDir, dataExportDir, "DATA.ASM", includeFilenames, true);
 			}
-
-			//Append to master include file
-			//m_project->AppendMasterIncludeFile(projectRootDir, scenesExportDirRelative, "include.asm", scenesRootDir, "INCLUDE.ASM");
 
 			SetStatusText("Export complete");
 		}

@@ -583,6 +583,8 @@ void StampsPanel::Refresh(bool eraseBackground, const wxRect *rect)
 		if(m_forceRefresh || (m_project->StampsAreInvalidated() && m_panelSize.x > tileWidth && m_panelSize.y > tileHeight))
 		{
 			m_stampSetId = m_project->GetEditingMap().GetStampSetId();
+			m_hoverStamp = InvalidStampId;
+			m_selectedStamp = InvalidStampId;
 
 			//Rearrange stamps (calculates canvas size)
 			ArrangeStamps(ion::Vector2(m_panelSize.x, m_panelSize.y));

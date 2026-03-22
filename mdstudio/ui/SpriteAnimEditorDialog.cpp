@@ -684,7 +684,7 @@ void SpriteAnimEditorDialog::PopulateStampAnimSheetList(const Stamp& stamp)
 	typedef std::vector<TNameIDPair> TNameList;
 	TNameList nameList;
 
-	for(TSpriteSheetMap::const_iterator it = stamp.StampAnimSheetsBegin(), end = stamp.StampAnimSheetsEnd(); it != end; ++it)
+	for(TSpriteSheetMap::const_iterator it = stamp.GetStampAnimSheets().begin(), end = stamp.GetStampAnimSheets().end(); it != end; ++it)
 	{
 		nameList.push_back(std::make_pair(it->second.GetName(), it->first));
 	}

@@ -103,7 +103,7 @@ private:
 
 	void AssignPalette(int index, int slotIndex);
 
-	int GetPaletteUsage(PaletteId paletteId, std::vector<TilesetId>& tilesets, std::vector<std::pair<ActorId,SpriteSheetId>>& spriteSheets, std::vector<MapId>& maps) const;
+	int GetPaletteUsage(PaletteId paletteId, std::vector<TilesetId>& tilesets, std::vector<ActorId>& actors, std::vector<MapId>& maps) const;
 	int GetTilesetUsage(TilesetId tilesetId, std::vector<StampSetId>& stampSets) const;
 	int GetStampSetUsage(StampSetId stampSetId, std::vector<MapId>& maps) const;
 

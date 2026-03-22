@@ -311,7 +311,7 @@ void PropertyPanel::OnPropertyChanged(wxPropertyGridEvent& event)
 				if (editingObject->LoadPreviewSprite(fileProp->GetFileName().GetFullPath().c_str().AsChar()))
 				{
 					m_renderResources.DeleteSpriteSheetRenderResources(editingObject->GetPreviewSpriteSheetId());
-					m_renderResources.CreateSpriteSheetResources(editingObject->GetPreviewSpriteSheetId(), editingObject->GetPreviewSpriteSheet());
+					m_renderResources.CreateSpriteSheetResources(editingObject->GetPreviewSpriteSheet().GetImportedPalette(), editingObject->GetPreviewSpriteSheetId(), editingObject->GetPreviewSpriteSheet());
 					m_mainWindow->RefreshPanel(MainWindow::ePanelMap);
 				}
 				break;
@@ -424,20 +424,6 @@ void PropertyPanel::SetObjectProperty(GameObjectVariable* variable, const std::s
 				}
 			}
 		}
-#if !PALETTE_SLOT_LIST // TODO: consider allowing palette to be overridden per object
-		else if (variable->HasTag("PALETTE_SLOT"))
-		{
-			int slotIdx = 0;
-			std::string slotStr = value;
-			if (slotStr[0] != '?')
-			{
-				slotStr = slotStr.substr(0, slotStr.find(':'));
-				slotIdx = atoi(slotStr.c_str());
-			}
-
-			variable->m_value = std::to_string(slotIdx);
-		}
-#endif
 		else
 		{
 			variable->m_value = value;
@@ -728,13 +714,7 @@ void PropertyPanel::AddProperty(const GameObjectBase* gameObject, const GameObje
 	}
 	else if (variable.HasTag("PALETTE_SLOT"))
 	{
-#if !PALETTE_SLOT_LIST // TODO: consider allowing palette to be overridden per object
 		wxString name = "[Unassigned]";
-#else
-		wxArrayString* list = new wxArrayString();
-		int selection = -1;
-#endif
-
 		int paletteSlotIdx = -1;
 
 		// Find the actor and sprite sheet var in this component to fetch the palette from
@@ -749,7 +729,7 @@ void PropertyPanel::AddProperty(const GameObjectBase* gameObject, const GameObje
 				const SpriteSheet* spriteSheet = actor->GetSpriteSheet(spriteSheetId);
 				if (spriteSheet)
 				{
-					PaletteId paletteId = spriteSheet->GetPaletteId();
+					PaletteId paletteId = actor->GetPaletteId();
 
 					const auto palettes = m_project.GetPalettes();
 
@@ -767,43 +747,17 @@ void PropertyPanel::AddProperty(const GameObjectBase* gameObject, const GameObje
 
 						std::string label = (slotIdx >= 0) ? std::to_string(slotIdx) : "?";
 						label += ": " + palette.second.GetName();
-#if !PALETTE_SLOT_LIST // TODO: consider allowing palette to be overridden per object
+
 						if (palette.first == paletteId)
 						{
 							paletteSlotIdx = slotIdx;
 							name = label;
 							break;
 						}
-#else
-						list->Add(label);
-						if (palette.first == paletteId)
-						{
-							selection = list->Count() - 1;
-							paletteSlotIdx = slotIdx;
-						}
-#endif
 					}
 				}
 			}
 		}
-
-#if !PALETTE_SLOT_LIST // TODO: consider allowing palette to be overridden per object
-#else
-		wxEnumProperty* paletteProp = new wxEnumProperty(variable.m_name, propName, *list);
-		property = paletteProp;
-
-		if (selection >= 0)
-		{
-			paletteProp->SetChoiceSelection(selection);
-		}
-		else
-		{
-			//Add a blank entry
-			paletteProp->AddChoice("[none]");
-			paletteProp->SetChoiceSelection(paletteProp->GetChoices().GetCount() - 1);
-			selectionValid = false;
-		}
-#endif
 
 		wxStringProperty* paletteProp = new wxStringProperty(variable.m_name, propName, name);
 		property = paletteProp;

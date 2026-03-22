@@ -134,7 +134,7 @@ public:
 		SpriteSheetRenderResources();
 		~SpriteSheetRenderResources();
 
-		void Load(const SpriteSheet& spriteSheet, ion::io::ResourceHandle<ion::render::Shader>& shader, Project* project, ion::io::ResourceManager& resourceManager);
+		void Load(const Palette& palette, const SpriteSheet& spriteSheet, ion::io::ResourceHandle<ion::render::Shader>& shader, Project* project, ion::io::ResourceManager& resourceManager);
 
 		struct Frame
 		{
@@ -147,7 +147,7 @@ public:
 	};
 
 	void CreateSpriteSheetResources(const Project& project);
-	void CreateSpriteSheetResources(SpriteSheetId spriteSheetId, const SpriteSheet& spriteSheet);
+	void CreateSpriteSheetResources(const Palette& palette, SpriteSheetId spriteSheetId, const SpriteSheet& spriteSheet);
 	void DeleteSpriteSheetRenderResources(SpriteSheetId spriteSheetId);
 	SpriteSheetRenderResources* GetSpriteSheetResources(SpriteSheetId spriteSheetId);
 

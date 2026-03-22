@@ -97,6 +97,14 @@ SpriteAnimEditorDialog::SpriteAnimEditorDialog(wxWindow* parent, AnimEditMode an
 	//Append 1 row per keyframe track
 	m_gridTimeline->AppendRows(eTrack_MAX - m_gridTimeline->GetNumberRows());
 
+	const auto& palettes = m_project.GetPalettes();
+
+	for (const auto& palette : palettes)
+	{
+		m_choicePalette->Append(palette.second.GetName());
+		m_populatedPalettes.push_back(palette.first);
+	}
+
 	Maximize();
 }
 
@@ -138,6 +146,32 @@ void SpriteAnimEditorDialog::OnSpriteSheetSelected(wxCommandEvent& event)
 void SpriteAnimEditorDialog::OnAnimSelected(wxCommandEvent& event)
 {
 	SelectAnimation(event.GetSelection());
+}
+
+void SpriteAnimEditorDialog::OnListPalette(wxCommandEvent& event)
+{
+	int index = m_choicePalette->GetSelection();
+	if (m_selectedActor && index >= 0 && index < m_populatedPalettes.size())
+	{
+		PaletteId paletteId = m_populatedPalettes[index];
+		m_selectedActor->SetPaletteId(paletteId);
+		const Palette& palette = m_project.GetPalette(paletteId);
+
+		for (const auto& spriteSheet : m_selectedActor->GetSpriteSheets())
+		{
+			m_renderResources.DeleteSpriteSheetRenderResources(spriteSheet.first);
+			m_renderResources.CreateSpriteSheetResources(palette, spriteSheet.first, spriteSheet.second);
+		}
+
+		Refresh();
+	}
+}
+
+void SpriteAnimEditorDialog::OnListPaletteSlot(wxCommandEvent& event)
+{
+	int index = m_choicePaletteSlot->GetSelection();
+	if (m_selectedActor)
+		m_selectedActor->SetPaletteSlot(index);
 }
 
 void SpriteAnimEditorDialog::OnBtnActorNew(wxCommandEvent& event)
@@ -228,6 +262,7 @@ void SpriteAnimEditorDialog::OnBtnSpriteSheetImport(wxCommandEvent& event)
 			for(int i = 0; i < numFrames; i++)
 			{
 				//Create new spriteSheet
+				bool firstSpriteSheet = m_selectedActor ? (m_selectedActor->GetSpriteSheetCount() == 0) : false;
 				SpriteSheetId spriteSheetId = m_selectedActor ? m_selectedActor->CreateSpriteSheet() : m_selectedStamp->CreateStampAnimSheet();
 				SpriteSheet* spriteSheet = m_selectedActor ? m_selectedActor->GetSpriteSheet(spriteSheetId) : m_selectedStamp->GetStampAnimSheet(spriteSheetId);
 
@@ -243,11 +278,19 @@ void SpriteAnimEditorDialog::OnBtnSpriteSheetImport(wxCommandEvent& event)
 				//Import bitmap
 				if (spriteSheet->ImportBitmap(dialog.m_filePicker->GetPath().GetData().AsChar(), name, tileWidth, tileHeight, widthFrames, heightFrames, i, endFrame))
 				{
-					//Show palette match dialog
-					ShowPaletteMatchDlg();
-
-					//Create render resources
-					m_renderResources.CreateSpriteSheetResources(spriteSheetId, *spriteSheet);
+					if (firstSpriteSheet)
+					{
+						//Show palette match dialog (also creates render resources)
+						ShowPaletteMatchDlg();
+					}
+					else
+					{
+						// Create render resrouces
+						const Palette& palette = m_project.GetPalette(m_selectedActor->GetPaletteId());
+						SpriteSheetId spriteSheetId = m_selectedActor->FindSpriteSheetId(m_selectedSpriteSheet->GetName());
+						m_renderResources.DeleteSpriteSheetRenderResources(spriteSheetId);
+						m_renderResources.CreateSpriteSheetResources(palette, spriteSheetId, *m_selectedSpriteSheet);
+					}
 
 					//Populate spriteSheet list
 					if (m_selectedActor)
@@ -294,24 +337,41 @@ void SpriteAnimEditorDialog::OnBtnSpriteSheetReplace(wxCommandEvent& event)
 			const int tileHeight = m_project.GetPlatformConfig().tileHeight;
 
 			SpriteSheetId spriteSheetId = m_selectedActor->FindSpriteSheetId(m_selectedSpriteSheet->GetName());
+			const Palette& palette = m_project.GetPalette(m_selectedActor->GetPaletteId());
 
+			std::string filename = dialog.m_filePicker->GetPath().GetData().AsChar();
 			std::string name = m_selectedSpriteSheet->GetName();
 			int endFrame = dialog.m_spinCellCount->GetValue() - 1;
 
-			//Import bitmap
-			if (m_selectedSpriteSheet->ImportBitmap(dialog.m_filePicker->GetPath().GetData().AsChar(), name, tileWidth, tileHeight, widthFrames, heightFrames, 0, endFrame))
+			Palette importedPalette;
+			if (m_project.ImportPaletteFromImage(filename, importedPalette) != Project::ImportResult::Success)
 			{
-				//Show palette match dialog
-				ShowPaletteMatchDlg();
+				wxMessageBox("Error importing spriteSheet", "Error", wxOK);
+				return;
+			}
 
-				//Create render resources
+			for (int i = 0; i < Palette::coloursPerPalette; i++)
+			{
+				if (importedPalette.IsColourUsed(i) && !palette.IsColourUsed(i))
+				{
+					wxMessageBox("Imported image " + filename + " is not compatible with palette " + palette.GetName(), "Error");
+					return;
+				}
+			}
+			
+			//Import bitmap
+			if (m_selectedSpriteSheet->ImportBitmap(filename, name, tileWidth, tileHeight, widthFrames, heightFrames, 0, endFrame))
+			{
+				//Recreate render resources
+				
 				m_renderResources.DeleteSpriteSheetRenderResources(spriteSheetId);
-				m_renderResources.CreateSpriteSheetResources(spriteSheetId, *m_selectedSpriteSheet);
+				m_renderResources.CreateSpriteSheetResources(palette, spriteSheetId, *m_selectedSpriteSheet);
 			}
 			else
 			{
 				//Failed
 				wxMessageBox("Error importing spriteSheet", "Error", wxOK);
+				return;
 			}
 
 			Refresh();
@@ -354,19 +414,20 @@ void SpriteAnimEditorDialog::ShowPaletteMatchDlg()
 	if (m_selectedSpriteSheet)
 	{
 		// Display list
-		MatchPaletteDialog dialog(this, m_project, m_selectedSpriteSheet->GetImportedPalette(), m_selectedSpriteSheet->GetPaletteId(), m_selectedSpriteSheet->GetName());
+		MatchPaletteDialog dialog(this, m_project, m_selectedSpriteSheet->GetImportedPalette(), m_selectedActor->GetPaletteId(), m_selectedSpriteSheet->GetName());
 
 		int result = dialog.ShowModal();
 
 		if (result != wxID_CANCEL)
 		{
 			// Set new palette id
-			m_selectedSpriteSheet->SetPaletteId(dialog.m_selectedPaletteId);
+			m_selectedActor->SetPaletteId(dialog.m_selectedPaletteId);
 
 			// Redraw render resources
+			const Palette& palette = m_project.GetPalette(dialog.m_selectedPaletteId);
 			SpriteSheetId spriteSheetId = m_selectedActor->FindSpriteSheetId(m_selectedSpriteSheet->GetName());
 			m_renderResources.DeleteSpriteSheetRenderResources(spriteSheetId);
-			m_renderResources.CreateSpriteSheetResources(spriteSheetId, *m_selectedSpriteSheet);
+			m_renderResources.CreateSpriteSheetResources(palette, spriteSheetId, *m_selectedSpriteSheet);
 
 			Refresh();
 		}
@@ -740,7 +801,12 @@ void SpriteAnimEditorDialog::PopulateSpriteFrames(const SpriteSheetId& spriteShe
 	//TEMP - for stamps
 	if(!spriteResources && m_selectedStamp)
 	{
-		m_renderResources.CreateSpriteSheetResources(spriteSheetId, *m_selectedStamp->GetStampAnimSheet(spriteSheetId));
+		const Map& editingMap = m_project.GetEditingMap();
+		const StampSet& stampSet = m_project.GetStampSet(editingMap.GetStampSetId());
+		TilesetId tilesetId = stampSet.GetTilesetId();
+		const Tileset& tileset = m_project.GetTileset(tilesetId);
+		const Palette& palette = m_project.GetPalette(tileset.GetDefaultPaletteId());
+		m_renderResources.CreateSpriteSheetResources(palette, spriteSheetId, *m_selectedStamp->GetStampAnimSheet(spriteSheetId));
 		spriteResources = m_renderResources.GetSpriteSheetResources(spriteSheetId);
 	}
 
@@ -912,6 +978,45 @@ void SpriteAnimEditorDialog::SelectActor(int index)
 			m_selectedActor = m_project.GetActor(m_selectedActorId);
 			ion::debug::Assert(m_selectedActor, "SpriteAnimEditorDialog::OnActorSelected() - Invalid actor ID");
 			PopulateSpriteSheetList(*m_selectedActor);
+
+			PaletteId paletteId = m_selectedActor->GetPaletteId();
+			if (paletteId == InvalidPaletteId)
+			{
+				m_paletteView->SetPalette(Palette());
+			}
+			else
+			{
+				const Palette& palette = m_project.GetPalette(paletteId);
+				m_paletteView->SetPalette(palette);
+			}
+
+			for (int j = 0; j < m_populatedPalettes.size(); j++)
+			{
+				if (paletteId == m_populatedPalettes[j])
+					m_choicePalette->SetSelection(j);
+			}
+
+			m_choicePaletteSlot->Clear();
+			const Map& editingMap = m_project.GetEditingMap();
+			for (int i = 0; i < editingMap.GetNumPaletteSlots(); i++)
+			{
+				PaletteId slotPalette = editingMap.GetPaletteFromSlot(i);
+				std::string paletteName = "[Unassigned]";
+				if (slotPalette != InvalidPaletteId)
+				{
+					const Palette& palette = m_project.GetPalette(slotPalette);
+					paletteName = palette.GetName();
+				}
+
+				std::string name = std::to_string(i) + ": " + paletteName;
+
+				if (slotPalette == m_selectedActor->GetPaletteId())
+					name += "  * default for actor *";
+
+				m_choicePaletteSlot->Append(name);
+			}
+
+			m_choicePaletteSlot->SetSelection(m_selectedActor->GetPaletteSlot());
 
 			if (m_spriteSheetCache.size() > 0)
 			{

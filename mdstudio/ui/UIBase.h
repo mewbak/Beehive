@@ -980,14 +980,15 @@ class SpriteAnimEditorDialogBase : public wxDialog
 		wxListBox* m_listAnimations;
 		wxButton* m_btnNewActor;
 		wxButton* m_btnDeleteActor;
-		wxButton* m_btnImport;
-		wxButton* m_btnExport;
 		wxButton* m_btnRenameActor;
+		wxStaticText* m_staticText160;
+		wxChoice* m_choicePalette;
+		wxStaticText* m_staticText161;
+		wxChoice* m_choicePaletteSlot;
 		wxButton* m_btnImportSpriteSheet;
 		wxButton* m_btnDeleteSprite;
 		wxButton* m_btnReplaceSpriteSheet;
 		wxButton* m_btnRenameSheet;
-		wxButton* m_btnSetPalette;
 		wxButton* m_btnNewAnim;
 		wxButton* m_btnDeleteAnim;
 		wxButton* m_btnRenameAnim;
@@ -1011,14 +1012,13 @@ class SpriteAnimEditorDialogBase : public wxDialog
 		virtual void OnAnimSelected( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnActorNew( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnActorDelete( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnBtnImport( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnBtnExport( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnRenameActor( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnListPalette( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnListPaletteSlot( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnSpriteSheetImport( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnSpriteSheetDelete( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnSpriteSheetReplace( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnRenameSheet( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnBtnSpriteSheetSetPalette( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnAnimNew( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnAnimDelete( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnRenameAnim( wxCommandEvent& event ) { event.Skip(); }
@@ -1031,6 +1031,7 @@ class SpriteAnimEditorDialogBase : public wxDialog
 
 
 	public:
+		PaletteViewCtrl* m_paletteView;
 
 		SpriteAnimEditorDialogBase( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("Sprite and Stamp Animation Editor"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 1378,772 ), long style = wxCAPTION|wxDEFAULT_DIALOG_STYLE|wxMAXIMIZE_BOX|wxRESIZE_BORDER|wxSYSTEM_MENU );
 

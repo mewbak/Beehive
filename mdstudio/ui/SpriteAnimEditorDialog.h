@@ -70,6 +70,8 @@ protected:
 	virtual void OnActorSelected(wxCommandEvent& event);
 	virtual void OnSpriteSheetSelected(wxCommandEvent& event);
 	virtual void OnAnimSelected(wxCommandEvent& event);
+	virtual void OnListPalette(wxCommandEvent& event);
+	virtual void OnListPaletteSlot(wxCommandEvent& event);
 	virtual void OnBtnActorNew(wxCommandEvent& event);
 	virtual void OnBtnActorDelete(wxCommandEvent& event);
 	virtual void OnBtnImport(wxCommandEvent& event);
@@ -132,6 +134,7 @@ private:
 
 	std::vector<SpriteSheetId> m_spriteSheetCache;
 	std::vector<SpriteAnimId> m_animCache;
+	std::vector<PaletteId> m_populatedPalettes;
 
 	wxTimer m_timer;
 

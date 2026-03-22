@@ -907,7 +907,7 @@ RenderResources::SpriteSheetRenderResources::SpriteSheetRenderResources()
 	m_primitive = NULL;
 }
 
-void RenderResources::SpriteSheetRenderResources::Load(const SpriteSheet& spriteSheet, ion::io::ResourceHandle<ion::render::Shader>& shader, Project* project, ion::io::ResourceManager& resourceManager)
+void RenderResources::SpriteSheetRenderResources::Load(const Palette& palette, const SpriteSheet& spriteSheet, ion::io::ResourceHandle<ion::render::Shader>& shader, Project* project, ion::io::ResourceManager& resourceManager)
 {
 	if (spriteSheet.GetNumFrames() > 0)
 	{
@@ -922,9 +922,6 @@ void RenderResources::SpriteSheetRenderResources::Load(const SpriteSheet& sprite
 		u32 textureHeight = heightTiles * tileHeight;
 		u32 bytesPerPixel = 4;
 		u32 textureSize = textureWidth * textureHeight * bytesPerPixel;
-
-		PaletteId paletteId = spriteSheet.GetPaletteId();
-		Palette palette = (paletteId == InvalidPaletteId) ? spriteSheet.GetImportedPalette() : project->GetPalette(paletteId);
 
 		static int resourceIdx = 0;
 
@@ -1029,6 +1026,7 @@ void RenderResources::SpriteSheetRenderResources::Load(const SpriteSheet& sprite
 			renderFrame.material = resourceManager.CreateResource(materialName, new ion::render::Material());
 			renderFrame.material->SetTextureMap(ion::render::Material::TextureMapType::Diffuse, renderFrame.texture);
 			renderFrame.material->SetDiffuseColour(ion::Colour(1.0f, 1.0f, 1.0f));
+			renderFrame.material->SetBlendMode(ion::render::Renderer::AlphaBlendType::Translucent);
 #if defined ION_RENDERER_SHADER
 			renderFrame.material->SetShader(shader);
 #endif
@@ -1063,21 +1061,23 @@ void RenderResources::CreateSpriteSheetResources(const Project& project)
 	{
 		for(TSpriteSheetMap::const_iterator it = actorIt->second.SpriteSheetsBegin(), end = actorIt->second.SpriteSheetsEnd(); it != end; ++it)
 		{
-			CreateSpriteSheetResources(it->first, it->second);
+			PaletteId paletteId = actorIt->second.GetPaletteId();
+			Palette palette = (paletteId == InvalidPaletteId) ? it->second.GetImportedPalette() : project.GetPalette(paletteId);
+			CreateSpriteSheetResources(palette, it->first, it->second);
 		}
 	}
 
 	for(TGameObjectTypeMap::const_iterator it = project.GetGameObjectTypes().begin(), end = project.GetGameObjectTypes().end(); it != end; ++it)
 	{
-		CreateSpriteSheetResources(it->second.GetPreviewSpriteSheetId(), it->second.GetPreviewSpriteSheet());
+		CreateSpriteSheetResources(it->second.GetPreviewSpriteSheet().GetImportedPalette(), it->second.GetPreviewSpriteSheetId(), it->second.GetPreviewSpriteSheet());
 	}
 }
 
-void RenderResources::CreateSpriteSheetResources(SpriteSheetId spriteSheetId, const SpriteSheet& spriteSheet)
+void RenderResources::CreateSpriteSheetResources(const Palette& palette , SpriteSheetId spriteSheetId, const SpriteSheet& spriteSheet)
 {
 	m_spriteSheetRenderResources.erase(spriteSheetId);
 	std::pair<std::map<SpriteSheetId, SpriteSheetRenderResources>::iterator, bool> it = m_spriteSheetRenderResources.insert(std::make_pair(spriteSheetId, SpriteSheetRenderResources()));
-	it.first->second.Load(spriteSheet, m_shaders[eShaderFlatTextured], &m_project, m_resourceManager);
+	it.first->second.Load(palette, spriteSheet, m_shaders[eShaderFlatTextured], &m_project, m_resourceManager);
 }
 
 void RenderResources::DeleteSpriteSheetRenderResources(SpriteSheetId spriteSheetId)

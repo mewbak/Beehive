@@ -71,7 +71,6 @@ protected:
 	virtual void OnSpriteSheetSelected(wxCommandEvent& event);
 	virtual void OnAnimSelected(wxCommandEvent& event);
 	virtual void OnListPalette(wxCommandEvent& event);
-	virtual void OnListPaletteSlot(wxCommandEvent& event);
 	virtual void OnBtnActorNew(wxCommandEvent& event);
 	virtual void OnBtnActorDelete(wxCommandEvent& event);
 	virtual void OnBtnImport(wxCommandEvent& event);
@@ -109,7 +108,7 @@ private:
 
 	void FindAndDrawDropTarget(wxPoint mousePosDropSource, wxPoint mousePosDropTarget);
 
-	void ShowPaletteMatchDlg();
+	void ShowPaletteMatchDlg(Actor& actor, SpriteSheetId spriteSheetId, SpriteSheet& spriteSheet);
 
 	AnimEditMode m_animEditMode;
 	Project& m_project;

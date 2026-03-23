@@ -2570,35 +2570,6 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 
 			for (const auto& stampSet : m_project->GetStampSets())
 			{
-				// Find map using this stampset
-				// TODO: find all fg maps that share this stampset, check all palette slots match
-
-				std::vector<int> paletteSlotRemap(4);
-				for (const auto& map : m_project->GetMaps())
-				{
-					if (!IsBackgroundMap(map.first))
-					{
-						MapId bgMapId = map.second.GetBackgroundMapId();
-						const Map* bgMap = (bgMapId != InvalidMapId) ? &m_project->GetMap(bgMapId) : nullptr;
-						if (map.second.GetStampSetId() == stampSet.first
-							|| (bgMap && bgMap->GetStampSetId() == stampSet.first))
-						{
-							int numScenePalettes = 0;
-							int paletteIdx = 0;
-
-							for (int i = 0; i < map.second.GetNumPaletteSlots(); i++)
-							{
-								PaletteId paletteId = map.second.GetPaletteFromSlot(i);
-								if (paletteId != InvalidPaletteId)
-								{
-									numScenePalettes++;
-									paletteSlotRemap[i] = paletteIdx++;
-								}
-							}
-						}
-					}
-				}
-
 				std::string stampSetName = stampSet.second.GetName();
 				std::string fnamePrefix = ion::string::ToUpper(scenesExportDir + "\\" + stampSet.second.GetName());
 
@@ -2609,10 +2580,14 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 					stamps.push_back(stamp.second);
 				}
 
-				// TODO: check slot matches tileset default palette
 				std::string stampsetLabel = "data_stampset_" + stampSetName;
 				std::string stampsetFilename = fnamePrefix + "_GSTAMPS.BIN";
-				int paletteSlotIdx = paletteSlotRemap[stampSet.second.GetPaletteSlot()];
+				int paletteSlotIdx = m_project->GetPaletteSlotForExport(stampSet.second.GetTilesetId());
+
+				// TODO: export errors/warnings
+				if (paletteSlotIdx == -1)
+					paletteSlotIdx = 0;
+
 				if (tilesetExporter.ExportStamps(stampsetFilename, stamps, paletteSlotIdx))
 				{
 					includeFilenames.push_back(Project::IncludeFile{ stampsetLabel, stampsetFilename, Project::IncludeExportFlags::None });

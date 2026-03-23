@@ -14,6 +14,7 @@
 #include "StampsPanel.h"
 #include "TilesPanel.h"
 #include "MainWindow.h"
+#include "GameObjectUtils.h"
 
 #include <ion/core/utils/STL.h>
 
@@ -246,28 +247,6 @@ void DialogAssetManagement::SelectStampSet(int index)
 		std::vector<MapId> maps;
 		m_txtStampSetUsageCount->SetLabelText(std::to_string(GetStampSetUsage(stampSetId, maps)));
 
-		m_choicePaletteSlot->Clear();
-		const Map& editingMap = m_project.GetEditingMap();
-		for (int i = 0; i < editingMap.GetNumPaletteSlots(); i++)
-		{
-			PaletteId paletteId = editingMap.GetPaletteFromSlot(i);
-			std::string paletteName = "[Unassigned]";
-			if (paletteId != InvalidPaletteId)
-			{
-				const Palette& palette = m_project.GetPalette(paletteId);
-				paletteName = palette.GetName();
-			}
-
-			std::string name = std::to_string(i) + ": " + paletteName;
-
-			if (paletteId == tileset.GetDefaultPaletteId())
-				name += "  * default for tileset *";
-
-			m_choicePaletteSlot->Append(name);
-		}
-
-		m_choicePaletteSlot->SetSelection(stampSet.GetPaletteSlot());
-
 		m_filePickerStampsImg->SetPath(m_project.m_settings.GetAbsolutePath(stampSetId));
 
 		Refresh();
@@ -299,9 +278,15 @@ void DialogAssetManagement::SelectMap(int index)
 		}
 
 		if (isBackgroundMap)
+		{
 			m_choiceBgMap->Disable();
+			m_btnAutoAssignPalettes->Disable();
+		}
 		else
+		{
 			m_choiceBgMap->Enable();
+			m_btnAutoAssignPalettes->Enable();
+		}
 
 		PaletteViewCtrl* views[4] = { m_paletteViewSlot0, m_paletteViewSlot1, m_paletteViewSlot2, m_paletteViewSlot3 };
 		wxChoice* lists[4] = { m_choiceSlot0, m_choiceSlot1, m_choiceSlot2, m_choiceSlot3 };
@@ -1109,21 +1094,6 @@ void DialogAssetManagement::OnBtnCleanupStampSet(wxCommandEvent& event)
 	}
 }
 
-void DialogAssetManagement::OnStampPaletteSlot(wxCommandEvent& event)
-{
-	int index = m_listStampSets->GetSelection();
-	if (index >= 0 && index < m_populatedStampSets.size())
-	{
-		StampSetId stampSetId = m_populatedStampSets[index];
-		StampSet& stampSet = m_project.GetStampSet(stampSetId);
-
-		stampSet.SetPaletteSlot(m_choicePaletteSlot->GetSelection());
-
-		m_mainWindow.RefreshTileset();
-		m_mainWindow.RefreshAll();
-	}
-}
-
 void DialogAssetManagement::OnBrowseStampsImg(wxFileDirPickerEvent& event)
 {
 	int stampSetIdx = m_listStampSets->GetSelection();
@@ -1498,6 +1468,124 @@ void DialogAssetManagement::OnListSlot2(wxCommandEvent& event)
 void DialogAssetManagement::OnListSlot3(wxCommandEvent& event)
 {
 	AssignPalette(m_choiceSlot3->GetSelection(), 3);
+}
+
+void DialogAssetManagement::OnBtnAutoAssignPalettes(wxCommandEvent& event)
+{
+	int index = m_listMaps->GetSelection();
+	if (index >= 0 && index < m_populatedMaps.size())
+	{
+		MapId mapIdFg = m_populatedMaps[index];
+		Map& mapFg = m_project.GetMap(mapIdFg);
+
+		static const int maxPaletteSlots = 4;
+		PaletteId slots[maxPaletteSlots] = { InvalidPaletteId };
+		int slotIdx = 0;
+
+		auto GetMapPalette = [&](MapId mapId)
+			{
+				const Map& map = m_project.GetMap(mapId);
+				StampSetId stampsetId = map.GetStampSetId();
+				const StampSet& stampset = m_project.GetStampSet(stampsetId);
+				TilesetId tilesetId = stampset.GetTilesetId();
+				const Tileset& tileset = m_project.GetTileset(tilesetId);
+				return tileset.GetDefaultPaletteId();
+			};
+		
+		// Slot 0 is fg map
+		PaletteId paletteIdFg = GetMapPalette(mapIdFg);
+		slots[slotIdx++] = paletteIdFg;
+
+		// Slot 1 is bg map, if we have one, and it's unique
+		MapId mapIdBg = mapFg.GetBackgroundMapId();
+		if (mapIdBg != InvalidMapId)
+		{
+			PaletteId paletteIdBg = GetMapPalette(mapIdBg);
+			if (paletteIdBg != InvalidPaletteId && paletteIdBg != paletteIdFg)
+				slots[slotIdx++] = paletteIdBg;
+		}
+
+		// Remaining slots for sprite actors, sorted by usage counts
+		std::map<PaletteId, std::pair<int, std::vector<std::string>>> actorPalettes;
+
+		for (const auto& gameObjType : mapFg.GetGameObjects())
+		{
+			for (const auto& gameObj : gameObjType.second)
+			{
+				ActorId actorId = InvalidActorId;
+				if (const Actor* actor = FindGameObjectActor(m_project, &gameObj.m_gameObject, actorId))
+				{
+					PaletteId paletteId = actor->GetPaletteId();
+					if (paletteId != InvalidPaletteId)
+					{
+						std::pair<int, std::vector<std::string>>& entry = actorPalettes[paletteId];
+						entry.first++;
+						entry.second.push_back(actor->GetName());
+					}
+				}
+			}
+		}
+
+		std::vector<std::pair<int, PaletteId>> sorted;
+		std::transform(actorPalettes.begin(), actorPalettes.end(), std::inserter(sorted, sorted.begin()),
+			[](const auto& item)
+			{
+				return std::make_pair(item.second.first, item.first);
+			});
+
+		std::sort(sorted.begin(), sorted.end(), [](const auto& a, const auto& b)
+			{
+				return a.first > b.first;
+			});
+
+		std::vector<std::string> mismatchedActors;
+
+		for (const auto& it : sorted)
+		{
+			bool alreadyMapped = false;
+			for (int i = 0; i < maxPaletteSlots; i++)
+			{
+				if (slots[i] == it.second)
+				{
+					alreadyMapped = true;
+					break;
+				}
+			}
+
+			if (!alreadyMapped)
+			{
+				if (slotIdx < maxPaletteSlots)
+				{
+					slots[slotIdx++] = it.second;
+				}
+				else
+				{
+					const std::vector<std::string>& actorNames = actorPalettes[it.second].second;
+					mismatchedActors.insert(mismatchedActors.begin(), actorNames.begin(), actorNames.end());
+				}
+			}
+		}
+
+		if (mismatchedActors.size() > 0)
+		{
+			std::string errorMsg = "No palette slots left for sprite actors in map:\n\n";
+			for (const std::string& name : mismatchedActors)
+			{
+				errorMsg += " " + name + "\n";
+			}
+
+			wxMessageBox(errorMsg.c_str(), "Error");
+		}
+
+		wxChoice* lists[4] = { m_choiceSlot0, m_choiceSlot1, m_choiceSlot2, m_choiceSlot3 };
+
+		for (int i = 0; i < maxPaletteSlots; i++)
+		{
+			PaletteId paletteId = slots[i];
+			mapFg.AssignPaletteToSlot(paletteId, i);
+			lists[i]->SetSelection(paletteId == InvalidPaletteId ? -1 : ion::utils::stl::IndexOf(m_populatedPalettes, paletteId));
+		}
+	}
 }
 
 int DialogAssetManagement::GetPaletteUsage(PaletteId paletteId, std::vector<TilesetId>& tilesets, std::vector<ActorId>& actors, std::vector<MapId>& maps) const

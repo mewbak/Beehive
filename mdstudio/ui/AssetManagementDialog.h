@@ -59,7 +59,6 @@ public:
 	virtual void OnBtnExportStampSet(wxCommandEvent& event);
 	virtual void OnBtnRenameStampSet(wxCommandEvent& event);
 	virtual void OnBtnCleanupStampSet(wxCommandEvent& event);
-	virtual void OnStampPaletteSlot(wxCommandEvent& event);
 	virtual void OnBrowseStampsImg(wxFileDirPickerEvent& event);
 
 	// Maps tab
@@ -75,6 +74,7 @@ public:
 	virtual void OnListSlot1(wxCommandEvent& event);
 	virtual void OnListSlot2(wxCommandEvent& event);
 	virtual void OnListSlot3(wxCommandEvent& event);
+	virtual void OnBtnAutoAssignPalettes(wxCommandEvent& event);
 
 	static void ShowImportError(Project::ImportResult result, const std::string& filenam, const Project& project);
 

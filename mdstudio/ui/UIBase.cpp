@@ -2608,14 +2608,14 @@ SpriteAnimEditorDialogBase::SpriteAnimEditorDialogBase( wxWindow* parent, wxWind
 	bSizer10 = new wxBoxSizer( wxVERTICAL );
 
 	wxFlexGridSizer* fgSizer14;
-	fgSizer14 = new wxFlexGridSizer( 3, 1, 0, 0 );
+	fgSizer14 = new wxFlexGridSizer( 0, 0, 0, 0 );
 	fgSizer14->AddGrowableCol( 0 );
 	fgSizer14->AddGrowableRow( 0 );
 	fgSizer14->SetFlexibleDirection( wxBOTH );
 	fgSizer14->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 
 	wxFlexGridSizer* fgSizer13;
-	fgSizer13 = new wxFlexGridSizer( 2, 1, 0, 0 );
+	fgSizer13 = new wxFlexGridSizer( 0, 1, 0, 0 );
 	fgSizer13->AddGrowableCol( 0 );
 	fgSizer13->AddGrowableRow( 0 );
 	fgSizer13->SetFlexibleDirection( wxBOTH );
@@ -2629,7 +2629,7 @@ SpriteAnimEditorDialogBase::SpriteAnimEditorDialogBase( wxWindow* parent, wxWind
 	fgSizer24->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 
 	wxFlexGridSizer* fgSizer25;
-	fgSizer25 = new wxFlexGridSizer( 3, 3, 0, 0 );
+	fgSizer25 = new wxFlexGridSizer( 0, 3, 0, 0 );
 	fgSizer25->AddGrowableRow( 1 );
 	fgSizer25->SetFlexibleDirection( wxBOTH );
 	fgSizer25->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
@@ -2680,15 +2680,6 @@ SpriteAnimEditorDialogBase::SpriteAnimEditorDialogBase( wxWindow* parent, wxWind
 	m_choicePalette = new wxChoice( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, m_choicePaletteChoices, 0 );
 	m_choicePalette->SetSelection( 0 );
 	fgSizer115->Add( m_choicePalette, 0, wxALL, 5 );
-
-	m_staticText161 = new wxStaticText( this, wxID_ANY, wxT("Palette slot:"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText161->Wrap( -1 );
-	fgSizer115->Add( m_staticText161, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 5 );
-
-	wxArrayString m_choicePaletteSlotChoices;
-	m_choicePaletteSlot = new wxChoice( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, m_choicePaletteSlotChoices, 0 );
-	m_choicePaletteSlot->SetSelection( 0 );
-	fgSizer115->Add( m_choicePaletteSlot, 0, wxALL, 5 );
 
 
 	fgSizer25->Add( fgSizer115, 1, wxEXPAND, 5 );
@@ -2748,7 +2739,7 @@ SpriteAnimEditorDialogBase::SpriteAnimEditorDialogBase( wxWindow* parent, wxWind
 	fgSizer13->Add( fgSizer24, 1, wxEXPAND, 5 );
 
 	wxFlexGridSizer* m_sizerTimeline;
-	m_sizerTimeline = new wxFlexGridSizer( 6, 1, 0, 0 );
+	m_sizerTimeline = new wxFlexGridSizer( 0, 1, 0, 0 );
 	m_sizerTimeline->AddGrowableCol( 0 );
 	m_sizerTimeline->AddGrowableRow( 1 );
 	m_sizerTimeline->AddGrowableRow( 3 );
@@ -2879,7 +2870,6 @@ SpriteAnimEditorDialogBase::SpriteAnimEditorDialogBase( wxWindow* parent, wxWind
 	m_btnDeleteActor->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( SpriteAnimEditorDialogBase::OnBtnActorDelete ), NULL, this );
 	m_btnRenameActor->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( SpriteAnimEditorDialogBase::OnBtnRenameActor ), NULL, this );
 	m_choicePalette->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( SpriteAnimEditorDialogBase::OnListPalette ), NULL, this );
-	m_choicePaletteSlot->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( SpriteAnimEditorDialogBase::OnListPaletteSlot ), NULL, this );
 	m_btnImportSpriteSheet->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( SpriteAnimEditorDialogBase::OnBtnSpriteSheetImport ), NULL, this );
 	m_btnDeleteSprite->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( SpriteAnimEditorDialogBase::OnBtnSpriteSheetDelete ), NULL, this );
 	m_btnReplaceSpriteSheet->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( SpriteAnimEditorDialogBase::OnBtnSpriteSheetReplace ), NULL, this );
@@ -2913,7 +2903,6 @@ SpriteAnimEditorDialogBase::~SpriteAnimEditorDialogBase()
 	m_btnDeleteActor->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( SpriteAnimEditorDialogBase::OnBtnActorDelete ), NULL, this );
 	m_btnRenameActor->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( SpriteAnimEditorDialogBase::OnBtnRenameActor ), NULL, this );
 	m_choicePalette->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( SpriteAnimEditorDialogBase::OnListPalette ), NULL, this );
-	m_choicePaletteSlot->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( SpriteAnimEditorDialogBase::OnListPaletteSlot ), NULL, this );
 	m_btnImportSpriteSheet->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( SpriteAnimEditorDialogBase::OnBtnSpriteSheetImport ), NULL, this );
 	m_btnDeleteSprite->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( SpriteAnimEditorDialogBase::OnBtnSpriteSheetDelete ), NULL, this );
 	m_btnReplaceSpriteSheet->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( SpriteAnimEditorDialogBase::OnBtnSpriteSheetReplace ), NULL, this );
@@ -4550,17 +4539,6 @@ DialogAssetsBase::DialogAssetsBase( wxWindow* parent, wxWindowID id, const wxStr
 	fgSizer91->SetFlexibleDirection( wxBOTH );
 	fgSizer91->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 
-	m_staticText144 = new wxStaticText( m_tabStamps, wxID_ANY, wxT("Palette Slot:"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText144->Wrap( -1 );
-	fgSizer91->Add( m_staticText144, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 5 );
-
-	wxArrayString m_choicePaletteSlotChoices;
-	m_choicePaletteSlot = new wxChoice( m_tabStamps, wxID_ANY, wxDefaultPosition, wxDefaultSize, m_choicePaletteSlotChoices, 0 );
-	m_choicePaletteSlot->SetSelection( 0 );
-	m_choicePaletteSlot->SetMinSize( wxSize( 360,-1 ) );
-
-	fgSizer91->Add( m_choicePaletteSlot, 0, wxALL, 5 );
-
 	m_staticText127 = new wxStaticText( m_tabStamps, wxID_ANY, wxT("Image File:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText127->Wrap( -1 );
 	fgSizer91->Add( m_staticText127, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 5 );
@@ -4760,7 +4738,7 @@ DialogAssetsBase::DialogAssetsBase( wxWindow* parent, wxWindowID id, const wxStr
 	m_sizerSlots = new wxStaticBoxSizer( new wxStaticBox( m_tabMaps, wxID_ANY, wxT("Active Palette Slots") ), wxVERTICAL );
 
 	wxFlexGridSizer* fgSizer77;
-	fgSizer77 = new wxFlexGridSizer( 4, 3, 0, 0 );
+	fgSizer77 = new wxFlexGridSizer( 0, 3, 0, 0 );
 	fgSizer77->AddGrowableCol( 2 );
 	fgSizer77->SetFlexibleDirection( wxBOTH );
 	fgSizer77->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
@@ -4830,6 +4808,15 @@ DialogAssetsBase::DialogAssetsBase( wxWindow* parent, wxWindowID id, const wxStr
 	fgSizer77->Add( m_paletteViewSlot3, 0, wxALL|wxEXPAND, 5 );
 
 
+	fgSizer77->Add( 0, 0, 1, wxEXPAND, 5 );
+
+
+	fgSizer77->Add( 0, 0, 1, wxEXPAND, 5 );
+
+	m_btnAutoAssignPalettes = new wxButton( m_sizerSlots->GetStaticBox(), wxID_ANY, wxT("Auto-assign"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizer77->Add( m_btnAutoAssignPalettes, 0, wxALIGN_RIGHT|wxALL, 5 );
+
+
 	m_sizerSlots->Add( fgSizer77, 1, wxEXPAND, 5 );
 
 
@@ -4872,7 +4859,6 @@ DialogAssetsBase::DialogAssetsBase( wxWindow* parent, wxWindowID id, const wxStr
 	m_btnExportStampSet->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnExportStampSet ), NULL, this );
 	m_btnRenameStampSet->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnRenameStampSet ), NULL, this );
 	m_btnCleanupStampSet->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnCleanupStampSet ), NULL, this );
-	m_choicePaletteSlot->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DialogAssetsBase::OnStampPaletteSlot ), NULL, this );
 	m_filePickerStampsImg->Connect( wxEVT_COMMAND_FILEPICKER_CHANGED, wxFileDirPickerEventHandler( DialogAssetsBase::OnBrowseStampsImg ), NULL, this );
 	m_listMaps->Connect( wxEVT_COMMAND_LISTBOX_SELECTED, wxCommandEventHandler( DialogAssetsBase::OnListMap ), NULL, this );
 	m_listMaps->Connect( wxEVT_COMMAND_LISTBOX_DOUBLECLICKED, wxCommandEventHandler( DialogAssetsBase::OnListMapDClick ), NULL, this );
@@ -4886,6 +4872,7 @@ DialogAssetsBase::DialogAssetsBase( wxWindow* parent, wxWindowID id, const wxStr
 	m_choiceSlot1->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DialogAssetsBase::OnListSlot1 ), NULL, this );
 	m_choiceSlot2->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DialogAssetsBase::OnListSlot2 ), NULL, this );
 	m_choiceSlot3->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DialogAssetsBase::OnListSlot3 ), NULL, this );
+	m_btnAutoAssignPalettes->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnAutoAssignPalettes ), NULL, this );
 }
 
 DialogAssetsBase::~DialogAssetsBase()
@@ -4913,7 +4900,6 @@ DialogAssetsBase::~DialogAssetsBase()
 	m_btnExportStampSet->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnExportStampSet ), NULL, this );
 	m_btnRenameStampSet->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnRenameStampSet ), NULL, this );
 	m_btnCleanupStampSet->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnCleanupStampSet ), NULL, this );
-	m_choicePaletteSlot->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DialogAssetsBase::OnStampPaletteSlot ), NULL, this );
 	m_filePickerStampsImg->Disconnect( wxEVT_COMMAND_FILEPICKER_CHANGED, wxFileDirPickerEventHandler( DialogAssetsBase::OnBrowseStampsImg ), NULL, this );
 	m_listMaps->Disconnect( wxEVT_COMMAND_LISTBOX_SELECTED, wxCommandEventHandler( DialogAssetsBase::OnListMap ), NULL, this );
 	m_listMaps->Disconnect( wxEVT_COMMAND_LISTBOX_DOUBLECLICKED, wxCommandEventHandler( DialogAssetsBase::OnListMapDClick ), NULL, this );
@@ -4927,5 +4913,6 @@ DialogAssetsBase::~DialogAssetsBase()
 	m_choiceSlot1->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DialogAssetsBase::OnListSlot1 ), NULL, this );
 	m_choiceSlot2->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DialogAssetsBase::OnListSlot2 ), NULL, this );
 	m_choiceSlot3->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DialogAssetsBase::OnListSlot3 ), NULL, this );
+	m_btnAutoAssignPalettes->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogAssetsBase::OnBtnAutoAssignPalettes ), NULL, this );
 
 }

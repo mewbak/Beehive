@@ -404,7 +404,7 @@ void PropertyPanel::SetObjectProperty(GameObjectVariable* variable, const std::s
 	{
 		if (variable->HasTag("SPRITE_ACTOR"))
 		{
-			ActorId actorId = m_project.FindActorId(variable->m_value);
+			ActorId actorId = m_project.FindActorId(value);
 			if (actorId != InvalidActorId)
 				gameObject->SetSpriteActorId(actorId);
 			variable->m_value = value;

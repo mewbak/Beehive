@@ -983,8 +983,6 @@ class SpriteAnimEditorDialogBase : public wxDialog
 		wxButton* m_btnRenameActor;
 		wxStaticText* m_staticText160;
 		wxChoice* m_choicePalette;
-		wxStaticText* m_staticText161;
-		wxChoice* m_choicePaletteSlot;
 		wxButton* m_btnImportSpriteSheet;
 		wxButton* m_btnDeleteSprite;
 		wxButton* m_btnReplaceSpriteSheet;
@@ -1014,7 +1012,6 @@ class SpriteAnimEditorDialogBase : public wxDialog
 		virtual void OnBtnActorDelete( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnRenameActor( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnListPalette( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnListPaletteSlot( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnSpriteSheetImport( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnSpriteSheetDelete( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnSpriteSheetReplace( wxCommandEvent& event ) { event.Skip(); }
@@ -1522,8 +1519,6 @@ class DialogAssetsBase : public wxDialog
 		wxStaticText* m_txtStampSetTileset;
 		wxStaticText* m_staticText9411;
 		wxStaticText* m_txtStampSetUsageCount;
-		wxStaticText* m_staticText144;
-		wxChoice* m_choicePaletteSlot;
 		wxStaticText* m_staticText127;
 		wxFilePickerCtrl* m_filePickerStampsImg;
 		wxStaticBoxSizer* m_sizerStamps;
@@ -1557,6 +1552,7 @@ class DialogAssetsBase : public wxDialog
 		wxChoice* m_choiceSlot2;
 		wxStaticText* m_staticText104;
 		wxChoice* m_choiceSlot3;
+		wxButton* m_btnAutoAssignPalettes;
 
 		// Virtual event handlers, override them in your derived class
 		virtual void OnTabChanged( wxNotebookEvent& event ) { event.Skip(); }
@@ -1581,7 +1577,6 @@ class DialogAssetsBase : public wxDialog
 		virtual void OnBtnExportStampSet( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnRenameStampSet( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnCleanupStampSet( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnStampPaletteSlot( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBrowseStampsImg( wxFileDirPickerEvent& event ) { event.Skip(); }
 		virtual void OnListMap( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnListMapDClick( wxCommandEvent& event ) { event.Skip(); }
@@ -1595,6 +1590,7 @@ class DialogAssetsBase : public wxDialog
 		virtual void OnListSlot1( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnListSlot2( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnListSlot3( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnBtnAutoAssignPalettes( wxCommandEvent& event ) { event.Skip(); }
 
 
 	public:

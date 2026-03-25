@@ -58,6 +58,12 @@ void DialogAssetManagement::PopulatePalettes()
 	m_populatedPalettes.clear();
 	m_listPalettes->Clear();
 	m_choiceTilesetPalette->Clear();
+	wxChoice* lists[4] = { m_choiceSlot0, m_choiceSlot1, m_choiceSlot2, m_choiceSlot3 };
+
+	for (int i = 0; i < 4; i++)
+	{
+		lists[i]->Clear();
+	}
 
 	const auto& palettes = m_project.GetPalettes();
 
@@ -65,6 +71,12 @@ void DialogAssetManagement::PopulatePalettes()
 	{
 		m_listPalettes->Append(palette.second.GetName());
 		m_choiceTilesetPalette->Append(palette.second.GetName());
+
+		for (int i = 0; i < 4; i++)
+		{
+			lists[i]->Append(palette.second.GetName());
+		}
+
 		m_populatedPalettes.push_back(palette.first);
 	}
 
@@ -293,8 +305,6 @@ void DialogAssetManagement::SelectMap(int index)
 
 		for (int i = 0; i < 4; i++)
 		{
-			lists[i]->Clear();
-
 			if (isBackgroundMap)
 			{
 				lists[i]->Disable();
@@ -307,20 +317,15 @@ void DialogAssetManagement::SelectMap(int index)
 				if (id == InvalidPaletteId)
 				{
 					views[i]->SetPalette(Palette());
+					lists[i]->SetSelection(-1);
 				}
 				else
 				{
 					const Palette& palette = m_project.GetPalette(id);
 					views[i]->SetPalette(palette);
-				}
 
-				for(int j = 0; j < m_populatedPalettes.size(); j++)
-				{
-					PaletteId paletteId = m_populatedPalettes[j];
-					const Palette& palette = m_project.GetPalette(paletteId);
-					lists[i]->Append(palette.GetName());
-					if (paletteId == id)
-						lists[i]->SetSelection(j);
+					int index = ion::utils::stl::IndexOf(m_populatedPalettes, id);
+					lists[i]->SetSelection(index);
 				}
 			}
 		}
@@ -1265,6 +1270,8 @@ void DialogAssetManagement::OnBtnNewMap(wxCommandEvent& event)
 			SelectTilesetById(tilesetId);
 			SelectStampSetById(stampSetId);
 			SelectMapById(mapId);
+
+			m_mainWindow.RefreshAll();
 		}
 	}
 }
@@ -1282,7 +1289,15 @@ void DialogAssetManagement::OnBtnDeleteMap(wxCommandEvent& event)
 		}
 
 		m_project.DeleteMap(mapId);
+
+		for (auto& map : m_project.GetMaps())
+		{
+			if (map.second.GetBackgroundMapId() == mapId)
+				map.second.SetBackgroundMap(InvalidMapId);
+		}
+
 		PopulateMaps();
+		m_mainWindow.RefreshAll();
 	}
 }
 

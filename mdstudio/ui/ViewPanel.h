@@ -40,13 +40,12 @@ class MainWindow;
 class ViewPanel : public wxGLCanvas
 {
 public:
-	ViewPanel(MainWindow* mainWindow, Project& project, ion::render::Renderer& renderer, wxGLContext* glContext, wxGLAttributes& glAttributes, RenderResources& renderResources, wxWindow *parent, wxWindowID winid = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL | wxNO_BORDER, const wxString& name = wxPanelNameStr);
 	ViewPanel(wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL | wxNO_BORDER, const wxString& name = wxFrameNameStr);
 	virtual ~ViewPanel();
 
-	void SetMainWindow(MainWindow* mainWindow) { m_mainWindow = mainWindow; }
-	virtual void SetProject(Project* project) { m_project = project; }
-	virtual void SetupRendering(ion::render::Renderer* renderer, wxGLContext* glContext, RenderResources* renderResources);
+	virtual void SetupRendering(MainWindow* mainWindow, Project* project, ion::render::Renderer* renderer, wxGLContext* glContext, RenderResources* renderResources);
+
+	void SetTilesetId(TilesetId tilesetId);
 
 	//Refresh panel
 	void ForceRefresh();
@@ -57,6 +56,7 @@ public:
 
 	//Allow default zoom/pan behaviour
 	void EnableZoom(bool enabled) { m_enableZoom = enabled; }
+	void EnableScroll(bool enabled) { m_enableScroll = enabled; }
 	void EnablePan(bool enabled) { m_enablePan = enabled; }
 
 	//Centre camera on canvas
@@ -78,20 +78,47 @@ public:
 	void FillTiles(TilesetId tilesetId, TileId tileId, const ion::Vector2i& boxCorner1, const ion::Vector2i& boxCorner2);
 	void FillTiles(TilesetId tilesetId, TileId tileId, const std::vector<ion::Vector2i>& selection);
 
+	//Set current tool
+	virtual void SetTool(ToolType tool);
+
+	//Camera zoom and pan
+	void SetCameraZoom(float zoom);
+	void ResetZoomPan();
+	ion::Vector2 GetCameraPos() const;
+	float GetCameraZoom() const;
+
+	//Reset scroll
+	void ScrollToTop();
+
+
+	//Dialogs
+	void EditStampCollisionDlg(Stamp& stamp);
+
 protected:
+	void InitPanel();
+
+	//Calc canvas size
+	virtual ion::Vector2i CalcCanvasSize();
+
+	//Paint all tiles to canvas
+	virtual void PaintContents();
+
+	TilesetId GetTilesetId() const;
+	Tileset& GetTileset();
+
 	//Event callbacks
 	virtual void OnMouse(wxMouseEvent& event, const ion::Vector2i& mouseDelta);
 	virtual void OnKeyboard(wxKeyEvent& event);
 	virtual void OnResize(wxSizeEvent& event);
 
-	//Mouse click or changed tile callback
-	virtual void OnMouseTileEvent(ion::Vector2i mousePos, ion::Vector2i mouseDelta, ion::Vector2i tileDelta, int buttonBits, int x, int y) {}
-
 	//Mouse click or changed pixel callback
-	virtual void OnMousePixelEvent(ion::Vector2i mousePos, ion::Vector2i mouseDelta, ion::Vector2i tileDelta, int buttonBits, int tileX, int tileY) {}
+	virtual void OnMousePixelEvent(ion::Vector2i mousePos, ion::Vector2i mouseDelta, ion::Vector2i tileDelta, int buttonBits, int tileX, int tileY);
+
+	//Mouse click or changed tile callback
+	virtual void OnMouseTileEvent(ion::Vector2i mousePos, ion::Vector2i mouseDelta, ion::Vector2i tileDelta, int buttonBits, int x, int y);
 
 	//Render callback
-	virtual void OnRender(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float& z, float zOffset) {}
+	virtual void OnRender(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float& z, float zOffset);
 
 	//Create canvas
 	void CreateCanvas(int width, int height);
@@ -105,12 +132,13 @@ protected:
 	//Find bounds from selected tile coords
 	void FindBounds(const std::vector<ion::Vector2i>& tiles, int& left, int& top, int& right, int& bottom) const;
 
-	//Set camera zoom
-	void SetCameraZoom(float zoom);
-
 	//Rendering
 	void RenderCanvas(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z, TilesetId tilesetId);
 	void RenderGrid(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z);
+	void RenderBox(const ion::Vector2i& pos, const ion::Vector2& size, const ion::Colour& colour, ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z);
+
+	//Clear all tool data
+	virtual void ResetToolData() {}
 	
 	//Main project
 	Project* m_project;
@@ -146,6 +174,7 @@ protected:
 	ion::render::Chessboard* m_terrainCanvasPrimitive;
 	ion::render::Chessboard* m_collisionCanvasPrimitive;
 	ion::render::Grid* m_gridPrimitive;
+	ion::render::Quad* m_selectionPrimitive;
 
 	bool m_canvasPrimitiveDirty;
 	bool m_terrainCanvasDirty;
@@ -160,7 +189,19 @@ protected:
 	//Prev panel size (for filtering resize events)
 	ion::Vector2i m_prevPanelSize;
 
+	ion::Vector2i m_selectableUnitSize;
+
+	//All registered tools
+	ToolFactory m_toolFactory;
+
+	//Current tool
+	Tool* m_currentTool;
+
+	//Undo stack
+	TUndoStack m_undoStack;
+
 	bool m_forceRefresh;
+	bool m_contentsInvalid;
 
 private:
 
@@ -172,5 +213,16 @@ private:
 	void EventHandlerResize(wxSizeEvent& event);
 
 	bool m_enableZoom;
+	bool m_enableScroll;
 	bool m_enablePan;
+
+	TilesetId m_tilesetId;
+
+	//Current/hover tile
+	TileId m_selectedTile;
+	TileId m_hoverTile;
+
+	//Current/hover stamp pos
+	ion::Vector2i m_selectedTilePos;
+	ion::Vector2i m_hoverTilePos;
 };

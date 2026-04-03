@@ -35,11 +35,12 @@ class TilesPanel;
 #include <wx/dialog.h>
 #include <wx/filepicker.h>
 #include <wx/checkbox.h>
-#include <wx/bmpbuttn.h>
+#include <wx/toolbar.h>
 #include <wx/textctrl.h>
 #include <wx/choice.h>
 #include "PaletteViewCtrl.h"
 #include <wx/radiobut.h>
+#include <wx/bmpbuttn.h>
 #include <wx/listctrl.h>
 #include <wx/listbox.h>
 #include <wx/scrolwin.h>
@@ -47,7 +48,6 @@ class TilesPanel;
 #include <wx/clrpicker.h>
 #include <wx/grid.h>
 #include <wx/slider.h>
-#include <wx/toolbar.h>
 #include <wx/statline.h>
 #include <wx/statbox.h>
 #include <wx/treectrl.h>
@@ -103,35 +103,34 @@ class TilesPanel;
 #define wxID_MENU_ANIMATION_EXPORT 1044
 #define wxID_MENU_ANIMATION_CONVERT_RELATIVE 1045
 #define wxID_BTN_CANCEL 1046
-#define wxID_TOOL_COL_ADDTERRAINBEZIER 1047
-#define wxID_TOOL_COL_EDITTERRAINBEZIER 1048
-#define wxID_TOOL_COL_DELETETERRAINBEZIER 1049
-#define wxID_TOOL_COL_PAINTSOLID 1050
-#define wxID_TOOL_GENERATETERRAIN 1051
-#define wxID_MATCH 1052
-#define wxID_TOOL_SELECTSTAMP 1053
-#define wxID_TOOL_STAMP 1054
-#define wxID_TOOL_MOVESTAMP 1055
-#define wxID_TOOL_STAMPPICKER 1056
-#define wxID_TOOL_CREATESTAMP 1057
-#define wxID_TOOL_REMOVESTAMP 1058
-#define wxID_TOOL_COL_PAINTTERRAIN 1059
-#define wxID_TOOL_COL_PAINTHOLE 1060
-#define wxID_TOOL_COL_DELETETERRTILE 1061
-#define wxID_TOOL_SELECTTILE 1062
-#define wxID_TOOL_PAINT 1063
-#define wxID_TOOL_TILEPICKER 1064
-#define wxID_TOOL_FLIPX 1065
-#define wxID_TOOL_FLIPY 1066
-#define wxID_TOOL_FILL 1067
-#define wxID_TOOL_CLONE 1068
-#define wxID_TOOL_CREATE_SCENE_ANIM 1069
-#define wxID_TOOL_COPY_TO_NEW_MAP 1070
-#define wxID_TOOL_SELECTGAMEOBJ 1071
-#define wxID_TOOL_PLACEGAMEOBJ 1072
-#define wxID_TOOL_ANIMATEGAMEOBJ 1073
-#define wxID_TOOL_REMOVEGAMEOBJ 1074
-#define wxID_TOOL_DRAWGAMEOBJ 1075
+#define wxID_MATCH 1047
+#define wxID_TOOL_SELECTSTAMP 1048
+#define wxID_TOOL_STAMP 1049
+#define wxID_TOOL_MOVESTAMP 1050
+#define wxID_TOOL_STAMPPICKER 1051
+#define wxID_TOOL_CREATESTAMP 1052
+#define wxID_TOOL_REMOVESTAMP 1053
+#define wxID_TOOL_COL_PAINTTERRAIN 1054
+#define wxID_TOOL_COL_PAINTSOLID 1055
+#define wxID_TOOL_COL_PAINTHOLE 1056
+#define wxID_TOOL_COL_DELETETERRTILE 1057
+#define wxID_TOOL_COL_ADDTERRAINBEZIER 1058
+#define wxID_TOOL_COL_EDITTERRAINBEZIER 1059
+#define wxID_TOOL_COL_DELETETERRAINBEZIER 1060
+#define wxID_TOOL_SELECTTILE 1061
+#define wxID_TOOL_PAINT 1062
+#define wxID_TOOL_TILEPICKER 1063
+#define wxID_TOOL_FLIPX 1064
+#define wxID_TOOL_FLIPY 1065
+#define wxID_TOOL_FILL 1066
+#define wxID_TOOL_CLONE 1067
+#define wxID_TOOL_CREATE_SCENE_ANIM 1068
+#define wxID_TOOL_COPY_TO_NEW_MAP 1069
+#define wxID_TOOL_SELECTGAMEOBJ 1070
+#define wxID_TOOL_PLACEGAMEOBJ 1071
+#define wxID_TOOL_ANIMATEGAMEOBJ 1072
+#define wxID_TOOL_REMOVEGAMEOBJ 1073
+#define wxID_TOOL_DRAWGAMEOBJ 1074
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Class MainWindowBase
@@ -281,34 +280,35 @@ class DialogUpdateStampBase : public wxDialog
 };
 
 ///////////////////////////////////////////////////////////////////////////////
-/// Class DialogEditStampCollisionBase
+/// Class DialogEditStampBase
 ///////////////////////////////////////////////////////////////////////////////
-class DialogEditStampCollisionBase : public wxDialog
+class DialogEditStampBase : public wxDialog
 {
 	private:
 
 	protected:
-		wxPanel* m_toolbox;
-		wxBitmapButton* m_toolAddTerrainBezier;
-		wxBitmapButton* m_toolEditTerrainBezier;
-		wxBitmapButton* m_toolDeleteTerrainBezier;
-		wxBitmapButton* m_toolPaintCollisionSolid;
-		wxBitmapButton* m_toolGenerateTerrain;
+		wxToolBar* m_toolBar;
+		wxToolBarToolBase* m_toolTerrainAddBezier;
+		wxToolBarToolBase* m_toolTerrainEditBezier;
+		wxToolBarToolBase* m_toolTerrainDeleteBezier;
+		wxToolBarToolBase* m_toolTerrainWall;
+		wxToolBarToolBase* m_toolSelectTiles;
 		StampCanvas* m_canvas;
+		wxStaticText* m_txtInfo;
 
 		// Virtual event handlers, override them in your derived class
 		virtual void OnToolAddBezier( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnToolEditBezier( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnToolDeleteBezier( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnToolPaintSolid( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnToolGenerateTerrain( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnToolSelectTiles( wxCommandEvent& event ) { event.Skip(); }
 
 
 	public:
 
-		DialogEditStampCollisionBase( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("Edit Stamp Collision"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 688,485 ), long style = wxCAPTION|wxCLOSE_BOX|wxMAXIMIZE_BOX|wxRESIZE_BORDER|wxSYSTEM_MENU );
+		DialogEditStampBase( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("Edit Stamp"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 688,485 ), long style = wxCAPTION|wxCLOSE_BOX|wxMAXIMIZE_BOX|wxRESIZE_BORDER|wxSYSTEM_MENU );
 
-		~DialogEditStampCollisionBase();
+		~DialogEditStampBase();
 
 };
 

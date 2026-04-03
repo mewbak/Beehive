@@ -16,18 +16,12 @@
 class StampsPanel : public ViewPanel
 {
 public:
-	StampsPanel(MainWindow* mainWindow, Project& project, ion::render::Renderer& renderer, wxGLContext* glContext, wxGLAttributes& glAttributes, RenderResources& renderResources, wxWindow *parent, wxWindowID winid = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL | wxNO_BORDER, const wxString& name = wxPanelNameStr);
 	StampsPanel(wxWindow* parent, wxWindowID winid = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL | wxNO_BORDER);
 	virtual ~StampsPanel();
 
-	virtual void SetProject(Project* project);
+	virtual void SetupRendering(MainWindow* mainWindow, Project* project, ion::render::Renderer* renderer, wxGLContext* glContext, RenderResources* renderResources);
 
 	void SetStampSetId(StampSetId stampSetId);
-
-	//Events
-	virtual void OnMouse(wxMouseEvent& event, const ion::Vector2i& mouseDelta);
-	virtual void OnKeyboard(wxKeyEvent& event);
-	virtual void OnResize(wxSizeEvent& event);
 
 	virtual void Refresh(bool eraseBackground = true, const wxRect *rect = NULL);
 
@@ -74,22 +68,17 @@ private:
 		eModeSubstitute
 	};
 
-	void InitPanel();
+	//Calc canvas size
+	virtual ion::Vector2i CalcCanvasSize();
 
 	//Paint all stamps using position map to canvas
-	void PaintStamps();
+	virtual void PaintContents();
 
 	//Recalc all stamp positions and canvas size
 	void ArrangeStamps(const ion::Vector2& panelSize);
 
-	//Render selection box
-	void RenderBox(const ion::Vector2i& pos, const ion::Vector2& size, const ion::Colour& colour, ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z);
-
 	//Render stamp outlines
 	void RenderStampOutlines(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z);
-
-	//Reset zoom/pan
-	void ResetZoomPan();
 
 	StampSetId GetStampSetId() const;
 	StampSet& GetStampSet();
@@ -111,12 +100,4 @@ private:
 	//Current/hover stamp pos
 	ion::Vector2i m_selectedStampPos;
 	ion::Vector2i m_hoverStampPos;
-
-	//Rendering materials and shaders
-	ion::render::Shader* m_selectionVertexShader;
-	ion::render::Shader* m_selectionPixelShader;
-	ion::render::Material* m_selectionMaterial;
-
-	//Rendering primitives
-	ion::render::Quad* m_selectionPrimitive;
 };

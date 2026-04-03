@@ -20,7 +20,7 @@
 #include "Mouse.h"
 #include "RenderResources.h"
 
-class MapPanel;
+class ViewPanel;
 
 enum ToolType
 {
@@ -51,6 +51,8 @@ enum ToolType
 	eToolRemoveStamp,
 	eToolStampPicker,
 	eToolCreateStampAnim,
+	eToolStampPaletteRegion,
+	eToolStampAnimationRegion,
 
 	//Game objects
 	eToolSelectGameObject,
@@ -73,9 +75,9 @@ typedef std::vector<std::pair<ToolType, ion::io::MemoryStream*>> TUndoStack;
 class Tool
 {
 public:
-	Tool(ToolType type, Project& project, MapPanel& mapPanel, TUndoStack& undoStack)
+	Tool(ToolType type, Project& project, ViewPanel& viewPanel, TUndoStack& undoStack)
 		: m_project(project)
-		, m_mapPanel(mapPanel)
+		, m_viewPanel(viewPanel)
 		, m_type(type)
 		, m_undoStack(undoStack)
 		, m_needsRedraw(false)
@@ -83,7 +85,7 @@ public:
 	}
 
 	Project& GetProject() { return m_project; }
-	MapPanel& GetMapPanel() { return m_mapPanel; }
+	ViewPanel& GetViewPanel() { return m_viewPanel; }
 
 	//Use help text
 	virtual std::string GetName() = 0;
@@ -118,7 +120,7 @@ protected:
 	void Redraw() { m_needsRedraw = true; }
 
 	Project& m_project;
-	MapPanel& m_mapPanel;
+	ViewPanel& m_viewPanel;
 	TUndoStack& m_undoStack;
 
 private:
@@ -129,11 +131,11 @@ private:
 class ToolFactory
 {
 public:
-	template <typename T> void RegisterTool(Project& project, MapPanel& mapPanel, TUndoStack& undoStack)
+	template <typename T> void RegisterTool(Project& project, ViewPanel& viewPanel, TUndoStack& undoStack)
 	{
 		if (m_tools.size() == 0)
 			m_tools.resize(ToolType::eToolTypeCount);
-		m_tools[T::StaticType()] = (Tool*)new T(project, mapPanel, undoStack);
+		m_tools[T::StaticType()] = (Tool*)new T(project, viewPanel, undoStack);
 	}
 
 	template <typename T> T* GetTool()

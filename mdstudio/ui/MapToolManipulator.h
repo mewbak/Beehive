@@ -24,7 +24,7 @@ template <typename T> class MapToolManipulator : public wxEvtHandler, public Too
 public:
 	static const ToolType StaticType() { return ToolType::eToolSelectStamp; }
 
-	MapToolManipulator(Project& project, MapPanel& mapPanel, TUndoStack& undoStack);
+	MapToolManipulator(Project& project, ViewPanel& viewPanel, TUndoStack& undoStack);
 	virtual ~MapToolManipulator();
 
 	virtual void OnKeyboard(wxKeyEvent& event);

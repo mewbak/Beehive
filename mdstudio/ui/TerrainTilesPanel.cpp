@@ -20,21 +20,16 @@
 
 const float TerrainTilesPanel::s_TerrainTileSize = 4.0f;
 
-TerrainTilesPanel::TerrainTilesPanel(MainWindow* mainWindow, Project& project, ion::render::Renderer& renderer, wxGLContext* glContext, wxGLAttributes& glAttributes, RenderResources& renderResources, wxWindow *parent, wxWindowID winid, const wxPoint& pos, const wxSize& size, long style, const wxString& name)
-	: ViewPanel(mainWindow, project, renderer, glContext, glAttributes, renderResources, parent, winid, pos, size, style, name)
+TerrainTilesPanel::TerrainTilesPanel(wxWindow *parent, wxWindowID winid, const wxPoint& pos, const wxSize& size, long style, const wxString& name)
+	: ViewPanel(parent, winid, pos, size, style, name)
 {
 	m_selectedTerrainTile = InvalidTerrainTileId;
 	m_hoverTerrainTile = InvalidTerrainTileId;
 
 	//Custom zoom/pan handling
 	EnableZoom(false);
+	EnableScroll(true);
 	EnablePan(false);
-
-	const int tileWidth = m_project->GetPlatformConfig().tileWidth;
-	const int tileHeight = m_project->GetPlatformConfig().tileHeight;
-
-	//Create selection quad
-	m_selectionPrimitive = new ion::render::Quad(ion::render::Quad::Axis::xy, ion::Vector2(tileWidth / 2.0f, tileHeight / 2.0f));
 }
 
 TerrainTilesPanel::~TerrainTilesPanel()

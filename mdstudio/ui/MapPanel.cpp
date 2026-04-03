@@ -28,10 +28,9 @@
 //All tools
 #include "MapToolManipulatorStamp.h"
 
-MapPanel::MapPanel(MainWindow* mainWindow, Project& project, ion::render::Renderer& renderer, wxGLContext* glContext, wxGLAttributes& glAttributes, RenderResources& renderResources, wxWindow *parent, wxWindowID winid, const wxPoint& pos, const wxSize& size, long style, const wxString& name)
-	: ViewPanel(mainWindow, project, renderer, glContext, glAttributes, renderResources, parent, winid, pos, size, style, name)
+MapPanel::MapPanel(wxWindow *parent, wxWindowID winid, const wxPoint& pos, const wxSize& size, long style, const wxString& name)
+	: ViewPanel(parent, winid, pos, size, style, name)
 {
-	m_currentTool = nullptr;
 	m_currentToolType = eToolSelectTiles;
 	m_cursorOrigin = eCursorTopLeft;
 	m_tempStamp = NULL;
@@ -49,13 +48,20 @@ MapPanel::MapPanel(MainWindow* mainWindow, Project& project, ion::render::Render
 
 	m_cursorHorizontal = new wxCursor(wxCURSOR_SIZEWE);
 	m_cursorVertical = new wxCursor(wxCURSOR_SIZENS);
+}
 
-	ResetToolData();
+MapPanel::~MapPanel()
+{
+	delete m_cursorHorizontal;
+	delete m_cursorVertical;
+}
 
-	Map& map = project.GetEditingMap();
-	CollisionMap& collisionMap = project.GetEditingCollisionMap();
-	StampSet& stampSet = project.GetStampSet(map.GetStampSetId());
-	Tileset& tileset = project.GetTileset(stampSet.GetTilesetId());
+void MapPanel::SetupRendering(MainWindow* mainWindow, Project* project, ion::render::Renderer* renderer, wxGLContext* glContext, RenderResources* renderResources)
+{
+	ViewPanel::SetupRendering(mainWindow, project, renderer, glContext, renderResources);
+
+	Map& map = project->GetEditingMap();
+	CollisionMap& collisionMap = project->GetEditingCollisionMap();
 	int mapWidth = map.GetWidth();
 	int mapHeight = map.GetHeight();
 
@@ -64,27 +70,13 @@ MapPanel::MapPanel(MainWindow* mainWindow, Project& project, ion::render::Render
 	CreateCollisionCanvas(collisionMap.GetWidth(), collisionMap.GetHeight());
 
 	//Create grid
-	CreateGrid(mapWidth, mapHeight, mapWidth / project.GetGridSize(), mapHeight / project.GetGridSize());
+	CreateGrid(mapWidth, mapHeight, mapWidth / project->GetGridSize(), mapHeight / project->GetGridSize());
 
 	if (!mainWindow->IsRefreshLocked())
 	{
 		//Redraw map
-		PaintMap(project.GetEditingMap());
-
-		//Redraw collision map
-		PaintCollisionMap(project.GetEditingMap(), project.GetEditingCollisionMap());
+		PaintContents();
 	}
-
-	//Create all tools
-	m_toolFactory.RegisterTool<MapToolManipulatorStamp>(project, *this, m_undoStack);
-}
-
-MapPanel::~MapPanel()
-{
-	delete m_cursorHorizontal;
-	delete m_cursorVertical;
-
-	ResetToolData();
 }
 
 void MapPanel::OnMouse(wxMouseEvent& event, const ion::Vector2i& mouseDelta)
@@ -94,23 +86,8 @@ void MapPanel::OnMouse(wxMouseEvent& event, const ion::Vector2i& mouseDelta)
 
 void MapPanel::OnKeyboard(wxKeyEvent& event)
 {
-	if(event.GetKeyCode() == WXK_ESCAPE)
-	{
-		ResetToolData();
-		m_currentToolType = eToolSelectTiles;
-		m_currentTool = nullptr;
-		Refresh();
-	}
-
-	//The new way of doing things
-	if (m_currentTool)
-	{
-		m_currentTool->OnKeyboard(event);
-		return;
-	}
-
 	//The old way...
-	if (m_currentToolType == eToolPaintStamp)
+	if (!m_currentTool && m_currentToolType == eToolPaintStamp)
 	{
 		if(m_previewTileFlipX != event.ShiftDown())
 		{
@@ -232,9 +209,7 @@ void MapPanel::OnMouseTileEvent(ion::Vector2i mousePos, ion::Vector2i mouseDelta
 	//The new way of doing things
 	if (m_currentTool)
 	{
-		m_currentTool->OnMouseTileEvent(mousePos, mouseDelta, tileDelta, buttonBits, x, y);
-		if (m_currentTool->NeedsRedraw())
-			Refresh();
+		ViewPanel::OnMouseTileEvent(mousePos, mouseDelta, tileDelta, buttonBits, x, y);
 		return;
 	}
 
@@ -459,8 +434,8 @@ void MapPanel::OnMouseTileEvent(ion::Vector2i mousePos, ion::Vector2i mouseDelta
 							m_selectedTiles.clear();
 
 							//eStart box selection, in case next event is dragging
-							m_boxSelectStart.x = x * tileWidth;
-							m_boxSelectStart.y = y * tileHeight;
+							m_boxSelectStart.x = x;
+							m_boxSelectStart.y = y;
 						}
 
 						//Single click - add tile at cursor to selection
@@ -469,17 +444,17 @@ void MapPanel::OnMouseTileEvent(ion::Vector2i mousePos, ion::Vector2i mouseDelta
 					else if(!m_multipleSelection)
 					{
 						//Dragging, set box end
-						m_boxSelectEnd.x = x * tileWidth;
-						m_boxSelectEnd.y = y * tileHeight;
+						m_boxSelectEnd.x = x;
+						m_boxSelectEnd.y = y;
 
 						//Clear current selection
 						m_selectedTiles.clear();
 
 						//Sanitise loop order
-						int top = ion::maths::Min(m_boxSelectStart.y * tileHeight, m_boxSelectEnd.y * tileHeight);
-						int left = ion::maths::Min(m_boxSelectStart.x * tileWidth, m_boxSelectEnd.x * tileWidth);
-						int bottom = ion::maths::Max(m_boxSelectStart.y * tileHeight, m_boxSelectEnd.y * tileHeight);
-						int right = ion::maths::Max(m_boxSelectStart.x * tileWidth, m_boxSelectEnd.x * tileWidth);
+						int top = ion::maths::Min(m_boxSelectStart.y, m_boxSelectEnd.y);
+						int left = ion::maths::Min(m_boxSelectStart.x, m_boxSelectEnd.x);
+						int bottom = ion::maths::Max(m_boxSelectStart.y, m_boxSelectEnd.y);
+						int right = ion::maths::Max(m_boxSelectStart.x, m_boxSelectEnd.x);
 
 						//Add all tiles in box
 						for(int tileX = left; tileX <= right; tileX++)
@@ -988,7 +963,7 @@ void MapPanel::OnContextMenuClick(wxCommandEvent& event)
 		if (m_hoverStamp != InvalidStampId)
 		{
 			Stamp& stamp = m_project->GetStampSet(map.GetStampSetId()).GetStamp(m_hoverStamp);
-			DialogEditStampCollision dialog(*m_mainWindow, stampSetId, stamp, *m_project, *m_renderer, *m_glContext, *m_renderResources);
+			DialogEditStamp dialog(*m_mainWindow, stampSetId, stamp, *m_project, *m_renderer, *m_glContext, *m_renderResources);
 			dialog.ShowModal();
 		}
 	}
@@ -1228,9 +1203,7 @@ void MapPanel::OnMousePixelEvent(ion::Vector2i mousePos, ion::Vector2i mouseDelt
 	//The new way of doing things
 	if (m_currentTool)
 	{
-		m_currentTool->OnMousePixelEvent(mousePos, mouseDelta, tileDelta, buttonBits, tileX, tileY);
-		if (m_currentTool->NeedsRedraw())
-			Refresh();
+		ViewPanel::OnMousePixelEvent(mousePos, mouseDelta, tileDelta, buttonBits, tileX, tileY);
 		return;
 	}
 
@@ -1526,40 +1499,6 @@ void MapPanel::Refresh(bool eraseBackground, const wxRect *rect)
 {
 	if(!m_mainWindow->IsRefreshLocked())
 	{
-		//If map invalidated
-		if(m_project->MapIsInvalidated())
-		{
-			Map& map = m_project->GetEditingMap();
-			CollisionMap& collisionMap = m_project->GetEditingCollisionMap();
-			StampSet& stampSet = m_project->GetStampSet(map.GetStampSetId());
-			Tileset& tileset = m_project->GetTileset(stampSet.GetTilesetId());
-			int mapWidth = map.GetWidth();
-			int mapHeight = map.GetHeight();
-
-			//Recreate canvas
-			CreateCanvas(mapWidth, mapHeight);
-			CreateCollisionCanvas(collisionMap.GetWidth(), collisionMap.GetHeight());
-
-			//Recreate grid
-			CreateGrid(mapWidth, mapHeight, mapWidth / m_project->GetGridSize(), mapHeight / m_project->GetGridSize());
-
-			//Redraw map
-			PaintMap(map);
-		}
-
-		//If collision tilset invalidated
-		if(m_project->TerrainTilesAreInvalidated())
-		{
-			//Redraw collision map
-			PaintCollisionMap(m_project->GetEditingMap(), m_project->GetEditingCollisionMap());
-		}
-
-		//If terrain beziers invalidated
-		if(m_project->TerrainBeziersAreInvalidated())
-		{
-			PaintTerrainBeziers(*m_project);
-		}
-
 		//If camera invalidated
 		if(m_project->CameraIsInvalidated())
 		{
@@ -1592,29 +1531,6 @@ void MapPanel::CameraCentreOnObject(const GameObject& gameObject)
 
 	//Re-apply zoom
 	SetCameraZoom(zoom);
-}
-
-ion::Vector2 MapPanel::GetCameraPos() const
-{
-	float prevZoom = m_cameraZoom;
-
-	//Reset camera zoom
-	ion::render::Camera camera = m_camera;
-	camera.SetZoom(ion::Vector3(1.0f, 1.0f, 1.0f));
-
-	//Compensate camera pos
-	ion::Vector2 originalViewportSize((float)m_panelSize.x / prevZoom, (float)m_panelSize.y / prevZoom);
-	ion::Vector2 newViewportSize((float)m_panelSize.x, (float)m_panelSize.y);
-	ion::Vector3 cameraPos = camera.GetPosition();
-	cameraPos.x -= (newViewportSize.x - originalViewportSize.x) / 2.0f;
-	cameraPos.y -= (newViewportSize.y - originalViewportSize.y) / 2.0f;
-	
-	return ion::Vector2(cameraPos.x, cameraPos.y);
-}
-
-float MapPanel::GetCameraZoom() const
-{
-	return m_cameraZoom;
 }
 
 void MapPanel::SelectGameObject(GameObjectId gameObjectId)
@@ -1725,23 +1641,12 @@ int MapPanel::FindGameObjects(int x, int y, int width, int height, std::vector<c
 	return gameObjects.size();
 }
 
-void MapPanel::EditStampCollisionDlg(Stamp& stamp)
-{
-	StampSetId stampSetId = m_project->GetEditingMap().GetStampSetId();
-	StampSet& stampSet = m_project->GetStampSet(stampSetId);
-	DialogEditStampCollision dialog(*m_mainWindow, stampSetId, stamp, *m_project, *m_renderer, *m_glContext, *m_renderResources);
-	dialog.ShowModal();
-}
-
 void MapPanel::SetTool(ToolType tool)
 {
 	//The new way of doing things
-	m_currentTool = m_toolFactory.GetTool(tool);
-	if (m_currentTool)
-	{
-		m_mainWindow->SetStatusText(m_currentTool->GetStatusText());
+	ViewPanel::SetTool(tool);
+	if(m_currentTool)
 		return;
-	}
 
 	//The old way...
 	ToolType previousTool = m_currentToolType;
@@ -1789,6 +1694,8 @@ void MapPanel::SetGizmoCentre(const ion::Vector2i& centre)
 
 void MapPanel::ResetToolData()
 {
+	ViewPanel::ResetToolData();
+
 	//Disable gizmo
 	m_gizmo.SetEnabled(false);
 
@@ -2554,6 +2461,51 @@ void MapPanel::RenderStampGrid(ion::render::Renderer& renderer, const ion::Matri
 	renderer.BindMaterial(*material, gridMtx, cameraInverseMtx, projectionMtx);
 	renderer.DrawVertexBuffer(m_gridPrimitive->GetVertexBuffer());
 	renderer.UnbindMaterial(*material);
+}
+
+ion::Vector2i MapPanel::CalcCanvasSize()
+{
+	Map& map = m_project->GetEditingMap();
+	int mapWidth = map.GetWidth();
+	int mapHeight = map.GetHeight();
+	return ion::Vector2i(mapWidth, mapHeight);
+}
+
+void MapPanel::PaintContents()
+{
+	//If map invalidated
+	if (m_project->MapIsInvalidated())
+	{
+		Map& map = m_project->GetEditingMap();
+		CollisionMap& collisionMap = m_project->GetEditingCollisionMap();
+		StampSet& stampSet = m_project->GetStampSet(map.GetStampSetId());
+		Tileset& tileset = m_project->GetTileset(stampSet.GetTilesetId());
+		int mapWidth = map.GetWidth();
+		int mapHeight = map.GetHeight();
+
+		//Recreate canvas
+		CreateCanvas(mapWidth, mapHeight);
+		CreateCollisionCanvas(collisionMap.GetWidth(), collisionMap.GetHeight());
+
+		//Recreate grid
+		CreateGrid(mapWidth, mapHeight, mapWidth / m_project->GetGridSize(), mapHeight / m_project->GetGridSize());
+
+		//Redraw map
+		PaintMap(map);
+	}
+
+	//If collision tilset invalidated
+	if (m_project->TerrainTilesAreInvalidated())
+	{
+		//Redraw collision map
+		PaintCollisionMap(m_project->GetEditingMap(), m_project->GetEditingCollisionMap());
+	}
+
+	//If terrain beziers invalidated
+	if (m_project->TerrainBeziersAreInvalidated())
+	{
+		PaintTerrainBeziers(*m_project);
+	}
 }
 
 void MapPanel::PaintMap(const Map& map)

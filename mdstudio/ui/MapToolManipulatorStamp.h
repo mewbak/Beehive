@@ -50,7 +50,7 @@ struct MapObjIdentifierStamp
 class MapToolManipulatorStamp : public MapToolManipulator<MapObjIdentifierStamp>
 {
 public:
-	MapToolManipulatorStamp(Project& project, MapPanel& mapPanel, TUndoStack& undoStack);
+	MapToolManipulatorStamp(Project& project, ViewPanel& viewPanel, TUndoStack& undoStack);
 	virtual ~MapToolManipulatorStamp();
 
 	virtual std::string GetName();

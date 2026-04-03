@@ -22,17 +22,18 @@ class Stamp;
 class Project;
 class RenderResources;
 
-class DialogEditStampCollision : public DialogEditStampCollisionBase
+class DialogEditStamp : public DialogEditStampBase
 {
 public:
-	DialogEditStampCollision(MainWindow& mainWindow, StampSetId stampSetId, Stamp& stamp, Project& project, ion::render::Renderer& renderer, wxGLContext& glContext, RenderResources& renderResources);
-	virtual ~DialogEditStampCollision();
+	DialogEditStamp(MainWindow& mainWindow, StampSetId stampSetId, Stamp& stamp, Project& project, ion::render::Renderer& renderer, wxGLContext& glContext, RenderResources& renderResources);
+	virtual ~DialogEditStamp();
 
 	virtual void OnToolAddBezier(wxCommandEvent& event);
 	virtual void OnToolEditBezier(wxCommandEvent& event);
 	virtual void OnToolDeleteBezier(wxCommandEvent& event);
 	virtual void OnToolGenerateTerrain(wxCommandEvent& event);
 	virtual void OnToolPaintSolid(wxCommandEvent& event);
+	virtual void OnToolSelectTiles(wxCommandEvent& event);
 
 private:
 	void Draw();

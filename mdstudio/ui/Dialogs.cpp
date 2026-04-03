@@ -323,14 +323,10 @@ MatchTilesetDialog::MatchTilesetDialog(MainWindow& mainWindow, Project& project,
 	: MatchTilesetDialogBase((wxWindow*)&mainWindow)
 	, m_matches(matches)
 {
-	m_canvasTilesImported->SetProject(&project);
-	m_canvasTilesImported->SetMainWindow(&mainWindow);
-	m_canvasTilesImported->SetupRendering(&renderer, &glContext, &renderResources);
+	m_canvasTilesImported->SetupRendering(&mainWindow, &project, &renderer, &glContext, &renderResources);
 	m_canvasTilesImported->SetTilesetId(tilesetToMatch);
 
-	m_canvasTilesMatch->SetProject(&project);
-	m_canvasTilesMatch->SetMainWindow(&mainWindow);
-	m_canvasTilesMatch->SetupRendering(&renderer, &glContext, &renderResources);
+	m_canvasTilesMatch->SetupRendering(&mainWindow, &project, &renderer, &glContext, &renderResources);
 	m_canvasTilesMatch->SetTilesetId(matches[0].first);
 
 	const Tileset& originalTileset = project.GetTileset(tilesetToMatch);

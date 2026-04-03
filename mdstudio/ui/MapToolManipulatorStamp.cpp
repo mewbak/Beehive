@@ -14,12 +14,12 @@
 
 #include <ion/core/utils/STL.h>
 
-MapToolManipulatorStamp::MapToolManipulatorStamp(Project& project, MapPanel& mapPanel, TUndoStack& undoStack)
-	: MapToolManipulator(project, mapPanel, undoStack)
+MapToolManipulatorStamp::MapToolManipulatorStamp(Project& project, ViewPanel& viewPanel, TUndoStack& undoStack)
+	: MapToolManipulator(project, viewPanel, undoStack)
 	, m_unitSizePx(	project.GetPlatformConfig().stampWidth * project.GetPlatformConfig().tileWidth,
 					project.GetPlatformConfig().stampHeight * project.GetPlatformConfig().tileHeight)
 {
-	AddContextMenuItem(0, "Edit collision", std::bind(&MapToolManipulatorStamp::OnContextMenuEditCollision, this, std::placeholders::_1, std::placeholders::_2));
+	AddContextMenuItem(0, "Edit stamp collision/animation/tiles", std::bind(&MapToolManipulatorStamp::OnContextMenuEditCollision, this, std::placeholders::_1, std::placeholders::_2));
 }
 
 MapToolManipulatorStamp::~MapToolManipulatorStamp()
@@ -182,7 +182,7 @@ void MapToolManipulatorStamp::OnContextMenuEditCollision(int id, std::vector<Map
 {
 	for (auto stamp : objects)
 	{
-		GetMapPanel().EditStampCollisionDlg(*stamp.stamp);
+		GetViewPanel().EditStampCollisionDlg(*stamp.stamp);
 	}
 }
 
@@ -241,7 +241,7 @@ void MapToolManipulatorStamp::RepaintStampArea(const ion::Vector2i& stampPos)
 					flags = map.GetTileFlags(x, y);
 				}
 
-				m_mapPanel.PaintTile(stampSet.GetTilesetId(), tileId, x, y_inv, flags);
+				m_viewPanel.PaintTile(stampSet.GetTilesetId(), tileId, x, y_inv, flags);
 			}
 		}
 	}

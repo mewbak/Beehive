@@ -27,13 +27,8 @@ DialogAssetManagement::DialogAssetManagement(MainWindow& mainWindow, Project& pr
 	, m_renderResources(renderResources)
 {
 	// Setup canvases
-	m_canvasTiles->SetProject(&project);
-	m_canvasTiles->SetMainWindow(&mainWindow);
-	m_canvasTiles->SetupRendering(&renderer, &glContext, &renderResources);
-
-	m_canvasStamps->SetProject(&project);
-	m_canvasStamps->SetMainWindow(&mainWindow);
-	m_canvasStamps->SetupRendering(&renderer, &glContext, &renderResources);
+	m_canvasTiles->SetupRendering(&mainWindow, &project, &renderer, &glContext, &renderResources);
+	m_canvasStamps->SetupRendering(&mainWindow, &project, &renderer, &glContext, &renderResources);
 
 	// Populate all tabs
 	PopulatePalettes();
@@ -1083,7 +1078,7 @@ void DialogAssetManagement::OnBtnCleanupStampSet(wxCommandEvent& event)
 		int cleanedTiles = m_project.CleanupTileset(tilesetId);
 
 		std::string msg = "Removed " + std::to_string(cleanedStamps) + " unused stamps from stampset '" + stampSet.GetName() + "'\n";
-		msg += "Removed " + std::to_string(cleanedTiles) + " unused tiles from tileset '" + tileset.GetName() + "'\n\Stamp set should be re-exported to source image before editing, export now?";
+		msg += "Removed " + std::to_string(cleanedTiles) + " unused tiles from tileset '" + tileset.GetName() + "'\n\nStamp set should be re-exported to source image before editing, export now?";
 		wxMessageBox(msg, "Cleanup");
 
 		if (wxMessageBox(msg, "Cleanup", wxYES | wxNO | wxICON_WARNING) == wxID_YES)

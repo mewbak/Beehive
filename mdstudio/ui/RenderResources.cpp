@@ -42,7 +42,8 @@ RenderResources::RenderResources(Project& project, ion::io::ResourceManager& res
 	}
 
 	//Setup flat material
-	m_materials[eMaterialFlatColour]->SetDiffuseColour(ion::Colour(0.0f, 0.0f, 0.0f));
+	m_materials[eMaterialFlatColour]->SetDiffuseColour(ion::Colour(0.0f, 0.0f, 0.0f, 1.0f));
+	m_materials[eMaterialFlatColour]->SetBlendMode(ion::render::Renderer::AlphaBlendType::Translucent);
 #if defined ION_RENDERER_SHADER
 	m_materials[eMaterialFlatColour]->SetShader(m_shaders[eShaderFlatColour]);
 #endif

@@ -18,7 +18,7 @@ class TerrainTilesPanel : public ViewPanel
 	static const float s_TerrainTileSize;
 
 public:
-	TerrainTilesPanel(MainWindow* mainWindow, Project& project, ion::render::Renderer& renderer, wxGLContext* glContext, wxGLAttributes& glAttributes, RenderResources& renderResources, wxWindow *parent, wxWindowID winid = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL | wxNO_BORDER, const wxString& name = wxPanelNameStr);
+	TerrainTilesPanel(wxWindow *parent, wxWindowID winid = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL | wxNO_BORDER, const wxString& name = wxPanelNameStr);
 	virtual ~TerrainTilesPanel();
 
 	//Events
@@ -80,7 +80,4 @@ private:
 	//Current/hover stamp pos
 	ion::Vector2i m_selectedTerrainTilePos;
 	ion::Vector2i m_hoverTerrainTilePos;
-
-	//Rendering primitives
-	ion::render::Quad* m_selectionPrimitive;
 };

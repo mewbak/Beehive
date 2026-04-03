@@ -15,8 +15,8 @@
 #include "MainWindow.h"
 #include "RenderResources.h"
 
-DialogEditStampCollision::DialogEditStampCollision(MainWindow& mainWindow, StampSetId stampSetId, Stamp& stamp, Project& project, ion::render::Renderer& renderer, wxGLContext& glContext, RenderResources& renderResources)
-	: DialogEditStampCollisionBase(&mainWindow)
+DialogEditStamp::DialogEditStamp(MainWindow& mainWindow, StampSetId stampSetId, Stamp& stamp, Project& project, ion::render::Renderer& renderer, wxGLContext& glContext, RenderResources& renderResources)
+	: DialogEditStampBase(&mainWindow)
 	, m_mainWindow(mainWindow)
 	, m_stampSetId(stampSetId)
 	, m_stamp(stamp)
@@ -31,32 +31,32 @@ DialogEditStampCollision::DialogEditStampCollision(MainWindow& mainWindow, Stamp
 	Draw();
 }
 
-DialogEditStampCollision::~DialogEditStampCollision()
+DialogEditStamp::~DialogEditStamp()
 {
 
 }
 
-void DialogEditStampCollision::OnToolAddBezier(wxCommandEvent& event)
+void DialogEditStamp::OnToolAddBezier(wxCommandEvent& event)
 {
 	m_canvas->SetTool(eToolDrawTerrainBezier);
 }
 
-void DialogEditStampCollision::OnToolEditBezier(wxCommandEvent& event)
+void DialogEditStamp::OnToolEditBezier(wxCommandEvent& event)
 {
 	m_canvas->SetTool(eToolSelectTerrainBezier);
 }
 
-void DialogEditStampCollision::OnToolDeleteBezier(wxCommandEvent& event)
+void DialogEditStamp::OnToolDeleteBezier(wxCommandEvent& event)
 {
 	m_canvas->SetTool(eToolDeleteTerrainBezier);
 }
 
-void DialogEditStampCollision::OnToolPaintSolid(wxCommandEvent& event)
+void DialogEditStamp::OnToolPaintSolid(wxCommandEvent& event)
 {
 	m_canvas->SetTool(eToolPaintCollisionSolid);
 }
 
-void DialogEditStampCollision::OnToolGenerateTerrain(wxCommandEvent& event)
+void DialogEditStamp::OnToolGenerateTerrain(wxCommandEvent& event)
 {
 	m_canvas->SetTool(eToolNone);
 
@@ -77,7 +77,12 @@ void DialogEditStampCollision::OnToolGenerateTerrain(wxCommandEvent& event)
 	}
 }
 
-void DialogEditStampCollision::Draw()
+void DialogEditStamp::OnToolSelectTiles(wxCommandEvent& event)
+{
+	m_canvas->SetTool(eToolStampPaletteRegion);
+}
+
+void DialogEditStamp::Draw()
 {
 	const int tileWidth = m_project.GetPlatformConfig().tileWidth;
 	const int tileHeight = m_project.GetPlatformConfig().tileHeight;

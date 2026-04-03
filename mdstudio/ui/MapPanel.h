@@ -21,8 +21,10 @@ class MapPanel : public ViewPanel
 {
 public:
 
-	MapPanel(MainWindow* mainWindow, Project& project, ion::render::Renderer& renderer, wxGLContext* glContext, wxGLAttributes& glAttributes, RenderResources& renderResources, wxWindow *parent, wxWindowID winid = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL | wxNO_BORDER, const wxString& name = wxPanelNameStr);
+	MapPanel(wxWindow *parent, wxWindowID winid = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL | wxNO_BORDER, const wxString& name = wxPanelNameStr);
 	virtual ~MapPanel();
+
+	virtual void SetupRendering(MainWindow* mainWindow, Project* project, ion::render::Renderer* renderer, wxGLContext* glContext, RenderResources* renderResources);
 
 	//Events
 	virtual void OnMouse(wxMouseEvent& event, const ion::Vector2i& mouseDelta);
@@ -31,11 +33,6 @@ public:
 
 	//Camera control
 	void CameraCentreOnObject(const GameObject& gameObject);
-	ion::Vector2 GetCameraPos() const;
-	float GetCameraZoom() const;
-
-	//Set current tool
-	void SetTool(ToolType tool);
 
 	//Set selection
 	void SelectGameObject(GameObjectId gameObjectId);
@@ -46,8 +43,7 @@ public:
 
 	virtual void Refresh(bool eraseBackground = true, const wxRect *rect = NULL);
 
-	//Dialogs
-	void EditStampCollisionDlg(Stamp& stamp);
+	virtual void SetTool(ToolType tool);
 
 protected:
 
@@ -59,6 +55,8 @@ protected:
 
 	//Render callback
 	virtual void OnRender(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float& z, float zOffset);
+
+	virtual void ResetToolData();
 
 private:
 
@@ -103,6 +101,12 @@ private:
 	void RenderGameObjectPreview(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z);
 	void RenderReferenceImage(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z);
 
+	//Calc canvas size
+	virtual ion::Vector2i CalcCanvasSize();
+
+	//Paint map to canvas
+	virtual void PaintContents();
+
 	//Paint whole map to canvas
 	void PaintMap(const Map& map);
 
@@ -118,9 +122,6 @@ private:
 	//Bucket fill (recursive)
 	void BucketFill(Map& map, ion::Vector2i position, ion::Vector2i prevPosition, TileId originalTile, TileId newTile);
 
-	//Clear all tool data
-	void ResetToolData();
-
 	//On right-click menu click
 	void OnContextMenuClick(wxCommandEvent& event);
 
@@ -133,16 +134,6 @@ private:
 	ion::render::Primitive* m_primitiveBezierPoints;
 	ion::render::Primitive* m_primitiveBezierHandles;
 
-	//All registered tools
-	ToolFactory m_toolFactory;
-
-	//Current tool
-	Tool* m_currentTool;
-	ToolType m_currentToolType;
-
-	//Undo stack
-	TUndoStack m_undoStack;
-
 	//Current cursor origin mode
 	CursorOrigin m_cursorOrigin;
 
@@ -152,6 +143,8 @@ private:
 	//Gizmo cursors
 	wxCursor* m_cursorHorizontal;
 	wxCursor* m_cursorVertical;
+
+	ToolType m_currentToolType;
 
 	///////////////////////////////////////////////////
 	// SELECT tool

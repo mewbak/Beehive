@@ -300,13 +300,11 @@ void MainWindow::SetProject(Project* project)
 
 		if(project)
 		{
-			//Create render resources
 			m_renderResources = new RenderResources(*m_project, *m_resourceManager);
-
-			//Recreate tileset/collision set/spriteSheet textures, and tile index cache
-			RefreshTileset();
-			RefreshTerrainTileset();
-			RefreshSpriteSheets();
+			m_renderResources->CreateTilesetTextures();
+			m_renderResources->CreateCollisionTypesTexture();
+			m_renderResources->CreateTerrainTilesTextures();
+			m_renderResources->CreateSpriteSheetResources(*m_project.get());
 
 #if !BEEHIVE_PLUGIN_LUMINARY
 			//Open bottom panels
@@ -1077,7 +1075,8 @@ void MainWindow::ShowPanelTiles()
 			paneInfo.Caption("Tileset");
 			paneInfo.CaptionVisible(true);
 			
-			m_tilesPanel = new TilesPanel(this, *m_project, *m_renderer, m_context, s_glAttributes, *m_renderResources, m_dockArea, NewControlId());
+			m_tilesPanel = new TilesPanel(m_dockArea, NewControlId());
+			m_tilesPanel->SetupRendering(this, m_project.get(), m_renderer, m_context, m_renderResources);
 			m_auiManager.AddPane(m_tilesPanel, paneInfo);
 			paneInfo.Show();
 		}
@@ -1107,7 +1106,8 @@ void MainWindow::ShowPanelTerrainTiles()
 			paneInfo.Caption("Tileset");
 			paneInfo.CaptionVisible(true);
 
-			m_terrainTilesPanel = new TerrainTilesPanel(this, *m_project, *m_renderer, m_context, s_glAttributes, *m_renderResources, m_dockArea, NewControlId());
+			m_terrainTilesPanel = new TerrainTilesPanel(m_dockArea, NewControlId());
+			m_terrainTilesPanel->SetupRendering(this, m_project.get(), m_renderer, m_context, m_renderResources);
 			m_auiManager.AddPane(m_terrainTilesPanel, paneInfo);
 			paneInfo.Show();
 		}
@@ -1138,7 +1138,8 @@ void MainWindow::ShowPanelStamps()
 			paneInfo.Caption("Stamps");
 			paneInfo.CaptionVisible(true);
 
-			m_stampsPanel = new StampsPanel(this, *m_project, *m_renderer, m_context, s_glAttributes, *m_renderResources, m_dockArea, NewControlId());
+			m_stampsPanel = new StampsPanel(m_dockArea, NewControlId());
+			m_stampsPanel->SetupRendering(this, m_project.get(), m_renderer, m_context, m_renderResources);
 			m_auiManager.AddPane(m_stampsPanel, paneInfo);
 			paneInfo.Show();
 		}
@@ -1197,7 +1198,8 @@ void MainWindow::ShowPanelMap()
 			paneInfo.Caption("Map");
 			paneInfo.CaptionVisible(true);
 
-			m_mapPanel = new MapPanel(this, *m_project, *m_renderer, m_context, s_glAttributes, *m_renderResources, m_dockArea, NewControlId());
+			m_mapPanel = new MapPanel(m_dockArea, NewControlId());
+			m_mapPanel->SetupRendering(this, m_project.get(), m_renderer, m_context, m_renderResources);
 			m_auiManager.AddPane(m_mapPanel, paneInfo);
 			paneInfo.Show();
 		}

@@ -962,8 +962,7 @@ void MapPanel::OnContextMenuClick(wxCommandEvent& event)
 
 		if (m_hoverStamp != InvalidStampId)
 		{
-			Stamp& stamp = m_project->GetStampSet(map.GetStampSetId()).GetStamp(m_hoverStamp);
-			DialogEditStamp dialog(*m_mainWindow, stampSetId, stamp, *m_project, *m_renderer, *m_glContext, *m_renderResources);
+			DialogEditStamp dialog(*m_mainWindow, stampSetId, m_hoverStamp, *m_project, *m_renderer, *m_glContext, *m_renderResources);
 			dialog.ShowModal();
 		}
 	}

@@ -80,8 +80,12 @@ public:
 	RenderResources(Project& project, ion::io::ResourceManager& resourceManager);
 	~RenderResources();
 
-	//Create and redraw tileset texture
+	//Create and redraw tileset textures
 	void CreateTilesetTextures();
+
+	//Create and redraw palette region textures
+	void CreatePaletteRegionOverlays();
+	void CreatePaletteRegionOverlay(StampSetId stampSetId, StampId stampId, PaletteRegionId paletteRegionId);
 
 	//Create and redraw terrain widthmap/heightmap tileset textures
 	void CreateTerrainTilesTextures();
@@ -98,6 +102,7 @@ public:
 
 	//Get tileset UV coords for tile
 	void GetTileTexCoords(TilesetId tilesetId, TileId tileId, ion::render::TexCoord texCoords[4], u32 flipFlags) const;
+	void GetTileTexCoords(const Stamp::PaletteRegion& paletteRegion, int x, int y, ion::render::TexCoord texCoords[4], u32 flipFlags) const;
 
 	//Get terrain tileset UV coords for collision type
 	void GetCollisionTypeTexCoords(u16 collisionFlags, ion::render::TexCoord texCoords[4]) const;
@@ -116,6 +121,7 @@ public:
 	//Get resources
 	ion::render::Material* GetMaterial(MaterialType type) { return m_materials[type]; }
 	ion::render::Material* GetMaterial(TilesetId tilesetId) { return m_tilesetResources[tilesetId].material; }
+	ion::render::Material* GetMaterial(StampId stampId, PaletteRegionId paletteRegionId) const;
 	ion::render::Shader* GetShader(ShaderType type) { return m_shaders[type].Get(); }
 	ion::render::Primitive* GetPrimitive(PrimitiveType type) const { return m_primitives[type]; }
 	const ion::Colour& GetColour(ColourType type) const { return m_colours[type]; }
@@ -164,7 +170,7 @@ private:
 
 	const TilesetResources& GetTilesetResources(TilesetId tilesetId) const;
 	TilesetResources& GetTilesetResources(TilesetId tilesetId);
-	
+
 	//terrain tileset size sq
 	u32 m_terrainTilesetSizeSq;
 
@@ -182,6 +188,7 @@ private:
 	ion::io::ResourceHandle<ion::render::Texture> m_textures[eTextureMax];
 	ion::io::ResourceHandle<ion::render::Material> m_materials[eMaterialMax];
 	std::map<TilesetId, TilesetResources> m_tilesetResources;
+	std::map<ion::UUID64, TilesetResources> m_paletteOverlayResources;
 	ion::render::Primitive* m_primitives[ePrimitiveMax];
 	ion::Colour m_colours[eColourMax];
 

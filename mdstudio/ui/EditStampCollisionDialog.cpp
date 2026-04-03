@@ -15,11 +15,11 @@
 #include "MainWindow.h"
 #include "RenderResources.h"
 
-DialogEditStamp::DialogEditStamp(MainWindow& mainWindow, StampSetId stampSetId, Stamp& stamp, Project& project, ion::render::Renderer& renderer, wxGLContext& glContext, RenderResources& renderResources)
+DialogEditStamp::DialogEditStamp(MainWindow& mainWindow, StampSetId stampSetId, StampId stampId, Project& project, ion::render::Renderer& renderer, wxGLContext& glContext, RenderResources& renderResources)
 	: DialogEditStampBase(&mainWindow)
 	, m_mainWindow(mainWindow)
 	, m_stampSetId(stampSetId)
-	, m_stamp(stamp)
+	, m_stampId(stampId)
 	, m_project(project)
 	, m_renderer(renderer)
 	, m_renderResources(renderResources)
@@ -86,10 +86,11 @@ void DialogEditStamp::Draw()
 {
 	const int tileWidth = m_project.GetPlatformConfig().tileWidth;
 	const int tileHeight = m_project.GetPlatformConfig().tileHeight;
+	const Stamp& stamp = m_project.GetStampSet(m_stampSetId).GetStamp(m_stampId);
 
-	m_canvas->CreateGrid(m_stamp.GetWidth() * tileWidth, m_stamp.GetHeight() * tileHeight, m_stamp.GetWidth(), m_stamp.GetHeight());
+	m_canvas->CreateGrid(stamp.GetWidth() * tileWidth, stamp.GetHeight() * tileHeight, stamp.GetWidth(), stamp.GetHeight());
 	m_canvas->SetGridColour(ion::Colour(1.0f, 1.0f, 1.0f, 1.0f));
 	m_canvas->SetDrawGrid(true);
-	m_canvas->SetStamp(m_stampSetId, m_stamp, ion::Vector2i());
+	m_canvas->SetStamp(m_stampSetId, m_stampId, ion::Vector2i());
 	m_canvas->Refresh();
 }

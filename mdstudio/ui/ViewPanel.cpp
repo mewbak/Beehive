@@ -953,10 +953,9 @@ void ViewPanel::ScrollToTop()
 	//SetCameraZoom(zoom);
 }
 
-void ViewPanel::EditStampCollisionDlg(Stamp& stamp)
+void ViewPanel::EditStampCollisionDlg(StampId stampId)
 {
 	StampSetId stampSetId = m_project->GetEditingMap().GetStampSetId();
-	StampSet& stampSet = m_project->GetStampSet(stampSetId);
-	DialogEditStamp dialog(*m_mainWindow, stampSetId, stamp, *m_project, *m_renderer, *m_glContext, *m_renderResources);
+	DialogEditStamp dialog(*m_mainWindow, stampSetId, stampId, *m_project, *m_renderer, *m_glContext, *m_renderResources);
 	dialog.ShowModal();
 }

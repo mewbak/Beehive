@@ -29,7 +29,7 @@ public:
 	virtual ~StampCanvas();
 
 	//Set current stamp
-	void SetStamp(StampSetId stampSetId, Stamp& stamp, const ion::Vector2i& offset);
+	void SetStamp(StampSetId stampSetId, StampId stampId, const ion::Vector2i& offset);
 
 	//Set current tool
 	void SetTool(ToolType tool);
@@ -71,8 +71,10 @@ private:
 	void RenderCollisionCanvas(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z);
 	void RenderBoxSelection(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z);
 	void RenderBoxPaletteRegions(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z);
+	void RenderPaletteOverlays(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z);
 
 	//Canvas drawing
+	void PaintPaletteOverlay(PaletteRegionId paletteRegionId);
 	void PaintTerrainBeziers(const Stamp& stamp);
 	void PaintCollisionStamp(const Stamp& stamp);
 	void PaintCollisionTile(TerrainTileId terrainTileId, int x, int y, u16 collisionFlags);
@@ -86,6 +88,7 @@ private:
 	ion::render::Primitive* m_primitiveBezierPoints;
 	ion::render::Primitive* m_primitiveBezierHandles;
 	ion::render::Primitive* m_primitiveBezierNormals;
+	std::map<ion::UUID64, ion::render::Chessboard*> m_primitivePaletteOverlay;
 
 	bool m_terrainPrimitiveDirty;
 	bool m_collisionPrimitiveDirty;
@@ -108,23 +111,18 @@ private:
 	//Currently editing stamp
 	StampSetId m_stampSetId;
 	TilesetId m_tilesetId;
+	StampId m_stampId;
 	Stamp* m_stamp;
-
-	//Selected tiles
-	std::vector<ion::Vector2i> m_selectedTiles;
 
 	//Box selection
 	bool m_boxSelection;
 	ion::Vector2i m_boxSelectStart;
 	ion::Vector2i m_boxSelectEnd;
 
-	//Multiple (CTRL) selection
-	bool m_multipleSelection;
-
 	//Current tool
 	ToolType m_currentToolType;
 
 	std::vector<PaletteId> m_populatedPalettes;
 
-	Stamp::PaletteRegion* m_currentPaletteRegion;
+	PaletteRegionId m_currentPaletteRegion;
 };

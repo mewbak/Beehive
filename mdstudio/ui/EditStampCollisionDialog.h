@@ -25,7 +25,7 @@ class RenderResources;
 class DialogEditStamp : public DialogEditStampBase
 {
 public:
-	DialogEditStamp(MainWindow& mainWindow, StampSetId stampSetId, Stamp& stamp, Project& project, ion::render::Renderer& renderer, wxGLContext& glContext, RenderResources& renderResources);
+	DialogEditStamp(MainWindow& mainWindow, StampSetId stampSetId, StampId stampId, Project& project, ion::render::Renderer& renderer, wxGLContext& glContext, RenderResources& renderResources);
 	virtual ~DialogEditStamp();
 
 	virtual void OnToolAddBezier(wxCommandEvent& event);
@@ -39,7 +39,7 @@ private:
 	void Draw();
 
 	StampSetId m_stampSetId;
-	Stamp& m_stamp;
+	StampId m_stampId;
 
 	MainWindow& m_mainWindow;
 	Project& m_project;

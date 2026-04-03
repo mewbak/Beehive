@@ -182,7 +182,7 @@ void MapToolManipulatorStamp::OnContextMenuEditCollision(int id, std::vector<Map
 {
 	for (auto stamp : objects)
 	{
-		GetViewPanel().EditStampCollisionDlg(*stamp.stamp);
+		GetViewPanel().EditStampCollisionDlg(stamp.stampId);
 	}
 }
 

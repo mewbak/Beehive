@@ -203,8 +203,7 @@ void StampsPanel::OnContextMenuClick(wxCommandEvent& event)
 		//Show collision editor dialog
 		if (m_hoverStamp != InvalidStampId)
 		{
-			Stamp& stamp = GetStampSet().GetStamp(m_hoverStamp);
-			DialogEditStamp dialog(*m_mainWindow, GetStampSetId(), stamp, *m_project, *m_renderer, *m_glContext, *m_renderResources);
+			DialogEditStamp dialog(*m_mainWindow, GetStampSetId(), m_hoverStamp, *m_project, *m_renderer, *m_glContext, *m_renderResources);
 			dialog.ShowModal();
 		}
 	}

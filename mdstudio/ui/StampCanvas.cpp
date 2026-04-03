@@ -28,11 +28,12 @@ StampCanvas::StampCanvas(wxWindow *parent, wxWindowID id, const wxPoint& pos, co
 	m_currentBezierControlIdx = -1;
 	m_currentToolType = eToolNone;
 	m_stamp = NULL;
+	m_stampId == InvalidStampId;
 	m_terrainPrimitiveDirty = true;
 	m_collisionPrimitiveDirty = true;
 	m_tilesetId = InvalidTilesetId;
 
-	m_currentPaletteRegion = nullptr;
+	m_currentPaletteRegion = InvalidPaletteRegionId;
 
 	ClearTool();
 }
@@ -89,7 +90,7 @@ void StampCanvas::Refresh(bool eraseBackground, const wxRect *rect)
 	SpriteCanvas::Refresh(eraseBackground, rect);
 }
 
-void StampCanvas::SetStamp(StampSetId stampSetId, Stamp& stamp, const ion::Vector2i& offset)
+void StampCanvas::SetStamp(StampSetId stampSetId, StampId stampId, const ion::Vector2i& offset)
 {
 	m_drawOffset = offset;
 
@@ -100,14 +101,15 @@ void StampCanvas::SetStamp(StampSetId stampSetId, Stamp& stamp, const ion::Vecto
 	if (m_collisionCanvasPrimitive)
 		delete m_collisionCanvasPrimitive;
 
-	m_stamp = &stamp;
+	m_stampId = stampId;
+	m_stamp = &m_project->GetStampSet(stampSetId).GetStamp(stampId);
 	m_stampSetId = stampSetId;
 	m_tilesetId = m_project->GetStampSet(stampSetId).GetTilesetId();
 
 	const int tileWidth = m_project->GetPlatformConfig().tileWidth;
 	const int tileHeight = m_project->GetPlatformConfig().tileHeight;
-	const int width = stamp.GetWidth();
-	const int height = stamp.GetHeight();
+	const int width = m_stamp->GetWidth();
+	const int height = m_stamp->GetHeight();
 
 	m_canvasSize.x = width;
 	m_canvasSize.y = height;
@@ -120,8 +122,8 @@ void StampCanvas::SetStamp(StampSetId stampSetId, Stamp& stamp, const ion::Vecto
 	{
 		for (int y = 0; y < height; y++)
 		{
-			TileId tileId = stamp.GetTile(x, y);
-			u32 tileFlags = stamp.GetTileFlags(x, y);
+			TileId tileId = m_stamp->GetTile(x, y);
+			u32 tileFlags = m_stamp->GetTileFlags(x, y);
 			int y_inv = height - 1 - y;
 
 			//Set texture coords for cell
@@ -133,8 +135,8 @@ void StampCanvas::SetStamp(StampSetId stampSetId, Stamp& stamp, const ion::Vecto
 
 	m_tileFramePrimitive->GetVertexBuffer().CommitBuffer();
 
-	PaintTerrainBeziers(stamp);
-	PaintCollisionStamp(stamp);
+	PaintTerrainBeziers(*m_stamp);
+	PaintCollisionStamp(*m_stamp);
 
 	Refresh();
 }
@@ -185,9 +187,6 @@ void StampCanvas::OnKeyboard(wxKeyEvent& event)
 		SetTool(eToolNone);
 		Refresh();
 	}
-
-	//Store CTRL held state for multiple selection
-	m_multipleSelection = event.ControlDown();
 
 	SpriteCanvas::OnKeyboard(event);
 }
@@ -263,82 +262,42 @@ void StampCanvas::OnMouseTileEvent(ion::Vector2i mousePos, ion::Vector2i mouseDe
 					if (buttonBits & eMouseLeft)
 					{
 						//If current coord is not inside an existing palette region
-						if (m_currentToolType != eToolStampPaletteRegion || m_currentPaletteRegion == nullptr)
+						if (m_currentToolType != eToolStampPaletteRegion || m_currentPaletteRegion == InvalidPaletteRegionId)
 						{
 							if (!(m_prevMouseBits & eMouseLeft))
 							{
-								//Single left-click, pick tiles one by one
-								if (m_boxSelectEnd.x > 0 && m_boxSelectEnd.y > 0)
-								{
-									//Previous selection was box selection, clear it
-									m_selectedTiles.clear();
-
-									//Reset box end
-									m_boxSelectEnd.x = -1;
-									m_boxSelectEnd.y = -1;
-								}
-
-								//If CTRL not held
-								if (!m_multipleSelection)
-								{
-									//Clear selection, start again
-									m_selectedTiles.clear();
-
-									//eStart box selection, in case next event is dragging
-									m_boxSelectStart.x = x;
-									m_boxSelectStart.y = y;
-								}
-
-								//Single click - add tile at cursor to selection
-								m_selectedTiles.push_back(ion::Vector2i(x, y));
+								//Start box selection
+								m_boxSelectStart.x = x;
+								m_boxSelectStart.y = y;
 							}
-							else if (!m_multipleSelection)
-							{
-								//If current box does not intersect an extising palette region
-								auto FindRegionInRegion = [](const Stamp& stamp, const ion::Vector2i& topLeft, const ion::Vector2i& bottomRight)
-									{
-										for (const auto& it : stamp.GetPaletteRegions())
-										{
-											if (ion::maths::BoxIntersectsBox(topLeft, bottomRight, it.topLeft, it.bottomRight))
-												return true;
-										}
-										return false;
-									};
 
-								if (m_currentToolType != eToolStampPaletteRegion || !FindRegionInRegion(*m_stamp, m_boxSelectStart, ion::Vector2i(x, y)))
+							//If current box does not intersect an existing palette region
+							auto FindRegionInRegion = [](const Stamp& stamp, const ion::Vector2i& topLeft, const ion::Vector2i& bottomRight)
 								{
-									//Dragging, set box end
-									m_boxSelectEnd.x = x;
-									m_boxSelectEnd.y = y;
-
-									//Clear current selection
-									m_selectedTiles.clear();
-
-									//Sanitise loop order
-									ion::Vector2i boxMin = m_boxSelectStart;
-									ion::Vector2i boxMax = m_boxSelectEnd;
-									ion::maths::SanitiseBox(boxMin, boxMax);
-
-									//Add all tiles in box
-									for (int tileX = boxMin.x; tileX <= boxMax.x; tileX++)
+									for (const auto& it : stamp.GetPaletteRegions())
 									{
-										for (int tileY = boxMin.y; tileY <= boxMax.y; tileY++)
-										{
-											m_selectedTiles.push_back(ion::Vector2i(tileX, tileY));
-										}
+										if (ion::maths::BoxIntersectsBox(topLeft, bottomRight, it.second.topLeft, it.second.bottomRight))
+											return true;
 									}
-								}
+									return false;
+								};
+
+							if (m_currentToolType != eToolStampPaletteRegion || !FindRegionInRegion(*m_stamp, m_boxSelectStart, ion::Vector2i(x, y)))
+							{
+								//Dragging, set box end
+								m_boxSelectEnd.x = x;
+								m_boxSelectEnd.y = y;
 							}
 
 							//Refresh to draw box selection
 							Refresh();
 						}
 					}
-					else if ((buttonBits & eMouseRight) && (m_currentPaletteRegion || m_selectedTiles.size() > 0))
+					else if ((buttonBits & eMouseRight) && (m_currentPaletteRegion || m_boxSelectStart.x >= 0))
 					{
 						wxMenu contextMenu;
 						wxMenu* paletteMenu = new wxMenu();
-						PaletteId paletteId = m_currentPaletteRegion ? m_currentPaletteRegion->paletteId : m_stamp->FindPaletteAtPosition(m_selectedTiles[0]);
+						PaletteId paletteId = (m_currentPaletteRegion != InvalidPaletteRegionId) ? m_stamp->GetPaletteRegion(m_currentPaletteRegion).paletteId : m_stamp->FindPaletteAtPosition(m_boxSelectStart);
 						int paletteIdx = 0;
 						m_populatedPalettes.clear();
 
@@ -353,21 +312,15 @@ void StampCanvas::OnMouseTileEvent(ion::Vector2i mousePos, ion::Vector2i mouseDe
 
 						if (m_currentPaletteRegion)
 						{
-							PaletteId paletteId = m_currentPaletteRegion->paletteId;
+							const Stamp::PaletteRegion& region = m_stamp->GetPaletteRegion(m_currentPaletteRegion);
+							PaletteId paletteId = region.paletteId;
 							contextMenu.Append(eContextMenuAddPaletteRegion, "Set Palette", paletteMenu);
 							contextMenu.Append(eContextMenuDeletePaletteRegion, "Delete Palette Region");
 						}
 						else
 						{
-							wxMenuItem* itemPalette = contextMenu.Append(eContextMenuAddPaletteRegion, "Add Palette Region", paletteMenu);
-							wxMenuItem* itemAnimation = contextMenu.Append(eContextMenuAddAnimationRegion, "Add Animation Region");
-
-							// Region options only available if selection is rectangular
-							if (m_selectedTiles.size() != 1 && (m_boxSelectEnd.x == 0 || m_boxSelectEnd.y == 0))
-							{
-								itemPalette->Enable(false);
-								itemAnimation->Enable(false);
-							}
+							contextMenu.Append(eContextMenuAddPaletteRegion, "Add Palette Region", paletteMenu);
+							contextMenu.Append(eContextMenuAddAnimationRegion, "Add Animation Region");
 						}
 
 						contextMenu.Connect(wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&StampCanvas::OnContextMenuClick, NULL, this);
@@ -377,10 +330,10 @@ void StampCanvas::OnMouseTileEvent(ion::Vector2i mousePos, ion::Vector2i mouseDe
 					{
 						if (m_currentToolType == eToolStampPaletteRegion)
 						{
-							Stamp::PaletteRegion* region = m_stamp->FindPaletteRegionAtPosition(ion::Vector2i(x, y));
-							if (region != m_currentPaletteRegion)
+							PaletteRegionId regionId = m_stamp->FindPaletteRegionAtPosition(ion::Vector2i(x, y));
+							if (regionId != m_currentPaletteRegion)
 							{
-								m_currentPaletteRegion = region;
+								m_currentPaletteRegion = regionId;
 								Refresh();
 							}
 						}
@@ -712,28 +665,40 @@ void StampCanvas::OnContextMenuClick(wxCommandEvent& event)
 	}
 	else if (event.GetId() == eContextMenuDeletePaletteRegion)
 	{
-		if (m_currentPaletteRegion)
+		if (m_currentPaletteRegion != InvalidPaletteRegionId)
 		{
-			m_stamp->DeletePaletteRegion(*m_currentPaletteRegion);
-			m_currentPaletteRegion = nullptr;
+			m_stamp->DeletePaletteRegion(m_currentPaletteRegion);
+			m_currentPaletteRegion = InvalidPaletteRegionId;
 			Refresh();
 		}
 	}
 	else if (event.GetId() >= eContextMenuPaletteFirst)
 	{
 		PaletteId paletteId = m_populatedPalettes[event.GetId() - eContextMenuPaletteFirst];
+		PaletteRegionId regionId = m_currentPaletteRegion;
 
-		if (m_currentPaletteRegion)
+		if (m_currentPaletteRegion != InvalidPaletteRegionId)
 		{
-			m_currentPaletteRegion->paletteId = paletteId;
+			Stamp::PaletteRegion& region = m_stamp->GetPaletteRegion(regionId);
+			region.paletteId = paletteId;
 		}
 		else if (m_boxSelectStart.x >= 0)
 		{
-			m_stamp->AddPaletteRegion(m_boxSelectStart, m_boxSelectEnd, paletteId);
+			//Sanitise selection box
+			ion::Vector2i boxMin = m_boxSelectStart;
+			ion::Vector2i boxMax = m_boxSelectEnd;
+			ion::maths::SanitiseBox(boxMin, boxMax);
+			boxMax.x += 1;
+			boxMax.y += 1;
+
+			regionId = m_stamp->AddPaletteRegion(boxMin, boxMax, paletteId);
+			m_boxSelectStart.x = -1;
 		}
-		else if(m_selectedTiles.size() == 1)
+
+		if (regionId != InvalidPaletteRegionId)
 		{
-			m_stamp->AddPaletteRegion(m_selectedTiles[0], m_selectedTiles[0], paletteId);
+			m_renderResources->CreatePaletteRegionOverlay(m_stampSetId, m_stampId, regionId);
+			PaintPaletteOverlay(regionId);
 		}
 
 		Refresh();
@@ -746,6 +711,10 @@ void StampCanvas::OnRender(ion::render::Renderer& renderer, const ion::Matrix4& 
 	{
 		//Render tile frame
 		RenderTileFrame(renderer, cameraInverseMtx, projectionMtx, z, m_tilesetId);
+		z += zOffset;
+
+		//Render palette overlays
+		RenderPaletteOverlays(renderer, cameraInverseMtx, projectionMtx, z);
 		z += zOffset;
 
 		//Render preview
@@ -791,24 +760,32 @@ void StampCanvas::OnRender(ion::render::Renderer& renderer, const ion::Matrix4& 
 
 void StampCanvas::RenderBoxSelection(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z)
 {
-	const float stampWidth = m_stamp->GetWidth();
-	const float stampHeight = m_stamp->GetHeight();
-	const float tileWidth = m_project->GetPlatformConfig().tileWidth;
-	const float tileHeight = m_project->GetPlatformConfig().tileHeight;
-
-	ion::render::Material* material = m_renderResources->GetMaterial(RenderResources::eMaterialFlatColour);
-	const ion::Colour& colour = m_renderResources->GetColour(RenderResources::eColourSelected);
-
 	if (m_boxSelectStart.x >= 0 && m_boxSelectEnd.x >= 0)
 	{
-		//Draw overlay over box selection
-		ion::render::Primitive* primitive = m_renderResources->GetPrimitive(RenderResources::ePrimitiveUnitQuad);
+		const float stampWidth = m_stamp->GetWidth();
+		const float stampHeight = m_stamp->GetHeight();
+		const float tileWidth = m_project->GetPlatformConfig().tileWidth;
+		const float tileHeight = m_project->GetPlatformConfig().tileHeight;
 
-		const float x = ion::maths::Min(m_boxSelectStart.x, m_boxSelectEnd.x) * tileWidth;
-		const float y = ion::maths::Min(m_boxSelectStart.y, m_boxSelectEnd.y) * tileHeight;
+		ion::render::Material* material = m_renderResources->GetMaterial(RenderResources::eMaterialFlatColour);
+		const ion::Colour& colourFill = m_renderResources->GetColour(RenderResources::eColourSelected);
+		const ion::Colour& colourOutline = m_renderResources->GetColour(RenderResources::eColourOutline);
+
+		ion::render::Primitive* primitiveFill = m_renderResources->GetPrimitive(RenderResources::ePrimitiveUnitQuad);
+		ion::render::Primitive* primitiveOutline = m_renderResources->GetPrimitive(RenderResources::ePrimitiveUnitLineQuad);
+
+		//Sanitise selection box
+		ion::Vector2i boxMin = m_boxSelectStart;
+		ion::Vector2i boxMax = m_boxSelectEnd;
+		ion::maths::SanitiseBox(boxMin, boxMax);
+		boxMax.x += 1;
+		boxMax.y += 1;
+
+		const float x = ion::maths::Min(boxMin.x, boxMax.x) * tileWidth;
+		const float y = ion::maths::Min(boxMin.y, boxMax.y) * tileHeight;
 		const float y_inv = (stampHeight * tileHeight) - y;
-		const float width = (float)(abs(m_boxSelectEnd.x - m_boxSelectStart.x) + 1) * tileWidth;
-		const float height = (float)(abs(m_boxSelectEnd.y - m_boxSelectStart.y) + 1) * tileHeight;
+		const float width = (float)abs(boxMax.x - boxMin.x) * tileWidth;
+		const float height = (float)abs(boxMax.y - boxMin.y) * tileHeight;
 		const ion::Vector2 mapCentre((stampWidth * tileWidth) / 2.0f, (stampHeight * tileHeight) / 2.0f);
 		const ion::Vector2 boxCentre(width / 2.0f, height / 2.0f);
 
@@ -819,45 +796,21 @@ void StampCanvas::RenderBoxSelection(ion::render::Renderer& renderer, const ion:
 		boxMtx.SetTranslation(boxPos);
 		boxMtx.SetScale(boxScale);
 
+		// Draw fill
 		renderer.SetAlphaBlending(ion::render::Renderer::AlphaBlendType::Translucent);
-		material->SetDiffuseColour(colour);
+		material->SetDiffuseColour(colourFill);
 		renderer.BindMaterial(*material, boxMtx, cameraInverseMtx, projectionMtx);
-		renderer.DrawVertexBuffer(primitive->GetVertexBuffer(), primitive->GetIndexBuffer());
+		renderer.DrawVertexBuffer(primitiveFill->GetVertexBuffer(), primitiveFill->GetIndexBuffer());
 		renderer.UnbindMaterial(*material);
 		renderer.SetAlphaBlending(ion::render::Renderer::AlphaBlendType::None);
-	}
-	else if (m_selectedTiles.size() > 0)
-	{
-		//Draw overlay over selected tiles
-		ion::render::Primitive* primitive = m_renderResources->GetPrimitive(RenderResources::ePrimitiveTileQuad);
 
-		ion::Matrix4 selectionMtx;
-		ion::Matrix4 worldViewProjMtx;
-		ion::render::Shader* shader = m_renderResources->GetShader(RenderResources::eShaderFlatColour);
-		ion::render::Shader::ParamHndl<ion::Matrix4> worldViewProjParamV = shader->CreateParamHndl<ion::Matrix4>("gWorldViewProjectionMatrix");
-
-		renderer.SetAlphaBlending(ion::render::Renderer::AlphaBlendType::Translucent);
-		material->SetDiffuseColour(colour);
-		renderer.BindMaterial(*material, selectionMtx, cameraInverseMtx, projectionMtx);
-
-		for (int i = 0; i < m_selectedTiles.size(); i++)
-		{
-			const float x = m_selectedTiles[i].x;
-			const float y = m_selectedTiles[i].y;
-			const float y_inv = stampHeight - 1 - y;
-
-			ion::Vector3 selectedQuadPos(((x - (stampWidth / 2) + 0.5f) * tileWidth),
-				((y_inv - (stampHeight / 2) + 0.5f) * tileHeight), z);
-
-			selectionMtx.SetTranslation(selectedQuadPos);
-			worldViewProjMtx = selectionMtx * cameraInverseMtx * projectionMtx;
-			worldViewProjParamV.SetValue(worldViewProjMtx);
-
-			renderer.DrawVertexBuffer(primitive->GetVertexBuffer(), primitive->GetIndexBuffer());
-		}
-
+		// Draw outline
+		material->SetDiffuseColour(colourOutline);
+		renderer.BindMaterial(*material, boxMtx, cameraInverseMtx, projectionMtx);
+		renderer.SetLineWidth(2.0f);
+		renderer.DrawVertexBuffer(primitiveOutline->GetVertexBuffer());
+		renderer.SetLineWidth(1.0f);
 		renderer.UnbindMaterial(*material);
-		renderer.SetAlphaBlending(ion::render::Renderer::AlphaBlendType::None);
 	}
 }
 
@@ -1075,12 +1028,14 @@ void StampCanvas::RenderBoxPaletteRegions(ion::render::Renderer& renderer, const
 		{
 			//Draw on top of grid
 			const float outlineZOffset = 0.1f;
-			ion::Matrix4 worldViewProjMtx = drawtools::CalcBoxDrawMatrix(region.topLeft * tileSizePx, (region.bottomRight + ion::Vector2i(1,1)) * tileSizePx, stampSizePx, z + outlineZOffset) * cameraInverseMtx * projectionMtx;
+			ion::Matrix4 worldViewProjMtx = drawtools::CalcBoxDrawMatrix(region.second.topLeft * tileSizePx, region.second.bottomRight * tileSizePx, stampSizePx, z + outlineZOffset) * cameraInverseMtx * projectionMtx;
 
 			//Outline
 			worldViewProjParam.SetValue(worldViewProjMtx);
 
-			if (m_currentPaletteRegion && region.topLeft == m_currentPaletteRegion->topLeft)
+			const Stamp::PaletteRegion* selectedRegion = (m_currentPaletteRegion != InvalidPaletteRegionId) ? &m_stamp->GetPaletteRegion(m_currentPaletteRegion) : nullptr;
+
+			if (selectedRegion && region.second.topLeft == selectedRegion->topLeft)
 			{
 				diffuseParam.SetValue(ion::Colour(1.0f, 0.0f, 0.0f, 1.0f));
 				renderer.SetLineWidth(3.0f);
@@ -1095,6 +1050,38 @@ void StampCanvas::RenderBoxPaletteRegions(ion::render::Renderer& renderer, const
 			renderer.SetLineWidth(1.0f);
 		}
 
+		renderer.UnbindMaterial(*material);
+	}
+}
+
+void StampCanvas::RenderPaletteOverlays(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z)
+{
+	const int tileWidth = m_project->GetPlatformConfig().tileWidth;
+	const int tileHeight = m_project->GetPlatformConfig().tileHeight;
+	const ion::Vector2i tileSizePx(m_project->GetPlatformConfig().tileWidth, m_project->GetPlatformConfig().tileHeight);
+	const ion::Vector2i stampSizePx = ion::Vector2i(m_stamp->GetWidth(), m_stamp->GetHeight()) * tileSizePx;
+
+	for (const auto& region : m_stamp->GetPaletteRegions())
+	{
+		//Render spriteSheet
+		ion::render::Primitive* primitive = m_primitivePaletteOverlay[region.first];
+		ion::render::Material* material = m_renderResources->GetMaterial(m_stampId, region.first);
+		material->SetDiffuseColour(ion::Colour(1.0f, 1.0f, 1.0f, 1.0f));
+
+		int width = (region.second.bottomRight.x - region.second.topLeft.x)  * tileWidth;
+		int height = (region.second.bottomRight.y - region.second.topLeft.y) * tileHeight;
+
+		const float y_inv = stampSizePx.y - (region.second.topLeft.y * tileHeight);
+		const ion::Vector2 mapCentre(stampSizePx.x / 2.0f, stampSizePx.y / 2.0f);
+		const ion::Vector2 boxCentre(width / 2.0f, height / 2.0f);
+		ion::Vector3 boxScale(width, height, 0.0f);
+		ion::Vector3 boxPos((region.second.topLeft.x * tileWidth) - mapCentre.x + boxCentre.x, y_inv - mapCentre.y - boxCentre.y, z);
+
+		ion::Matrix4 boxMtx;
+		boxMtx.SetTranslation(boxPos);
+
+		renderer.BindMaterial(*material, boxMtx, cameraInverseMtx, projectionMtx);
+		renderer.DrawVertexBuffer(primitive->GetVertexBuffer(), primitive->GetIndexBuffer());
 		renderer.UnbindMaterial(*material);
 	}
 }
@@ -1134,6 +1121,43 @@ void StampCanvas::PaintCollisionTile(TerrainTileId terrainTileId, int x, int y, 
 	m_renderResources->GetCollisionTypeTexCoords(collisionFlags, coords);
 	m_collisionCanvasPrimitive->SetTexCoords((y * m_canvasSize.x) + x, coords);
 	m_collisionPrimitiveDirty = true;
+}
+
+void StampCanvas::PaintPaletteOverlay(PaletteRegionId paletteRegionId)
+{
+	auto& it = m_primitivePaletteOverlay.find(paletteRegionId);
+	if (it != m_primitivePaletteOverlay.end())
+	{
+		delete it->second;
+		m_primitivePaletteOverlay.erase(it);
+	}
+
+	const Stamp::PaletteRegion& paletteRegion = m_stamp->GetPaletteRegion(paletteRegionId);
+	const int tileWidth = m_project->GetPlatformConfig().tileWidth;
+	const int tileHeight = m_project->GetPlatformConfig().tileHeight;
+	const int width = paletteRegion.bottomRight.x - paletteRegion.topLeft.x;
+	const int height = paletteRegion.bottomRight.y - paletteRegion.topLeft.y;
+
+	ion::render::Chessboard* primitive = new ion::render::Chessboard(ion::render::Chessboard::Axis::xy, ion::Vector2((float)width * (tileWidth / 2.0f), (float)height * (tileHeight / 2.0f)), width, height, true);
+
+	for (int x = 0; x < width; x++)
+	{
+		for (int y = 0; y < height; y++)
+		{
+			int tileX = paletteRegion.topLeft.x + x;
+			int tileY = paletteRegion.topLeft.y + y;
+			u32 tileFlags = m_stamp->GetTileFlags(tileX, tileY);
+			int y_inv = height - 1 - y;
+
+			//Set texture coords for cell
+			ion::render::TexCoord coords[4];
+			m_renderResources->GetTileTexCoords(paletteRegion, x, y, coords, tileFlags);
+			primitive->SetTexCoords((y_inv * width) + x, coords);
+		}
+	}
+
+	primitive->GetVertexBuffer().CommitBuffer();
+	m_primitivePaletteOverlay.insert(std::make_pair(paletteRegionId, primitive));
 }
 
 void StampCanvas::PaintTerrainBeziers(const Stamp& stamp)
@@ -1181,8 +1205,6 @@ void StampCanvas::ClearTool()
 {
 	// Clear tool data
 	m_currentToolType = eToolNone;
-	m_selectedTiles.clear();
-	m_multipleSelection = false;
 	m_boxSelection = false;
 	m_boxSelectStart.x = -1;
 	m_boxSelectStart.y = -1;

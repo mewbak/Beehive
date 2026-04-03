@@ -92,7 +92,7 @@ public:
 
 
 	//Dialogs
-	void EditStampCollisionDlg(Stamp& stamp);
+	void EditStampCollisionDlg(StampId stampId);
 
 protected:
 	void InitPanel();

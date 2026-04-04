@@ -2570,12 +2570,13 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 				}
 			}
 
+			//Export Luminary stamp sets
 			for (const auto& stampSet : m_project->GetStampSets())
 			{
 				std::string stampSetName = stampSet.second.GetName();
 				std::string fnamePrefix = ion::string::ToUpper(scenesExportDir + "\\" + stampSet.second.GetName());
+				const Tileset& tileset = m_project->GetTileset(stampSet.second.GetTilesetId());
 
-				//Export Luminary stamp sets
 				std::vector<Stamp> stamps;
 				for(const auto stamp : stampSet.second.GetStamps())
 				{
@@ -2584,13 +2585,35 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 
 				std::string stampsetLabel = "data_stampset_" + stampSetName;
 				std::string stampsetFilename = fnamePrefix + "_GSTAMPS.BIN";
-				int paletteSlotIdx = m_project->GetPaletteSlotForExport(stampSet.second.GetTilesetId());
 
-				// TODO: export errors/warnings
-				if (paletteSlotIdx == -1)
-					paletteSlotIdx = 0;
+				// Get palette usage for first map using this stampset
+				// TODO: check all maps match
+				auto FindFirstMap = [&](StampSetId stampSetId)
+					{
+						for (const auto& map : m_project->GetMaps())
+						{
+							if (map.second.GetStampSetId() == stampSetId && !IsBackgroundMap(map.first))
+								return map.first;
+						}
+					};
 
-				if (tilesetExporter.ExportStamps(stampsetFilename, stamps, paletteSlotIdx))
+				MapId firstMapId = FindFirstMap(stampSet.first);
+				std::vector<std::pair<PaletteId, Project::PaletteUsage>> paletteUsage;
+				m_project->SortPaletteSlotsForExport(firstMapId, paletteUsage);
+
+				// Sort into slots
+				std::map<PaletteId, int> paletteSlotMap;
+				PaletteId defaultPaletteId = tileset.GetDefaultPaletteId();
+				int defaultPaletteSlot = 0;
+
+				for (int i = 0; i < paletteUsage.size(); i++)
+				{
+					paletteSlotMap[paletteUsage[i].first] = i;
+					if (paletteUsage[i].first == defaultPaletteId)
+						defaultPaletteSlot = i;
+				}
+
+				if (tilesetExporter.ExportStamps(stampsetFilename, stamps, paletteSlotMap, defaultPaletteSlot))
 				{
 					includeFilenames.push_back(Project::IncludeFile{ stampsetLabel, stampsetFilename, Project::IncludeExportFlags::None });
 				}

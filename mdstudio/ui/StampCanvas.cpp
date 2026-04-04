@@ -138,6 +138,11 @@ void StampCanvas::SetStamp(StampSetId stampSetId, StampId stampId, const ion::Ve
 	PaintTerrainBeziers(*m_stamp);
 	PaintCollisionStamp(*m_stamp);
 
+	for (const auto& overlay : m_stamp->GetPaletteRegions())
+	{
+		PaintPaletteOverlay(overlay.first);
+	}
+
 	Refresh();
 }
 
@@ -688,8 +693,6 @@ void StampCanvas::OnContextMenuClick(wxCommandEvent& event)
 			ion::Vector2i boxMin = m_boxSelectStart;
 			ion::Vector2i boxMax = m_boxSelectEnd;
 			ion::maths::SanitiseBox(boxMin, boxMax);
-			boxMax.x += 1;
-			boxMax.y += 1;
 
 			regionId = m_stamp->AddPaletteRegion(boxMin, boxMax, paletteId);
 			m_boxSelectStart.x = -1;
@@ -1028,7 +1031,7 @@ void StampCanvas::RenderBoxPaletteRegions(ion::render::Renderer& renderer, const
 		{
 			//Draw on top of grid
 			const float outlineZOffset = 0.1f;
-			ion::Matrix4 worldViewProjMtx = drawtools::CalcBoxDrawMatrix(region.second.topLeft * tileSizePx, region.second.bottomRight * tileSizePx, stampSizePx, z + outlineZOffset) * cameraInverseMtx * projectionMtx;
+			ion::Matrix4 worldViewProjMtx = drawtools::CalcBoxDrawMatrix(region.second.topLeft * tileSizePx, (region.second.bottomRight + ion::Vector2i(1,1)) * tileSizePx, stampSizePx, z + outlineZOffset) * cameraInverseMtx * projectionMtx;
 
 			//Outline
 			worldViewProjParam.SetValue(worldViewProjMtx);
@@ -1068,8 +1071,8 @@ void StampCanvas::RenderPaletteOverlays(ion::render::Renderer& renderer, const i
 		ion::render::Material* material = m_renderResources->GetMaterial(m_stampId, region.first);
 		material->SetDiffuseColour(ion::Colour(1.0f, 1.0f, 1.0f, 1.0f));
 
-		int width = (region.second.bottomRight.x - region.second.topLeft.x)  * tileWidth;
-		int height = (region.second.bottomRight.y - region.second.topLeft.y) * tileHeight;
+		int width = (region.second.bottomRight.x - region.second.topLeft.x + 1)  * tileWidth;
+		int height = (region.second.bottomRight.y - region.second.topLeft.y + 1) * tileHeight;
 
 		const float y_inv = stampSizePx.y - (region.second.topLeft.y * tileHeight);
 		const ion::Vector2 mapCentre(stampSizePx.x / 2.0f, stampSizePx.y / 2.0f);
@@ -1135,8 +1138,8 @@ void StampCanvas::PaintPaletteOverlay(PaletteRegionId paletteRegionId)
 	const Stamp::PaletteRegion& paletteRegion = m_stamp->GetPaletteRegion(paletteRegionId);
 	const int tileWidth = m_project->GetPlatformConfig().tileWidth;
 	const int tileHeight = m_project->GetPlatformConfig().tileHeight;
-	const int width = paletteRegion.bottomRight.x - paletteRegion.topLeft.x;
-	const int height = paletteRegion.bottomRight.y - paletteRegion.topLeft.y;
+	const int width = paletteRegion.bottomRight.x - paletteRegion.topLeft.x + 1;
+	const int height = paletteRegion.bottomRight.y - paletteRegion.topLeft.y + 1;
 
 	ion::render::Chessboard* primitive = new ion::render::Chessboard(ion::render::Chessboard::Axis::xy, ion::Vector2((float)width * (tileWidth / 2.0f), (float)height * (tileHeight / 2.0f)), width, height, true);
 

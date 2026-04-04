@@ -285,7 +285,7 @@ void RenderResources::CreatePaletteRegionOverlay(StampSetId stampSetId, StampId 
 
 	TilesetResources tilesetResources;
 
-	ion::Vector2i regionSize = paletteRegion.bottomRight - paletteRegion.topLeft;
+	ion::Vector2i regionSize = (paletteRegion.bottomRight - paletteRegion.topLeft) + ion::Vector2i(1,1);
 	u32 numTiles = regionSize.x * regionSize.y;
 	tilesetResources.tilesetSizeSq = ion::maths::Max(1, (int)ion::maths::Ceil(ion::maths::Sqrt((float)numTiles)));
 	u32 textureWidth = tilesetResources.tilesetSizeSq * tileWidth;
@@ -723,7 +723,7 @@ void RenderResources::GetTileTexCoords(TilesetId tilesetId, TileId tileId, ion::
 
 void RenderResources::GetTileTexCoords(const Stamp::PaletteRegion& paletteRegion, int x, int y, ion::render::TexCoord texCoords[4], u32 flipFlags) const
 {
-	ion::Vector2i regionSize = paletteRegion.bottomRight - paletteRegion.topLeft;
+	ion::Vector2i regionSize = (paletteRegion.bottomRight - paletteRegion.topLeft) + ion::Vector2i(1, 1);
 	u32 numTiles = regionSize.x * regionSize.y;
 	u32 tilesetSizeSq = ion::maths::Max(1, (int)ion::maths::Ceil(ion::maths::Sqrt((float)numTiles)));
 	float cellSizeTexSpaceSq = 1.0f / (float)tilesetSizeSq;

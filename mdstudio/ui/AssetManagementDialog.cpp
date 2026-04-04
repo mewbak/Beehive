@@ -1485,39 +1485,102 @@ void DialogAssetManagement::OnBtnAutoAssignPalettes(wxCommandEvent& event)
 	int index = m_listMaps->GetSelection();
 	if (index >= 0 && index < m_populatedMaps.size())
 	{
-		MapId mapIdFg = m_populatedMaps[index];
-		Map& mapFg = m_project.GetMap(mapIdFg);
+		// Collect all used palettes, their usage types, and reference counts
+		enum PaletteUser
+		{
+			// High value = higher prio
+			eUsageActor		= 1 << 0,
+			eUsageOverlay	= 1 << 1,
+			eUsageMap		= 1 << 2,
+		};
+
+		struct PaletteUsage
+		{
+			u16 refcount;
+			u16 usageFlags;
+			std::vector<std::string> maps;
+			std::vector<std::string> overlays;
+			std::vector<std::string> actors;
+		};
+
+		std::map<PaletteId, PaletteUsage> paletteUsage;
+
+		auto AddUsage = [&](PaletteId paletteId, PaletteUser user, const std::string& name)
+			{
+				if (paletteId != InvalidPaletteId)
+				{
+					std::map<PaletteId, PaletteUsage>::iterator it = paletteUsage.find(paletteId);
+					if (it == paletteUsage.end())
+						it = paletteUsage.insert(std::make_pair(paletteId, PaletteUsage())).first;
+
+					switch (user)
+					{
+					case eUsageMap:
+						ion::utils::stl::PushBackUnique(it->second.maps, name);
+						break;
+					case eUsageOverlay:
+						ion::utils::stl::PushBackUnique(it->second.overlays, name);
+						break;
+					case eUsageActor:
+						ion::utils::stl::PushBackUnique(it->second.actors, name);
+						break;
+					}
+
+					it->second.usageFlags |= user;
+					it->second.refcount++;
+				}
+			};
 
 		static const int maxPaletteSlots = 4;
-		PaletteId slots[maxPaletteSlots] = { InvalidPaletteId };
-		int slotIdx = 0;
 
-		auto GetMapPalette = [&](MapId mapId)
+		// Get palette for fg map
+		MapId mapIdFg = m_populatedMaps[index];
+		Map& mapFg = m_project.GetMap(mapIdFg);
+		StampSetId stampsetIdFg = mapFg.GetStampSetId();
+		const StampSet& stampsetFg = m_project.GetStampSet(stampsetIdFg);
+		TilesetId tilesetIdFg = stampsetFg.GetTilesetId();
+		const Tileset& tilesetFg = m_project.GetTileset(tilesetIdFg);
+		PaletteId paletteIdFg = tilesetFg.GetDefaultPaletteId();
+		AddUsage(paletteIdFg, eUsageMap, mapFg.GetName());
+
+		// Get palettes for any used fg stamp palette overlays
+		for (const auto& stampPlacement : mapFg.GetStamps())
+		{
+			const Stamp& stamp = stampsetFg.GetStamp(stampPlacement.m_id);
+			for (const auto& overlay : stamp.GetPaletteRegions())
 			{
-				const Map& map = m_project.GetMap(mapId);
-				StampSetId stampsetId = map.GetStampSetId();
-				const StampSet& stampset = m_project.GetStampSet(stampsetId);
-				TilesetId tilesetId = stampset.GetTilesetId();
-				const Tileset& tileset = m_project.GetTileset(tilesetId);
-				return tileset.GetDefaultPaletteId();
-			};
-		
-		// Slot 0 is fg map
-		PaletteId paletteIdFg = GetMapPalette(mapIdFg);
-		slots[slotIdx++] = paletteIdFg;
+				char name[1024] = { 0 };
+				sprintf_s(name, 1024, "%s region %i,%i - %i,%i", mapFg.GetName().c_str(), overlay.second.topLeft.x, overlay.second.topLeft.y, overlay.second.bottomRight.x, overlay.second.bottomRight.y);
+				AddUsage(overlay.second.paletteId, eUsageOverlay, name);
+			}
+		}
 
-		// Slot 1 is bg map, if we have one, and it's unique
+		// Get palette for bg map
 		MapId mapIdBg = mapFg.GetBackgroundMapId();
 		if (mapIdBg != InvalidMapId)
 		{
-			PaletteId paletteIdBg = GetMapPalette(mapIdBg);
-			if (paletteIdBg != InvalidPaletteId && paletteIdBg != paletteIdFg)
-				slots[slotIdx++] = paletteIdBg;
+			const Map& mapBg = m_project.GetMap(mapIdBg);
+			StampSetId stampsetIdBg = mapFg.GetStampSetId();
+			const StampSet& stampsetBg = m_project.GetStampSet(stampsetIdBg);
+			TilesetId tilesetIdBg = stampsetBg.GetTilesetId();
+			const Tileset& tilesetBg = m_project.GetTileset(tilesetIdBg);
+			PaletteId paletteIdBg = tilesetBg.GetDefaultPaletteId();
+			AddUsage(paletteIdBg, eUsageMap, mapBg.GetName());
+
+			// Get palettes for any used bg stamp palette overlays
+			for (const auto& stampPlacement : mapBg.GetStamps())
+			{
+				const Stamp& stamp = stampsetBg.GetStamp(stampPlacement.m_id);
+				for (const auto& overlay : stamp.GetPaletteRegions())
+				{
+					char name[1024] = { 0 };
+					sprintf_s(name, 1024, "%s region %i,%i - %i,%i", mapBg.GetName().c_str(), overlay.second.topLeft.x, overlay.second.topLeft.y, overlay.second.bottomRight.x, overlay.second.bottomRight.y);
+					AddUsage(overlay.second.paletteId, eUsageOverlay, name);
+				}
+			}
 		}
 
-		// Remaining slots for sprite actors, sorted by usage counts
-		std::map<PaletteId, std::pair<int, std::vector<std::string>>> actorPalettes;
-
+		// Get palettes for all used sprite actors
 		for (const auto& gameObjType : mapFg.GetGameObjects())
 		{
 			for (const auto& gameObj : gameObjType.second)
@@ -1526,62 +1589,58 @@ void DialogAssetManagement::OnBtnAutoAssignPalettes(wxCommandEvent& event)
 				if (const Actor* actor = FindGameObjectActor(m_project, &gameObj.m_gameObject, actorId))
 				{
 					PaletteId paletteId = actor->GetPaletteId();
-					if (paletteId != InvalidPaletteId)
-					{
-						std::pair<int, std::vector<std::string>>& entry = actorPalettes[paletteId];
-						entry.first++;
-						entry.second.push_back(actor->GetName());
-					}
+					AddUsage(paletteId, eUsageActor, actor->GetName());
 				}
 			}
 		}
 
-		std::vector<std::pair<int, PaletteId>> sorted;
-		std::transform(actorPalettes.begin(), actorPalettes.end(), std::inserter(sorted, sorted.begin()),
+		// Sort into priority order (usage first, then refcount)
+		std::vector<std::pair<PaletteId, PaletteUsage>> sorted;
+		std::transform(paletteUsage.begin(), paletteUsage.end(), std::inserter(sorted, sorted.begin()),
 			[](const auto& item)
 			{
-				return std::make_pair(item.second.first, item.first);
+				return std::make_pair(item.first, item.second);
 			});
 
 		std::sort(sorted.begin(), sorted.end(), [](const auto& a, const auto& b)
 			{
-				return a.first > b.first;
+				return ((a.second.usageFlags << 16) | a.second.refcount) > ((b.second.usageFlags << 16) | b.second.refcount);
 			});
 
-		std::vector<std::string> mismatchedActors;
-
-		for (const auto& it : sorted)
+		if (sorted.size() > maxPaletteSlots)
 		{
-			bool alreadyMapped = false;
-			for (int i = 0; i < maxPaletteSlots; i++)
-			{
-				if (slots[i] == it.second)
-				{
-					alreadyMapped = true;
-					break;
-				}
-			}
+			std::string errorMsg = "Used palettes (" + std::to_string(sorted.size()) + ") exceeds slot count (" + std::to_string(maxPaletteSlots) + "). Usage:\n\n";
 
-			if (!alreadyMapped)
+			for (const auto& it : sorted)
 			{
-				if (slotIdx < maxPaletteSlots)
-				{
-					slots[slotIdx++] = it.second;
-				}
-				else
-				{
-					const std::vector<std::string>& actorNames = actorPalettes[it.second].second;
-					mismatchedActors.insert(mismatchedActors.begin(), actorNames.begin(), actorNames.end());
-				}
-			}
-		}
+				const Palette& palette = m_project.GetPalette(it.first);
+				errorMsg += " Palette " + palette.GetName() + ":\n";
 
-		if (mismatchedActors.size() > 0)
-		{
-			std::string errorMsg = "No palette slots left for sprite actors in map:\n\n";
-			for (const std::string& name : mismatchedActors)
-			{
-				errorMsg += " " + name + "\n";
+				if (it.second.usageFlags & eUsageMap)
+				{
+					for (const std::string& name : it.second.maps)
+					{
+						errorMsg += "  Map: " + name + "\n";
+					}
+				}
+
+				if (it.second.usageFlags & eUsageOverlay)
+				{
+					for (const std::string& name : it.second.overlays)
+					{
+						errorMsg += "  Overlay: " + name + "\n";
+					}
+				}
+
+				if (it.second.usageFlags & eUsageActor)
+				{
+					for (const std::string& name : it.second.actors)
+					{
+						errorMsg += "  Actor: " + name + "\n";
+					}
+				}
+
+				errorMsg += "\n";
 			}
 
 			wxMessageBox(errorMsg.c_str(), "Error");
@@ -1591,7 +1650,7 @@ void DialogAssetManagement::OnBtnAutoAssignPalettes(wxCommandEvent& event)
 
 		for (int i = 0; i < maxPaletteSlots; i++)
 		{
-			PaletteId paletteId = slots[i];
+			PaletteId paletteId = i < sorted.size() ? sorted[i].first : InvalidPaletteId;
 			mapFg.AssignPaletteToSlot(paletteId, i);
 			lists[i]->SetSelection(paletteId == InvalidPaletteId ? -1 : ion::utils::stl::IndexOf(m_populatedPalettes, paletteId));
 		}

@@ -1404,6 +1404,11 @@ void MapPanel::OnRender(ion::render::Renderer& renderer, const ion::Matrix4& cam
 
 	z += zOffset;
 
+	//Render palette overlays
+	RenderPaletteOverlays(renderer, cameraInverseMtx, projectionMtx, z);
+
+	z += zOffset;
+
 	//Render reference image
 	RenderReferenceImage(renderer, cameraInverseMtx, projectionMtx, z);
 
@@ -2141,6 +2146,46 @@ void MapPanel::RenderReferenceImage(ion::render::Renderer& renderer, const ion::
 		renderer.BindMaterial(*material, matrix, cameraInverseMtx, projectionMtx);
 		renderer.DrawVertexBuffer(primitive->GetVertexBuffer(), primitive->GetIndexBuffer());
 		renderer.UnbindMaterial(*material);
+	}
+}
+
+void MapPanel::RenderPaletteOverlays(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z)
+{
+	const int tileWidth = m_project->GetPlatformConfig().tileWidth;
+	const int tileHeight = m_project->GetPlatformConfig().tileHeight;
+	const int stampWidth = m_project->GetPlatformConfig().stampWidth;
+	const int stampHeight = m_project->GetPlatformConfig().stampHeight;
+	const ion::Vector2i tileSizePx(m_project->GetPlatformConfig().tileWidth, m_project->GetPlatformConfig().tileHeight);
+	const ion::Vector2i stampSizePx = ion::Vector2i(stampWidth, stampHeight) * tileSizePx;
+
+	const Map& map = m_project->GetEditingMap();
+	const StampSet& stampSet = m_project->GetStampSet(map.GetStampSetId());
+	ion::Vector2i mapSizePx(map.GetWidth() * tileWidth, map.GetHeight() * tileHeight);
+
+	for (const auto& stampPlacement : map.GetStamps())
+	{
+		const Stamp& stamp = stampSet.GetStamp(stampPlacement.m_id);
+		for (const auto& region : stamp.GetPaletteRegions())
+		{
+			//Render spriteSheet
+			ion::render::Primitive* primitive = m_primitivePaletteOverlay[region.first];
+			ion::render::Material* material = m_renderResources->GetMaterial(stampPlacement.m_id, region.first);
+			material->SetDiffuseColour(ion::Colour(1.0f, 1.0f, 1.0f, 1.0f));
+
+			float x = stampPlacement.m_position.x + region.second.topLeft.x;
+			float y = stampPlacement.m_position.y + region.second.topLeft.y;
+			float width = (region.second.bottomRight.x - region.second.topLeft.x + 1);
+			float height = (region.second.bottomRight.y - region.second.topLeft.y + 1);
+
+			ion::Matrix4 matrix;
+			float bottom = (float)m_canvasSize.y - y - height;
+			ion::Vector3 translation((x - ((float)m_canvasSize.x / 2.0f) + (width / 2.0f)), (bottom - ((float)m_canvasSize.y / 2.0f) + (height / 2.0f)), z);
+			matrix.SetTranslation(translation * ion::Vector3(tileWidth, tileHeight, 1.0f));
+
+			renderer.BindMaterial(*material, matrix, cameraInverseMtx, projectionMtx);
+			renderer.DrawVertexBuffer(primitive->GetVertexBuffer(), primitive->GetIndexBuffer());
+			renderer.UnbindMaterial(*material);
+		}
 	}
 }
 

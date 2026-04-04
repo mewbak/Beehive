@@ -65,6 +65,9 @@ public:
 	//Paint single tile to canvas
 	void PaintTile(TilesetId tilesetId, TileId tileId, int x, int y, u32 flipFlags);
 
+	//Paint tiles for palette overlay
+	void PaintPaletteOverlay(const Stamp& stamp, PaletteRegionId paletteRegionId);
+
 	//Paint collision tile to canvas
 	void PaintCollisionTile(TerrainTileId terrainTileId, int x, int y, u16 collisionFlags);
 
@@ -175,6 +178,7 @@ protected:
 	ion::render::Chessboard* m_collisionCanvasPrimitive;
 	ion::render::Grid* m_gridPrimitive;
 	ion::render::Quad* m_selectionPrimitive;
+	std::map<ion::UUID64, ion::render::Chessboard*> m_primitivePaletteOverlay;
 
 	bool m_canvasPrimitiveDirty;
 	bool m_terrainCanvasDirty;

@@ -355,6 +355,12 @@ void ViewPanel::PaintCollisionTile(TerrainTileId terrainTileId, int x, int y, u1
 
 void ViewPanel::PaintStamp(TilesetId tilesetId, const Stamp& stamp, int x, int y, u32 flipFlags)
 {
+	//Paint palette overlays first
+	for (const auto& overlay : stamp.GetPaletteRegions())
+	{
+		PaintPaletteOverlay(stamp, overlay.first);
+	}
+
 	int width = stamp.GetWidth();
 	int height = stamp.GetHeight();
 
@@ -380,6 +386,43 @@ void ViewPanel::PaintStamp(TilesetId tilesetId, const Stamp& stamp, int x, int y
 			}
 		}
 	}
+}
+
+void ViewPanel::PaintPaletteOverlay(const Stamp& stamp, PaletteRegionId paletteRegionId)
+{
+	auto& it = m_primitivePaletteOverlay.find(paletteRegionId);
+	if (it != m_primitivePaletteOverlay.end())
+	{
+		delete it->second;
+		m_primitivePaletteOverlay.erase(it);
+	}
+
+	const Stamp::PaletteRegion& paletteRegion = stamp.GetPaletteRegion(paletteRegionId);
+	const int tileWidth = m_project->GetPlatformConfig().tileWidth;
+	const int tileHeight = m_project->GetPlatformConfig().tileHeight;
+	const int width = paletteRegion.bottomRight.x - paletteRegion.topLeft.x + 1;
+	const int height = paletteRegion.bottomRight.y - paletteRegion.topLeft.y + 1;
+
+	ion::render::Chessboard* primitive = new ion::render::Chessboard(ion::render::Chessboard::Axis::xy, ion::Vector2((float)width * (tileWidth / 2.0f), (float)height * (tileHeight / 2.0f)), width, height, true);
+
+	for (int x = 0; x < width; x++)
+	{
+		for (int y = 0; y < height; y++)
+		{
+			int tileX = paletteRegion.topLeft.x + x;
+			int tileY = paletteRegion.topLeft.y + y;
+			u32 tileFlags = stamp.GetTileFlags(tileX, tileY);
+			int y_inv = height - 1 - y;
+
+			//Set texture coords for cell
+			ion::render::TexCoord coords[4];
+			m_renderResources->GetTileTexCoords(paletteRegion, x, y, coords, tileFlags);
+			primitive->SetTexCoords((y_inv * width) + x, coords);
+		}
+	}
+
+	primitive->GetVertexBuffer().CommitBuffer();
+	m_primitivePaletteOverlay.insert(std::make_pair(paletteRegionId, primitive));
 }
 
 void ViewPanel::PaintStampCollision(const Stamp& stamp, int x, int y, u32 flipFlags)

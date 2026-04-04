@@ -33,7 +33,8 @@ DialogEditStamp::DialogEditStamp(MainWindow& mainWindow, StampSetId stampSetId, 
 
 DialogEditStamp::~DialogEditStamp()
 {
-
+	m_mainWindow.RefreshPanel(MainWindow::Panel::ePanelMap);
+	m_mainWindow.RefreshPanel(MainWindow::Panel::ePanelStamps);
 }
 
 void DialogEditStamp::OnToolAddBezier(wxCommandEvent& event)

@@ -79,6 +79,7 @@ private:
 
 	//Render stamp outlines
 	void RenderStampOutlines(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z);
+	void RenderPaletteOverlays(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z);
 
 	StampSetId GetStampSetId() const;
 	StampSet& GetStampSet();

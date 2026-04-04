@@ -702,6 +702,7 @@ void StampCanvas::OnContextMenuClick(wxCommandEvent& event)
 		{
 			m_renderResources->CreatePaletteRegionOverlay(m_stampSetId, m_stampId, regionId);
 			PaintPaletteOverlay(regionId);
+			m_project->InvalidateStamps(true);
 		}
 
 		Refresh();

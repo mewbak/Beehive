@@ -1167,7 +1167,7 @@ void DialogAssetManagement::MergeStampset(const std::string filename, StampSetId
 		{
 			lhs.second.GetTerrainBeziers() = rhs->second.GetTerrainBeziers();
 			lhs.second.GetCollisionTiles() = rhs->second.GetCollisionTiles();
-			lhs.second.GetStampAnimSheets() = rhs->second.GetStampAnimSheets();
+			lhs.second.GetStampAnims() = rhs->second.GetStampAnims();
 			lhs.second.GetPaletteRegions() = rhs->second.GetPaletteRegions();
 		}
 	}

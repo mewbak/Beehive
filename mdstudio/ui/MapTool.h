@@ -52,7 +52,7 @@ enum ToolType
 	eToolStampPicker,
 	eToolCreateStampAnim,
 	eToolStampPaletteRegion,
-	eToolStampAnimationRegion,
+	eToolStampAnimation,
 
 	//Game objects
 	eToolSelectGameObject,

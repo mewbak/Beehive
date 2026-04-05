@@ -570,6 +570,10 @@ DialogEditStampBase::DialogEditStampBase( wxWindow* parent, wxWindowID id, const
 
 	m_toolSelectTiles = m_toolBar->AddTool( wxID_ANY, wxT("tool"), wxBitmap( newtile_xpm ), wxNullBitmap, wxITEM_NORMAL, wxEmptyString, wxEmptyString, NULL );
 
+	m_toolBar->AddSeparator();
+
+	m_toolPlaceAnim = m_toolBar->AddTool( wxID_ANY, wxT("tool"), wxBitmap( tool_animate_xpm ), wxNullBitmap, wxITEM_NORMAL, wxEmptyString, wxEmptyString, NULL );
+
 	m_toolBar->Realize();
 
 	fgSizer41->Add( m_toolBar, 0, wxEXPAND, 5 );
@@ -596,6 +600,7 @@ DialogEditStampBase::DialogEditStampBase( wxWindow* parent, wxWindowID id, const
 	this->Connect( m_toolTerrainDeleteBezier->GetId(), wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( DialogEditStampBase::OnToolDeleteBezier ) );
 	this->Connect( m_toolTerrainWall->GetId(), wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( DialogEditStampBase::OnToolPaintSolid ) );
 	this->Connect( m_toolSelectTiles->GetId(), wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( DialogEditStampBase::OnToolSelectTiles ) );
+	this->Connect( m_toolPlaceAnim->GetId(), wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( DialogEditStampBase::OnToolPlaceAnim ) );
 }
 
 DialogEditStampBase::~DialogEditStampBase()
@@ -606,6 +611,7 @@ DialogEditStampBase::~DialogEditStampBase()
 	this->Disconnect( m_toolTerrainDeleteBezier->GetId(), wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( DialogEditStampBase::OnToolDeleteBezier ) );
 	this->Disconnect( m_toolTerrainWall->GetId(), wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( DialogEditStampBase::OnToolPaintSolid ) );
 	this->Disconnect( m_toolSelectTiles->GetId(), wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( DialogEditStampBase::OnToolSelectTiles ) );
+	this->Disconnect( m_toolPlaceAnim->GetId(), wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( DialogEditStampBase::OnToolPlaceAnim ) );
 
 }
 

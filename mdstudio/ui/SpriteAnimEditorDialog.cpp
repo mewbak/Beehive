@@ -37,8 +37,6 @@ SpriteAnimEditorDialog::SpriteAnimEditorDialog(wxWindow* parent, AnimEditMode an
 {
 	m_selectedActorId = InvalidActorId;
 	m_selectedActor = NULL;
-	m_selectedStampId = InvalidStampId;
-	m_selectedStamp = NULL;
 	m_selectedSpriteSheetId = InvalidSpriteSheetId;
 	m_selectedAnimId = InvalidSpriteAnimId;
 	m_selectedSpriteSheet = NULL;
@@ -57,10 +55,12 @@ SpriteAnimEditorDialog::SpriteAnimEditorDialog(wxWindow* parent, AnimEditMode an
 	{
 		PopulateActorList();
 	}
+#if !BEEHIVE_PLUGIN_LUMINARY
 	else if(m_animEditMode == eAnimEditModeStampAnim)
 	{
 		PopulateStampList();
 	}
+#endif
 
 	//Subscribe to events
 	Bind(wxEVT_TIMER, &SpriteAnimEditorDialog::EventHandlerTimer, this, m_timer.GetId());
@@ -113,29 +113,18 @@ SpriteAnimEditorDialog::~SpriteAnimEditorDialog()
 
 }
 
-void SpriteAnimEditorDialog::SetSelectedStamp(StampId stampId)
-{
-	for(int i = 0; i < m_stampCache.size(); i++)
-	{
-		if(m_stampCache[i] == stampId)
-		{
-			m_listActors->SetSelection(i);
-			SelectStamp(i);
-			break;
-		}
-	}
-}
-
 void SpriteAnimEditorDialog::OnActorSelected(wxCommandEvent& event)
 {
 	if(m_animEditMode == eAnimEditModeSpriteAnim)
 	{
 		SelectActor(event.GetSelection());
 	}
+#if !BEEHIVE_PLUGIN_LUMINARY
 	else if(m_animEditMode == eAnimEditModeStampAnim)
 	{
 		SelectStamp(event.GetSelection());
 	}
+#endif
 }
 
 void SpriteAnimEditorDialog::OnSpriteSheetSelected(wxCommandEvent& event)
@@ -241,7 +230,7 @@ void SpriteAnimEditorDialog::OnBtnExport(wxCommandEvent& event)
 
 void SpriteAnimEditorDialog::OnBtnSpriteSheetImport(wxCommandEvent& event)
 {
-	if(m_selectedActor || m_selectedStamp)
+	if(m_selectedActor)
 	{
 		ImportDialogSpriteSheet dialog(this, m_project, m_renderer, m_glContext, m_renderResources);
 		if(dialog.ShowModal() == wxID_OK)
@@ -255,9 +244,9 @@ void SpriteAnimEditorDialog::OnBtnSpriteSheetImport(wxCommandEvent& event)
 			for(int i = 0; i < numFrames; i++)
 			{
 				//Create new spriteSheet
-				bool firstSpriteSheet = m_selectedActor ? (m_selectedActor->GetSpriteSheetCount() == 0) : false;
-				SpriteSheetId spriteSheetId = m_selectedActor ? m_selectedActor->CreateSpriteSheet() : m_selectedStamp->CreateStampAnimSheet();
-				SpriteSheet* spriteSheet = m_selectedActor ? m_selectedActor->GetSpriteSheet(spriteSheetId) : m_selectedStamp->GetStampAnimSheet(spriteSheetId);
+				bool firstSpriteSheet = (m_selectedActor->GetSpriteSheetCount() == 0);
+				SpriteSheetId spriteSheetId = m_selectedActor->CreateSpriteSheet();
+				SpriteSheet* spriteSheet = m_selectedActor->GetSpriteSheet(spriteSheetId);
 
 				std::string name = dialog.m_textName->GetValue().GetData().AsChar();
 				int endFrame = dialog.m_spinCellCount->GetValue() - 1;
@@ -286,14 +275,7 @@ void SpriteAnimEditorDialog::OnBtnSpriteSheetImport(wxCommandEvent& event)
 					}
 
 					//Populate spriteSheet list
-					if (m_selectedActor)
-					{
-						PopulateSpriteSheetList(*m_selectedActor);
-					}
-					else if (m_selectedStamp)
-					{
-						PopulateStampAnimSheetList(*m_selectedStamp);
-					}
+					PopulateSpriteSheetList(*m_selectedActor);
 
 					//Select in list
 					int index = m_listSpriteSheets->FindString(spriteSheet->GetName());
@@ -380,11 +362,6 @@ void SpriteAnimEditorDialog::OnBtnSpriteSheetDelete(wxCommandEvent& event)
 		{
 			m_selectedActor->DeleteSpriteSheet(m_selectedSpriteSheetId);
 			PopulateSpriteSheetList(*m_selectedActor);
-		}
-		else if(m_selectedStamp)
-		{
-			m_selectedStamp->DeleteStampAnimSheet(m_selectedSpriteSheetId);
-			PopulateStampAnimSheetList(*m_selectedStamp);
 		}
 
 		m_renderResources.DeleteSpriteSheetRenderResources(m_selectedSpriteSheetId);
@@ -660,6 +637,7 @@ void SpriteAnimEditorDialog::PopulateActorList()
 	}
 }
 
+#if !BEEHIVE_PLUGIN_LUMINARY
 void SpriteAnimEditorDialog::PopulateStampList()
 {
 	m_listActors->Clear();
@@ -695,6 +673,7 @@ void SpriteAnimEditorDialog::PopulateStampList()
 		m_listActors->AppendString(nameList[i].first);
 	}
 }
+#endif
 
 void SpriteAnimEditorDialog::PopulateSpriteSheetList(const Actor& actor)
 {
@@ -724,6 +703,7 @@ void SpriteAnimEditorDialog::PopulateSpriteSheetList(const Actor& actor)
 	}
 }
 
+#if !BEEHIVE_PLUGIN_LUMINARY
 void SpriteAnimEditorDialog::PopulateStampAnimSheetList(const Stamp& stamp)
 {
 	m_listSpriteSheets->Clear();
@@ -751,6 +731,7 @@ void SpriteAnimEditorDialog::PopulateStampAnimSheetList(const Stamp& stamp)
 		m_listSpriteSheets->AppendString(nameList[i].first);
 	}
 }
+#endif
 
 void SpriteAnimEditorDialog::PopulateAnimList(const SpriteSheet& spriteSheet)
 {
@@ -788,6 +769,7 @@ void SpriteAnimEditorDialog::PopulateSpriteFrames(const SpriteSheetId& spriteShe
 	//Get sprite resources
 	const RenderResources::SpriteSheetRenderResources* spriteResources = m_renderResources.GetSpriteSheetResources(spriteSheetId);
 
+#if !BEEHIVE_PLUGIN_LUMINARY
 	//TEMP - for stamps
 	if(!spriteResources && m_selectedStamp)
 	{
@@ -799,6 +781,7 @@ void SpriteAnimEditorDialog::PopulateSpriteFrames(const SpriteSheetId& spriteShe
 		m_renderResources.CreateSpriteSheetResources(palette, spriteSheetId, *m_selectedStamp->GetStampAnimSheet(spriteSheetId));
 		spriteResources = m_renderResources.GetSpriteSheetResources(spriteSheetId);
 	}
+#endif
 
 	ion::debug::Assert(spriteResources, "SpriteAnimEditorDialog::PopulateSpriteFrames() - No sprite resources");
 
@@ -995,6 +978,7 @@ void SpriteAnimEditorDialog::SelectActor(int index)
 	}
 }
 
+#if !BEEHIVE_PLUGIN_LUMINARY
 void SpriteAnimEditorDialog::SelectStamp(int index)
 {
 	m_selectedStampId = InvalidStampId;
@@ -1020,6 +1004,7 @@ void SpriteAnimEditorDialog::SelectStamp(int index)
 		}
 	}
 }
+#endif
 
 void SpriteAnimEditorDialog::SelectSpriteSheet(int index)
 {
@@ -1031,12 +1016,12 @@ void SpriteAnimEditorDialog::SelectSpriteSheet(int index)
 	const int tileWidth = m_project.GetPlatformConfig().tileWidth;
 	const int tileHeight = m_project.GetPlatformConfig().tileHeight;
 
-	if((m_selectedActor || m_selectedStamp) && m_spriteSheetCache.size() > 0)
+	if(m_selectedActor && m_spriteSheetCache.size() > 0)
 	{
 		if(index >= 0 && index < m_spriteSheetCache.size())
 		{
 			m_selectedSpriteSheetId = m_spriteSheetCache[index];
-			m_selectedSpriteSheet = m_selectedActor ? m_selectedActor->GetSpriteSheet(m_selectedSpriteSheetId) : m_selectedStamp->GetStampAnimSheet(m_selectedSpriteSheetId);
+			m_selectedSpriteSheet = m_selectedActor->GetSpriteSheet(m_selectedSpriteSheetId);
 			ion::debug::Assert(m_selectedSpriteSheet, "SpriteAnimEditorDialog::OnSpriteSheetSelected() - Invalid spriteSheet ID");
 			m_canvas->SetSpriteSheetDimentionsPixels(ion::Vector2i(m_selectedSpriteSheet->GetWidthTiles() * tileWidth, m_selectedSpriteSheet->GetHeightTiles() * tileHeight));
 			m_canvas->SetDrawSpriteSheet(m_selectedSpriteSheetId, 0, ion::Vector2i(), ion::Vector2i(), ion::Vector2i(), ion::Vector2i());

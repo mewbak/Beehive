@@ -34,7 +34,9 @@ public:
 	enum AnimEditMode
 	{
 		eAnimEditModeSpriteAnim,
+#if !BEEHIVE_PLUGIN_LUMINARY
 		eAnimEditModeStampAnim
+#endif
 	};
 
 	enum ContextMenu
@@ -54,7 +56,9 @@ public:
 	SpriteAnimEditorDialog(wxWindow* parent, AnimEditMode animEditMode, Project& project, ion::render::Renderer& renderer, wxGLContext& glContext, RenderResources& renderResources);
 	virtual ~SpriteAnimEditorDialog();
 
+#if !BEEHIVE_PLUGIN_LUMINARY
 	void SetSelectedStamp(StampId stampId);
+#endif
 
 	void EventHandlerTimer(wxTimerEvent& event);
 	void EventHandlerDragFrameListBegin(wxGridEvent& event);
@@ -94,15 +98,19 @@ protected:
 
 private:
 	void PopulateActorList();
-	void PopulateStampList();
 	void PopulateSpriteSheetList(const Actor& actor);
+#if !BEEHIVE_PLUGIN_LUMINARY
+	void PopulateStampList();
 	void PopulateStampAnimSheetList(const Stamp& stamp);
+#endif
 	void PopulateSpriteFrames(const SpriteSheetId& spriteSheetId);
 	void PopulateAnimList(const SpriteSheet& spriteSheet);
 	void PopulateKeyframes(const SpriteSheetId& spriteSheetId, const SpriteAnimation& anim);
 		 
 	void SelectActor(int index);
+#if !BEEHIVE_PLUGIN_LUMINARY
 	void SelectStamp(int index);
+#endif
 	void SelectSpriteSheet(int index);
 	void SelectAnimation(int index);
 
@@ -121,10 +129,12 @@ private:
 	Actor* m_selectedActor;
 	std::vector<ActorId> m_actorCache;
 
+#if !BEEHIVE_PLUGIN_LUMINARY
 	//Stamp anim edit mode
 	StampId m_selectedStampId;
 	Stamp* m_selectedStamp;
 	std::vector<StampId> m_stampCache;
+#endif
 
 	SpriteSheetId m_selectedSpriteSheetId;
 	SpriteSheet* m_selectedSpriteSheet;

@@ -31,7 +31,7 @@
     <property name="relative_path">1</property>
     <property name="use_microsoft_bom">0</property>
     <property name="use_native_eol">0</property>
-    <object class="Frame" expanded="false">
+    <object class="Frame" expanded="true">
       <property name="aui_managed">0</property>
       <property name="aui_manager_style">wxAUI_MGR_DEFAULT</property>
       <property name="bg"></property>
@@ -60,7 +60,7 @@
       <property name="window_name"></property>
       <property name="window_style">wxTAB_TRAVERSAL</property>
       <property name="xrc_skip_sizer">1</property>
-      <object class="wxMenuBar" expanded="false">
+      <object class="wxMenuBar" expanded="true">
         <property name="bg"></property>
         <property name="context_help"></property>
         <property name="context_menu">1</property>
@@ -82,7 +82,7 @@
         <property name="window_extra_style"></property>
         <property name="window_name"></property>
         <property name="window_style"></property>
-        <object class="wxMenu" expanded="false">
+        <object class="wxMenu" expanded="true">
           <property name="label">Project</property>
           <property name="name">m_menuProject</property>
           <property name="permission">protected</property>
@@ -2488,6 +2488,21 @@
                   <property name="statusbar"></property>
                   <property name="tooltip"></property>
                   <event name="OnToolClicked">OnToolSelectTiles</event>
+                </object>
+                <object class="toolSeparator" expanded="true">
+                  <property name="permission">protected</property>
+                </object>
+                <object class="tool" expanded="true">
+                  <property name="bitmap">Load From File; tool_animate.xpm</property>
+                  <property name="context_menu">0</property>
+                  <property name="id">wxID_ANY</property>
+                  <property name="kind">wxITEM_NORMAL</property>
+                  <property name="label">tool</property>
+                  <property name="name">m_toolPlaceAnim</property>
+                  <property name="permission">protected</property>
+                  <property name="statusbar"></property>
+                  <property name="tooltip"></property>
+                  <event name="OnToolClicked">OnToolPlaceAnim</event>
                 </object>
               </object>
             </object>

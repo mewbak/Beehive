@@ -38,6 +38,7 @@ public:
 
 private:
 	static const int s_maxTerrainLayers = 2;
+	static const int s_maxPalettes = 128;
 
 	enum ContextMenuItems
 	{
@@ -46,10 +47,11 @@ private:
 		eContextMenuSetTerrainGenerateWidthData,
 		eContextMenuAddPaletteRegion,
 		eContextMenuDeletePaletteRegion,
-		eContextMenuAddAnimationRegion,
+		eContextMenuPlaceStampAnimation,
 		eContextMenuSetTerrainLayerFirst,
 		eContextMenuSetTerrainLayerLast = eContextMenuSetTerrainLayerFirst + s_maxTerrainLayers,
 		eContextMenuPaletteFirst,
+		eContextMenuAnimationFirst = eContextMenuPaletteFirst + s_maxPalettes,
 	};
 
 	//Mouse click or changed tile callback
@@ -72,8 +74,10 @@ private:
 	void RenderBoxSelection(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z);
 	void RenderBoxPaletteRegions(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z);
 	void RenderPaletteOverlays(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z);
+	void RenderAnimations(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z);
 
 	//Canvas drawing
+	void PaintStamp(const Stamp& stamp);
 	void PaintPaletteOverlay(PaletteRegionId paletteRegionId);
 	void PaintTerrainBeziers(const Stamp& stamp);
 	void PaintCollisionStamp(const Stamp& stamp);
@@ -114,6 +118,9 @@ private:
 	StampId m_stampId;
 	Stamp* m_stamp;
 
+	//Placement
+	ion::Vector2i m_placePosition;
+
 	//Box selection
 	bool m_boxSelection;
 	ion::Vector2i m_boxSelectStart;
@@ -123,6 +130,8 @@ private:
 	ToolType m_currentToolType;
 
 	std::vector<PaletteId> m_populatedPalettes;
+	std::vector<std::tuple<ActorId,SpriteSheetId,AnimationId>> m_populatedAnims;
 
 	PaletteRegionId m_currentPaletteRegion;
+	std::tuple<ActorId, SpriteSheetId, AnimationId> m_currentAnimation;
 };

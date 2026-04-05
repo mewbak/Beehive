@@ -83,6 +83,11 @@ void DialogEditStamp::OnToolSelectTiles(wxCommandEvent& event)
 	m_canvas->SetTool(eToolStampPaletteRegion);
 }
 
+void DialogEditStamp::OnToolPlaceAnim(wxCommandEvent& event)
+{
+	m_canvas->SetTool(eToolStampAnimation);
+}
+
 void DialogEditStamp::Draw()
 {
 	const int tileWidth = m_project.GetPlatformConfig().tileWidth;

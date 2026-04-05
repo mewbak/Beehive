@@ -34,6 +34,7 @@ public:
 	virtual void OnToolGenerateTerrain(wxCommandEvent& event);
 	virtual void OnToolPaintSolid(wxCommandEvent& event);
 	virtual void OnToolSelectTiles(wxCommandEvent& event);
+	virtual void OnToolPlaceAnim(wxCommandEvent& event);
 
 private:
 	void Draw();

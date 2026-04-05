@@ -2215,8 +2215,7 @@ void MapPanel::RenderGameObjectPreview(ion::render::Renderer& renderer, const io
 		ion::Matrix4 previewMtx;
 
 #if BEEHIVE_PLUGIN_LUMINARY
-		ion::Vector3 previewPos(floor((x - (mapWidth / 2.0f)) * tileWidth),
-			floor((y_inv - (mapHeight / 2.0f)) * tileHeight), z);
+		ion::Vector3 previewPos((x - (mapWidth / 2.0f)) * tileWidth, (y_inv - (mapHeight / 2.0f)) * tileHeight, z);
 #else
 		ion::Vector3 previewPos(floor((x - (mapWidth / 2.0f) + (width / 2.0f)) * tileWidth),
 								floor((y_inv - (mapHeight / 2.0f) + ((height_inv / 2.0f) + 1.0f)) * tileHeight), z);
@@ -2253,9 +2252,9 @@ void MapPanel::RenderGameObjectPreview(ion::render::Renderer& renderer, const io
 			ion::Matrix4 spriteSheetMtx;
 			spriteSheetMtx.SetTranslation(previewPos);
 
-			renderer.BindMaterial(*material, spriteSheetMtx, cameraInverseMtx, projectionMtx);
+			renderer.BindMaterial(*spriteSheetMaterial, spriteSheetMtx, cameraInverseMtx, projectionMtx);
 			renderer.DrawVertexBuffer(spriteSheetPrimitive->GetVertexBuffer(), spriteSheetPrimitive->GetIndexBuffer());
-			renderer.UnbindMaterial(*material);
+			renderer.UnbindMaterial(*spriteSheetMaterial);
 		}
 
 		renderer.SetAlphaBlending(ion::render::Renderer::AlphaBlendType::None);

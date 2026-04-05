@@ -293,6 +293,7 @@ class DialogEditStampBase : public wxDialog
 		wxToolBarToolBase* m_toolTerrainDeleteBezier;
 		wxToolBarToolBase* m_toolTerrainWall;
 		wxToolBarToolBase* m_toolSelectTiles;
+		wxToolBarToolBase* m_toolPlaceAnim;
 		StampCanvas* m_canvas;
 		wxStaticText* m_txtInfo;
 
@@ -302,6 +303,7 @@ class DialogEditStampBase : public wxDialog
 		virtual void OnToolDeleteBezier( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnToolPaintSolid( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnToolSelectTiles( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnToolPlaceAnim( wxCommandEvent& event ) { event.Skip(); }
 
 
 	public:

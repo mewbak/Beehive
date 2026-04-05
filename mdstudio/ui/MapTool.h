@@ -51,7 +51,7 @@ enum ToolType
 	eToolRemoveStamp,
 	eToolStampPicker,
 	eToolCreateStampAnim,
-	eToolStampPaletteRegion,
+	eToolStampOverlay,
 	eToolStampAnimation,
 
 	//Game objects

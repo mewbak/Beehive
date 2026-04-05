@@ -66,7 +66,7 @@ public:
 	void PaintTile(TilesetId tilesetId, TileId tileId, int x, int y, u32 flipFlags);
 
 	//Paint tiles for palette overlay
-	void PaintPaletteOverlay(const Stamp& stamp, PaletteRegionId paletteRegionId);
+	void PaintPaletteOverlay(const Stamp& stamp, OverlayId overlayId);
 
 	//Paint collision tile to canvas
 	void PaintCollisionTile(TerrainTileId terrainTileId, int x, int y, u16 collisionFlags);

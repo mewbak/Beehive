@@ -45,8 +45,8 @@ private:
 		eContextMenuSetTerrainFlagSpecial,
 		eContextMenuSetTerrainFlagWater,
 		eContextMenuSetTerrainGenerateWidthData,
-		eContextMenuAddPaletteRegion,
-		eContextMenuDeletePaletteRegion,
+		eContextMenuAddOverlay,
+		eContextMenuDeleteOverlay,
 		eContextMenuPlaceStampAnimation,
 		eContextMenuSetTerrainLayerFirst,
 		eContextMenuSetTerrainLayerLast = eContextMenuSetTerrainLayerFirst + s_maxTerrainLayers,
@@ -72,13 +72,13 @@ private:
 	void RenderTerrainCanvas(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z);
 	void RenderCollisionCanvas(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z);
 	void RenderBoxSelection(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z);
-	void RenderBoxPaletteRegions(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z);
+	void RenderBoxOverlays(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z);
 	void RenderPaletteOverlays(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z);
 	void RenderAnimations(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z);
 
 	//Canvas drawing
 	void PaintStamp(const Stamp& stamp);
-	void PaintPaletteOverlay(PaletteRegionId paletteRegionId);
+	void PaintPaletteOverlay(OverlayId overlayId);
 	void PaintTerrainBeziers(const Stamp& stamp);
 	void PaintCollisionStamp(const Stamp& stamp);
 	void PaintCollisionTile(TerrainTileId terrainTileId, int x, int y, u16 collisionFlags);
@@ -132,6 +132,6 @@ private:
 	std::vector<PaletteId> m_populatedPalettes;
 	std::vector<std::tuple<ActorId,SpriteSheetId,AnimationId>> m_populatedAnims;
 
-	PaletteRegionId m_currentPaletteRegion;
+	OverlayId m_currentOverlay;
 	std::tuple<ActorId, SpriteSheetId, AnimationId> m_currentAnimation;
 };

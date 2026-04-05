@@ -1168,7 +1168,7 @@ void DialogAssetManagement::MergeStampset(const std::string filename, StampSetId
 			lhs.second.GetTerrainBeziers() = rhs->second.GetTerrainBeziers();
 			lhs.second.GetCollisionTiles() = rhs->second.GetCollisionTiles();
 			lhs.second.GetStampAnims() = rhs->second.GetStampAnims();
-			lhs.second.GetPaletteRegions() = rhs->second.GetPaletteRegions();
+			lhs.second.GetOverlays() = rhs->second.GetOverlays();
 		}
 	}
 
@@ -1513,7 +1513,7 @@ void DialogAssetManagement::OnBtnAutoAssignPalettes(wxCommandEvent& event)
 
 				if (it.second.usageFlags & Project::PaletteUser::eUsageOverlay)
 				{
-					for (PaletteRegionId id : it.second.overlays)
+					for (OverlayId id : it.second.overlays)
 					{
 						char name[1024] = { 0 };
 
@@ -1521,7 +1521,7 @@ void DialogAssetManagement::OnBtnAutoAssignPalettes(wxCommandEvent& event)
 						{
 							for (const auto& stamp : stampSet.second.GetStamps())
 							{
-								for (const auto& region : stamp.second.GetPaletteRegions())
+								for (const auto& region : stamp.second.GetOverlays())
 								{
 									if (region.first == id)
 									{

@@ -80,7 +80,7 @@ void DialogEditStamp::OnToolGenerateTerrain(wxCommandEvent& event)
 
 void DialogEditStamp::OnToolSelectTiles(wxCommandEvent& event)
 {
-	m_canvas->SetTool(eToolStampPaletteRegion);
+	m_canvas->SetTool(eToolStampOverlay);
 }
 
 void DialogEditStamp::OnToolPlaceAnim(wxCommandEvent& event)

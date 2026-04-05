@@ -33,7 +33,7 @@ StampCanvas::StampCanvas(wxWindow *parent, wxWindowID id, const wxPoint& pos, co
 	m_collisionPrimitiveDirty = true;
 	m_tilesetId = InvalidTilesetId;
 
-	m_currentPaletteRegion = InvalidPaletteRegionId;
+	m_currentOverlay = InvalidOverlayId;
 	std::get<0>(m_currentAnimation) = InvalidActorId;
 
 	ClearTool();
@@ -119,7 +119,7 @@ void StampCanvas::SetStamp(StampSetId stampSetId, StampId stampId, const ion::Ve
 	PaintTerrainBeziers(*m_stamp);
 	PaintCollisionStamp(*m_stamp);
 
-	for (const auto& overlay : m_stamp->GetPaletteRegions())
+	for (const auto& overlay : m_stamp->GetOverlays())
 	{
 		PaintPaletteOverlay(overlay.first);
 	}
@@ -240,14 +240,14 @@ void StampCanvas::OnMouseTileEvent(ion::Vector2i mousePos, ion::Vector2i mouseDe
 				break;
 			}
 
-			case eToolStampPaletteRegion:
+			case eToolStampOverlay:
 			{
 				if (inMaprange)
 				{
 					if (buttonBits & eMouseLeft)
 					{
 						//If current coord is not inside an existing palette region
-						if (m_currentToolType != eToolStampPaletteRegion || m_currentPaletteRegion == InvalidPaletteRegionId)
+						if (m_currentToolType != eToolStampOverlay || m_currentOverlay == InvalidOverlayId)
 						{
 							if (!(m_prevMouseBits & eMouseLeft))
 							{
@@ -259,7 +259,7 @@ void StampCanvas::OnMouseTileEvent(ion::Vector2i mousePos, ion::Vector2i mouseDe
 							//If current box does not intersect an existing palette region
 							auto FindRegionInRegion = [](const Stamp& stamp, const ion::Vector2i& topLeft, const ion::Vector2i& bottomRight)
 								{
-									for (const auto& it : stamp.GetPaletteRegions())
+									for (const auto& it : stamp.GetOverlays())
 									{
 										if (ion::maths::BoxIntersectsBox(topLeft, bottomRight, it.second.topLeft, it.second.bottomRight))
 											return true;
@@ -267,7 +267,7 @@ void StampCanvas::OnMouseTileEvent(ion::Vector2i mousePos, ion::Vector2i mouseDe
 									return false;
 								};
 
-							if (m_currentToolType != eToolStampPaletteRegion || !FindRegionInRegion(*m_stamp, m_boxSelectStart, ion::Vector2i(x, y)))
+							if (m_currentToolType != eToolStampOverlay || !FindRegionInRegion(*m_stamp, m_boxSelectStart, ion::Vector2i(x, y)))
 							{
 								//Dragging, set box end
 								m_boxSelectEnd.x = x;
@@ -278,11 +278,11 @@ void StampCanvas::OnMouseTileEvent(ion::Vector2i mousePos, ion::Vector2i mouseDe
 							Refresh();
 						}
 					}
-					else if ((buttonBits & eMouseRight) && (m_currentPaletteRegion || m_boxSelectStart.x >= 0))
+					else if ((buttonBits & eMouseRight) && (m_currentOverlay || m_boxSelectStart.x >= 0))
 					{
 						wxMenu contextMenu;
 						wxMenu* paletteMenu = new wxMenu();
-						PaletteId paletteId = (m_currentPaletteRegion != InvalidPaletteRegionId) ? m_stamp->GetPaletteRegion(m_currentPaletteRegion).paletteId : m_stamp->FindPaletteAtPosition(m_boxSelectStart);
+						PaletteId paletteId = (m_currentOverlay != InvalidOverlayId) ? m_stamp->GetOverlay(m_currentOverlay).paletteId : m_stamp->FindPaletteAtPosition(m_boxSelectStart);
 						int paletteIdx = 0;
 						m_populatedPalettes.clear();
 
@@ -295,16 +295,16 @@ void StampCanvas::OnMouseTileEvent(ion::Vector2i mousePos, ion::Vector2i mouseDe
 							m_populatedPalettes.push_back(palette.first);
 						}
 
-						if (m_currentPaletteRegion)
+						if (m_currentOverlay)
 						{
-							const Stamp::PaletteRegion& region = m_stamp->GetPaletteRegion(m_currentPaletteRegion);
+							const Stamp::Overlay& region = m_stamp->GetOverlay(m_currentOverlay);
 							PaletteId paletteId = region.paletteId;
-							contextMenu.Append(eContextMenuAddPaletteRegion, "Set Palette", paletteMenu);
-							contextMenu.Append(eContextMenuDeletePaletteRegion, "Delete Palette Region");
+							contextMenu.Append(eContextMenuAddOverlay, "Set Palette", paletteMenu);
+							contextMenu.Append(eContextMenuDeleteOverlay, "Delete Palette Region");
 						}
 						else
 						{
-							contextMenu.Append(eContextMenuAddPaletteRegion, "Add Palette Region", paletteMenu);
+							contextMenu.Append(eContextMenuAddOverlay, "Add Palette Region", paletteMenu);
 						}
 
 						contextMenu.Connect(wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&StampCanvas::OnContextMenuClick, NULL, this);
@@ -312,12 +312,12 @@ void StampCanvas::OnMouseTileEvent(ion::Vector2i mousePos, ion::Vector2i mouseDe
 					}
 					else
 					{
-						if (m_currentToolType == eToolStampPaletteRegion)
+						if (m_currentToolType == eToolStampOverlay)
 						{
-							PaletteRegionId regionId = m_stamp->FindPaletteRegionAtPosition(ion::Vector2i(x, y));
-							if (regionId != m_currentPaletteRegion)
+							OverlayId overlayId = m_stamp->FindOverlayAtPosition(ion::Vector2i(x, y));
+							if (overlayId != m_currentOverlay)
 							{
-								m_currentPaletteRegion = regionId;
+								m_currentOverlay = overlayId;
 								Refresh();
 							}
 						}
@@ -373,11 +373,12 @@ void StampCanvas::OnMouseTileEvent(ion::Vector2i mousePos, ion::Vector2i mouseDe
 								// If not already allocated in tileset
 								const StampSet& stampSet = m_project->GetStampSet(m_stampSetId);
 								Tileset& tileset = m_project->GetTileset(stampSet.GetTilesetId());
+								Tileset::ReservedBlock reservedBlock = tileset.GetReservedBlock(animId);
 								
-								if (tileset.GetReservedBlock(animId).firstTile == InvalidTileId)
+								if (reservedBlock.firstTile == InvalidTileId)
 								{
 									// Allocate tiles
-									Tileset::ReservedBlock reservedBlock = tileset.AllocateReservedBlock(animId, spriteSheet.GetWidthTiles() * spriteSheet.GetHeightTiles());
+									reservedBlock = tileset.AllocateReservedBlock(animId, spriteSheet.GetWidthTiles() * spriteSheet.GetHeightTiles());
 
 									// Copy first frame
 									std::vector<Tile*> tiles;
@@ -386,24 +387,25 @@ void StampCanvas::OnMouseTileEvent(ion::Vector2i mousePos, ion::Vector2i mouseDe
 										tiles.push_back(&tileset.GetTile(reservedBlock.firstTile + i));
 									}
 									
-									spriteSheet.CopyFrameToTilesetRowOrder(animation.m_trackSpriteFrame.GetValue(0.0f), tiles);
+									spriteSheet.CopyFrameToTilesetRowMajor(animation.m_trackSpriteFrame.GetValue(0.0f), tiles);
 
 									tileset.RebuildHashMap();
 
-									// Set new tiles on stamp
-									for (int srcX = 0; srcX < spriteSheet.GetWidthTiles(); srcX++)
-									{
-										for (int srcY = 0; srcY < spriteSheet.GetHeightTiles(); srcY++)
-										{
-											int dstX = srcX + x;
-											int dstY = srcY + y;
-											m_stamp->SetTile(dstX, dstY, reservedBlock.firstTile + (srcY * x) + x);
-										}
-									}
-
-									// Recreate sprite sheet resources
-									m_renderResources->CreateSpriteSheetResources(m_project->GetPalette(actor.GetPaletteId()), spriteSheetId, spriteSheet);
+									// Recreate tileset resources
+									m_renderResources->CreateTilesetTextures();
 									m_project->InvalidateTiles(true);
+								}
+
+								// Set new tiles on stamp
+								// TODO: treat this as an overlay, don't mess with the original data
+								for (int srcX = 0; srcX < spriteSheet.GetWidthTiles(); srcX++)
+								{
+									for (int srcY = 0; srcY < spriteSheet.GetHeightTiles(); srcY++)
+									{
+										int dstX = srcX + x;
+										int dstY = srcY + y;
+										m_stamp->SetTile(dstX, dstY, reservedBlock.firstTile + (srcY * spriteSheet.GetWidthTiles()) + srcX);
+									}
 								}
 
 								std::get<0>(m_currentAnimation) = InvalidActorId;
@@ -775,24 +777,24 @@ void StampCanvas::OnContextMenuClick(wxCommandEvent& event)
 	{
 		m_currentAnimation = m_populatedAnims[event.GetId() - eContextMenuAnimationFirst];
 	}
-	else if (event.GetId() == eContextMenuDeletePaletteRegion)
+	else if (event.GetId() == eContextMenuDeleteOverlay)
 	{
-		if (m_currentPaletteRegion != InvalidPaletteRegionId)
+		if (m_currentOverlay != InvalidOverlayId)
 		{
-			m_stamp->DeletePaletteRegion(m_currentPaletteRegion);
-			m_currentPaletteRegion = InvalidPaletteRegionId;
+			m_stamp->DeleteOverlay(m_currentOverlay);
+			m_currentOverlay = InvalidOverlayId;
 			Refresh();
 		}
 	}
 	else if (event.GetId() >= eContextMenuPaletteFirst && event.GetId() < eContextMenuAnimationFirst)
 	{
 		PaletteId paletteId = m_populatedPalettes[event.GetId() - eContextMenuPaletteFirst];
-		PaletteRegionId regionId = m_currentPaletteRegion;
+		OverlayId overlayId = m_currentOverlay;
 
-		if (m_currentPaletteRegion != InvalidPaletteRegionId)
+		if (m_currentOverlay != InvalidOverlayId)
 		{
-			Stamp::PaletteRegion& region = m_stamp->GetPaletteRegion(regionId);
-			region.paletteId = paletteId;
+			Stamp::Overlay& overlay = m_stamp->GetOverlay(overlayId);
+			overlay.paletteId = paletteId;
 		}
 		else if (m_boxSelectStart.x >= 0)
 		{
@@ -801,14 +803,14 @@ void StampCanvas::OnContextMenuClick(wxCommandEvent& event)
 			ion::Vector2i boxMax = m_boxSelectEnd;
 			ion::maths::SanitiseBox(boxMin, boxMax);
 
-			regionId = m_stamp->AddPaletteRegion(boxMin, boxMax, paletteId);
+			overlayId = m_stamp->AddOverlay(boxMin, boxMax, paletteId);
 			m_boxSelectStart.x = -1;
 		}
 
-		if (regionId != InvalidPaletteRegionId)
+		if (overlayId != InvalidOverlayId)
 		{
-			m_renderResources->CreatePaletteRegionOverlay(m_stampSetId, m_stampId, regionId);
-			PaintPaletteOverlay(regionId);
+			m_renderResources->CreatePaletteOverlay(m_stampSetId, m_stampId, overlayId);
+			PaintPaletteOverlay(overlayId);
 			m_project->InvalidateStamps(true);
 		}
 
@@ -863,7 +865,7 @@ void StampCanvas::OnRender(ion::render::Renderer& renderer, const ion::Matrix4& 
 		z += zOffset;
 
 		//Render palette overlays
-		RenderBoxPaletteRegions(renderer, cameraInverseMtx, projectionMtx, z);
+		RenderBoxOverlays(renderer, cameraInverseMtx, projectionMtx, z);
 
 		z += zOffset;
 
@@ -1121,7 +1123,7 @@ void StampCanvas::RenderCollisionCanvas(ion::render::Renderer& renderer, const i
 	}
 }
 
-void StampCanvas::RenderBoxPaletteRegions(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z)
+void StampCanvas::RenderBoxOverlays(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z)
 {
 	if (m_stamp)
 	{
@@ -1138,7 +1140,7 @@ void StampCanvas::RenderBoxPaletteRegions(ion::render::Renderer& renderer, const
 
 		renderer.BindMaterial(*material, ion::Matrix4(), cameraInverseMtx, projectionMtx);
 
-		for (const auto& region : m_stamp->GetPaletteRegions())
+		for (const auto& region : m_stamp->GetOverlays())
 		{
 			//Draw on top of grid
 			const float outlineZOffset = 0.1f;
@@ -1147,7 +1149,7 @@ void StampCanvas::RenderBoxPaletteRegions(ion::render::Renderer& renderer, const
 			//Outline
 			worldViewProjParam.SetValue(worldViewProjMtx);
 
-			const Stamp::PaletteRegion* selectedRegion = (m_currentPaletteRegion != InvalidPaletteRegionId) ? &m_stamp->GetPaletteRegion(m_currentPaletteRegion) : nullptr;
+			const Stamp::Overlay* selectedRegion = (m_currentOverlay != InvalidOverlayId) ? &m_stamp->GetOverlay(m_currentOverlay) : nullptr;
 
 			if (selectedRegion && region.second.topLeft == selectedRegion->topLeft)
 			{
@@ -1175,7 +1177,7 @@ void StampCanvas::RenderPaletteOverlays(ion::render::Renderer& renderer, const i
 	const ion::Vector2i tileSizePx(m_project->GetPlatformConfig().tileWidth, m_project->GetPlatformConfig().tileHeight);
 	const ion::Vector2i stampSizePx = ion::Vector2i(m_stamp->GetWidth(), m_stamp->GetHeight()) * tileSizePx;
 
-	for (const auto& region : m_stamp->GetPaletteRegions())
+	for (const auto& region : m_stamp->GetOverlays())
 	{
 		ion::render::Primitive* primitive = m_primitivePaletteOverlay[region.first];
 		ion::render::Material* material = m_renderResources->GetMaterial(m_stampId, region.first);
@@ -1344,20 +1346,20 @@ void StampCanvas::PaintCollisionTile(TerrainTileId terrainTileId, int x, int y, 
 	m_collisionPrimitiveDirty = true;
 }
 
-void StampCanvas::PaintPaletteOverlay(PaletteRegionId paletteRegionId)
+void StampCanvas::PaintPaletteOverlay(OverlayId overlayId)
 {
-	auto& it = m_primitivePaletteOverlay.find(paletteRegionId);
+	auto& it = m_primitivePaletteOverlay.find(overlayId);
 	if (it != m_primitivePaletteOverlay.end())
 	{
 		delete it->second;
 		m_primitivePaletteOverlay.erase(it);
 	}
 
-	const Stamp::PaletteRegion& paletteRegion = m_stamp->GetPaletteRegion(paletteRegionId);
+	const Stamp::Overlay& overlay = m_stamp->GetOverlay(overlayId);
 	const int tileWidth = m_project->GetPlatformConfig().tileWidth;
 	const int tileHeight = m_project->GetPlatformConfig().tileHeight;
-	const int width = paletteRegion.bottomRight.x - paletteRegion.topLeft.x + 1;
-	const int height = paletteRegion.bottomRight.y - paletteRegion.topLeft.y + 1;
+	const int width = overlay.bottomRight.x - overlay.topLeft.x + 1;
+	const int height = overlay.bottomRight.y - overlay.topLeft.y + 1;
 
 	ion::render::Chessboard* primitive = new ion::render::Chessboard(ion::render::Chessboard::Axis::xy, ion::Vector2((float)width * (tileWidth / 2.0f), (float)height * (tileHeight / 2.0f)), width, height, true);
 
@@ -1365,20 +1367,20 @@ void StampCanvas::PaintPaletteOverlay(PaletteRegionId paletteRegionId)
 	{
 		for (int y = 0; y < height; y++)
 		{
-			int tileX = paletteRegion.topLeft.x + x;
-			int tileY = paletteRegion.topLeft.y + y;
+			int tileX = overlay.topLeft.x + x;
+			int tileY = overlay.topLeft.y + y;
 			u32 tileFlags = m_stamp->GetTileFlags(tileX, tileY);
 			int y_inv = height - 1 - y;
 
 			//Set texture coords for cell
 			ion::render::TexCoord coords[4];
-			m_renderResources->GetTileTexCoords(paletteRegion, x, y, coords, tileFlags);
+			m_renderResources->GetTileTexCoords(overlay, x, y, coords, tileFlags);
 			primitive->SetTexCoords((y_inv * width) + x, coords);
 		}
 	}
 
 	primitive->GetVertexBuffer().CommitBuffer();
-	m_primitivePaletteOverlay.insert(std::make_pair(paletteRegionId, primitive));
+	m_primitivePaletteOverlay.insert(std::make_pair(overlayId, primitive));
 }
 
 void StampCanvas::PaintTerrainBeziers(const Stamp& stamp)

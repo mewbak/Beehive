@@ -151,9 +151,9 @@ RenderResources::TilesetResources& RenderResources::GetTilesetResources(TilesetI
 	return it->second;
 }
 
-ion::render::Material* RenderResources::GetMaterial(StampId stampId, PaletteRegionId paletteRegionId) const
+ion::render::Material* RenderResources::GetMaterial(StampId stampId, OverlayId overlayId) const
 {
-	const auto it = m_paletteOverlayResources.find(paletteRegionId);
+	const auto it = m_paletteOverlayResources.find(overlayId);
 	ion::debug::Assert(it != m_paletteOverlayResources.end(), "RenderResources::GetMaterial palette overlay id");
 	return it->second.material;
 }
@@ -255,37 +255,37 @@ void RenderResources::CreateTilesetTextures()
 	}
 
 	// Now create all palette overlays
-	CreatePaletteRegionOverlays();
+	CreatePaletteOverlays();
 }
 
-void RenderResources::CreatePaletteRegionOverlays()
+void RenderResources::CreatePaletteOverlays()
 {
 	for (const auto& stampSet : m_project.GetStampSets())
 	{
 		for (const auto& stamp : stampSet.second.GetStamps())
 		{
-			for (const auto& paletteRegion : stamp.second.GetPaletteRegions())
+			for (const auto& overlay : stamp.second.GetOverlays())
 			{
-				CreatePaletteRegionOverlay(stampSet.first, stamp.first, paletteRegion.first);
+				CreatePaletteOverlay(stampSet.first, stamp.first, overlay.first);
 			}
 		}
 	}
 }
 
-void RenderResources::CreatePaletteRegionOverlay(StampSetId stampSetId, StampId stampId, PaletteRegionId paletteRegionId)
+void RenderResources::CreatePaletteOverlay(StampSetId stampSetId, StampId stampId, OverlayId overlayId)
 {
 	const int tileWidth = m_project.GetPlatformConfig().tileWidth;
 	const int tileHeight = m_project.GetPlatformConfig().tileHeight;
 
 	const StampSet& stampset = m_project.GetStampSet(stampSetId);
 	const Stamp& stamp = stampset.GetStamp(stampId);
-	const Stamp::PaletteRegion& paletteRegion = stamp.GetPaletteRegion(paletteRegionId);
+	const Stamp::Overlay& overlay = stamp.GetOverlay(overlayId);
 	const Tileset& tileset = m_project.GetTileset(stampset.GetTilesetId());
-	const Palette& palette = m_project.GetPalette(paletteRegion.paletteId);
+	const Palette& palette = m_project.GetPalette(overlay.paletteId);
 
 	TilesetResources tilesetResources;
 
-	ion::Vector2i regionSize = (paletteRegion.bottomRight - paletteRegion.topLeft) + ion::Vector2i(1,1);
+	ion::Vector2i regionSize = (overlay.bottomRight - overlay.topLeft) + ion::Vector2i(1,1);
 	u32 numTiles = regionSize.x * regionSize.y;
 	tilesetResources.tilesetSizeSq = ion::maths::Max(1, (int)ion::maths::Ceil(ion::maths::Sqrt((float)numTiles)));
 	u32 textureWidth = tilesetResources.tilesetSizeSq * tileWidth;
@@ -299,8 +299,8 @@ void RenderResources::CreatePaletteRegionOverlay(StampSetId stampSetId, StampId 
 
 	for (int i = 0; i < numTiles; i++)
 	{
-		u32 regionX = paletteRegion.topLeft.x + (i % regionSize.x);
-		u32 regionY = paletteRegion.topLeft.y + (i / regionSize.x);
+		u32 regionX = overlay.topLeft.x + (i % regionSize.x);
+		u32 regionY = overlay.topLeft.y + (i / regionSize.x);
 		const Tile& tile = tileset.GetTile(stamp.GetTile(regionX, regionY));
 
 		u32 x = i % tilesetResources.tilesetSizeSq;
@@ -349,7 +349,7 @@ void RenderResources::CreatePaletteRegionOverlay(StampSetId stampSetId, StampId 
 
 	//Create texture
 	static int idx = 0;
-	std::string texName = "BeehivePaletteOverlayTexture_" + std::to_string(paletteRegionId) + "_" + std::to_string(idx);
+	std::string texName = "BeehivePaletteOverlayTexture_" + std::to_string(overlayId) + "_" + std::to_string(idx);
 	tilesetResources.texture = m_resourceManager.CreateResource(texName, ion::render::Texture::Create());
 
 	tilesetResources.texture->Load(desc);
@@ -358,14 +358,14 @@ void RenderResources::CreatePaletteRegionOverlay(StampSetId stampSetId, StampId 
 	tilesetResources.texture->SetWrapping(ion::render::Texture::Wrapping::Clamp);
 
 	//Create material
-	std::string matName = "BeehivePaletteOverlayMaterial_" + std::to_string(paletteRegionId) + "_" + std::to_string(idx++);
+	std::string matName = "BeehivePaletteOverlayMaterial_" + std::to_string(overlayId) + "_" + std::to_string(idx++);
 	tilesetResources.material = m_resourceManager.CreateResource(matName, new ion::render::Material());
 
 	tilesetResources.material->SetTextureMap(ion::render::Material::TextureMapType::Diffuse, tilesetResources.texture);
 	tilesetResources.material->SetDiffuseColour(ion::Colour(1.0f, 1.0f, 1.0f));
 	tilesetResources.material->SetShader(m_shaders[eShaderFlatTextured]);
 
-	m_paletteOverlayResources[paletteRegionId] = tilesetResources;
+	m_paletteOverlayResources[overlayId] = tilesetResources;
 
 	delete data;
 }
@@ -721,9 +721,9 @@ void RenderResources::GetTileTexCoords(TilesetId tilesetId, TileId tileId, ion::
 	}
 }
 
-void RenderResources::GetTileTexCoords(const Stamp::PaletteRegion& paletteRegion, int x, int y, ion::render::TexCoord texCoords[4], u32 flipFlags) const
+void RenderResources::GetTileTexCoords(const Stamp::Overlay& overlay, int x, int y, ion::render::TexCoord texCoords[4], u32 flipFlags) const
 {
-	ion::Vector2i regionSize = (paletteRegion.bottomRight - paletteRegion.topLeft) + ion::Vector2i(1, 1);
+	ion::Vector2i regionSize = (overlay.bottomRight - overlay.topLeft) + ion::Vector2i(1, 1);
 	u32 numTiles = regionSize.x * regionSize.y;
 	u32 tilesetSizeSq = ion::maths::Max(1, (int)ion::maths::Ceil(ion::maths::Sqrt((float)numTiles)));
 	float cellSizeTexSpaceSq = 1.0f / (float)tilesetSizeSq;

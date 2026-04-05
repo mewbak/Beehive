@@ -277,7 +277,7 @@ void StampsPanel::RenderPaletteOverlays(ion::render::Renderer& renderer, const i
 	for (const auto& stampPlacement : m_stampPosMap)
 	{
 		const Stamp& stamp = stampSet.GetStamp(stampPlacement.first);
-		for (const auto& region : stamp.GetPaletteRegions())
+		for (const auto& region : stamp.GetOverlays())
 		{
 			//Render spriteSheet
 			ion::render::Primitive* primitive = m_primitivePaletteOverlay[region.first];

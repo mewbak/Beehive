@@ -1169,11 +1169,40 @@ void DialogAssetManagement::MergeStampset(const std::string filename, StampSetId
 			lhs.second.GetCollisionTiles() = rhs->second.GetCollisionTiles();
 			lhs.second.GetStampAnims() = rhs->second.GetStampAnims();
 			lhs.second.GetOverlays() = rhs->second.GetOverlays();
+
+			//Re-allocate animation regions
+			for (const auto& stampAnim : rhs->second.GetStampAnims())
+			{
+				// Add anim to stamp
+				StampAnimId stampAnimId = lhs.second.AddStampAnim(stampAnim.second.actorId, stampAnim.second.spriteSheetId, stampAnim.second.spriteAnimId, stampAnim.second.position);
+
+				// If not already allocated in tileset
+				Tileset::ReservedBlock reservedBlock = importedTileset.GetReservedBlock(stampAnim.second.spriteAnimId);
+
+				if (reservedBlock.firstTile == InvalidTileId)
+				{
+					// Allocate tiles
+					const Actor& actor = *m_project.GetActor(stampAnim.second.actorId);
+					const SpriteSheet& spriteSheet = *actor.GetSpriteSheet(stampAnim.second.spriteSheetId);
+					const SpriteAnimation& spriteAnim = *spriteSheet.GetAnimation(stampAnim.second.spriteAnimId);
+					reservedBlock = importedTileset.AllocateReservedBlock(stampAnim.second.spriteAnimId, spriteSheet.GetWidthTiles() * spriteSheet.GetHeightTiles());
+
+					// Copy first frame
+					std::vector<Tile*> tiles;
+					for (int i = 0; i < reservedBlock.numTiles; i++)
+					{
+						tiles.push_back(&importedTileset.GetTile(reservedBlock.firstTile + i));
+					}
+
+					spriteSheet.CopyFrameToTilesetRowMajor(spriteAnim.m_trackSpriteFrame.GetValue(0.0f), tiles);
+				}
+			}
 		}
 	}
 
 	// Set new
 	tileset.GetTiles() = importedTileset.GetTiles();
+	tileset.GetReservedBlocks() = importedTileset.GetReservedBlocks();
 	stampSet.GetStamps() = importedStampSet.GetStamps();
 	tileset.RebuildHashMap();
 

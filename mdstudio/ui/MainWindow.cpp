@@ -2595,53 +2595,92 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 				std::vector<std::pair<PaletteId, Project::PaletteUsage>> paletteUsage;
 				m_project->SortPaletteSlotsForExport(firstMapId, paletteUsage);
 
-				// Sort into slots
-				std::map<PaletteId, int> paletteSlotMap;
-				PaletteId defaultPaletteId = tileset.GetDefaultPaletteId();
-				int defaultPaletteSlot = 0;
+				auto FindPaletteSlot = [&](PaletteId paletteId)
+					{
+						for (u8 i = 0; i < paletteUsage.size(); i++)
+						{
+							if (paletteUsage[i].first == paletteId)
+								return i;
+						}
 
-				for (int i = 0; i < paletteUsage.size(); i++)
-				{
-					paletteSlotMap[paletteUsage[i].first] = i;
-					if (paletteUsage[i].first == defaultPaletteId)
-						defaultPaletteSlot = i;
-				}
+						return (u8)0;
+					};
 
-				//Repaint stamps with animation overlays
-				std::vector<Stamp> stamps;
+				// Get defaultSlot
+				u8 defaultPaletteSlot = FindPaletteSlot(tileset.GetDefaultPaletteId());
+
+				// Convert stamps to luminary stamps
+				std::vector<luminary::GfxStamp> gfxStamps;
 				for (const auto& stamp : stampSet.second.GetStamps())
 				{
-					Stamp repaintedStamp = stamp.second;
+					luminary::GfxStamp luminaryStamp;
+					luminaryStamp.width = stamp.second.GetWidth();
+					luminaryStamp.height = stamp.second.GetHeight();
 
+					for (int y = 0; y < stamp.second.GetHeight(); y++)
+					{
+						for (int x = 0; x < stamp.second.GetWidth(); x++)
+						{
+							luminary::TileEntry tile;
+							tile.index = stamp.second.GetTile(x, y);
+							tile.flags = stamp.second.GetTileFlags(x, y);
+							tile.paletteSlot = defaultPaletteSlot;
+							luminaryStamp.tiles.push_back(tile);
+						}
+					}
+
+					// Override tile ids with first frame of animations
 					for (const auto& anim : stamp.second.GetStampAnims())
 					{
 						const Actor& actor = *m_project->GetActor((anim.second.actorId));
 						const SpriteSheet& sheet = *actor.GetSpriteSheet(anim.second.spriteSheetId);
 						Tileset::ReservedBlock reservedBlock = tileset.GetReservedBlock(anim.second.spriteAnimId);
 
-						for (int srcX = 0; srcX < sheet.GetWidthTiles(); srcX++)
+						for (int srcY = 0; srcY < sheet.GetHeightTiles(); srcY++)
 						{
-							for (int srcY = 0; srcY < sheet.GetHeightTiles(); srcY++)
+							for (int srcX = 0; srcX < sheet.GetWidthTiles(); srcX++)
 							{
 								int dstX = srcX + anim.second.position.x;
 								int dstY = srcY + anim.second.position.y;
-								repaintedStamp.SetTile(dstX, dstY, reservedBlock.firstTile + (srcY * sheet.GetWidthTiles()) + srcX);
+								luminary::TileEntry& tile = luminaryStamp.tiles[(dstY * stamp.second.GetWidth()) + dstX];
+								tile.index = reservedBlock.firstTile + (srcY * sheet.GetWidthTiles()) + srcX;
+								tile.flags = 0;
+								tile.paletteSlot = FindPaletteSlot(actor.GetPaletteId());
 							}
 						}
 					}
 
-					stamps.push_back(repaintedStamp);
+					// Override palettes and priorities with overlays
+					for (const auto& overlay : stamp.second.GetOverlays())
+					{
+						for (int y = overlay.second.topLeft.y; y <= overlay.second.bottomRight.y; y++)
+						{
+							for (int x = overlay.second.topLeft.x; x <= overlay.second.bottomRight.x; x++)
+							{
+								luminary::TileEntry& tile = luminaryStamp.tiles[(y * stamp.second.GetWidth()) + x];
+								tile.paletteSlot = FindPaletteSlot(overlay.second.paletteId);
+							}
+						}
+					}
+
+					gfxStamps.push_back(luminaryStamp);
 				}
 
-				if (tilesetExporter.ExportStamps(stampsetFilename, stamps, paletteSlotMap, defaultPaletteSlot))
+				if (tilesetExporter.ExportStamps(stampsetFilename, gfxStamps))
 				{
 					includeFilenames.push_back(Project::IncludeFile{ stampsetLabel, stampsetFilename, Project::IncludeExportFlags::None });
 				}
 
 				//Export Luminary terrain stamps
+				std::vector<Stamp> terrainStamps;
+				for (const auto& stamp : stampSet.second.GetStamps())
+				{
+					terrainStamps.push_back(stamp.second);
+				}
+
 				std::string terrainStampsetLabel = "data_collision_stampset_" + stampSetName;
 				std::string terrainStampsetFilename = fnamePrefix + "_CSTAMPS.BIN";
-				if (terrainExporter.ExportTerrainStamps(terrainStampsetFilename, stamps, m_project->GetTerrainTileset(), m_project->GetDefaultTerrainTile()))
+				if (terrainExporter.ExportTerrainStamps(terrainStampsetFilename, terrainStamps, m_project->GetTerrainTileset(), m_project->GetDefaultTerrainTile()))
 				{
 					includeFilenames.push_back(Project::IncludeFile{ terrainStampsetLabel, terrainStampsetFilename, Project::IncludeExportFlags::None });
 				}

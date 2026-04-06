@@ -2577,12 +2577,6 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 				std::string fnamePrefix = ion::string::ToUpper(scenesExportDir + "\\" + stampSet.second.GetName());
 				const Tileset& tileset = m_project->GetTileset(stampSet.second.GetTilesetId());
 
-				std::vector<Stamp> stamps;
-				for(const auto stamp : stampSet.second.GetStamps())
-				{
-					stamps.push_back(stamp.second);
-				}
-
 				std::string stampsetLabel = "data_stampset_" + stampSetName;
 				std::string stampsetFilename = fnamePrefix + "_GSTAMPS.BIN";
 
@@ -2611,6 +2605,32 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 					paletteSlotMap[paletteUsage[i].first] = i;
 					if (paletteUsage[i].first == defaultPaletteId)
 						defaultPaletteSlot = i;
+				}
+
+				//Repaint stamps with animation overlays
+				std::vector<Stamp> stamps;
+				for (const auto& stamp : stampSet.second.GetStamps())
+				{
+					Stamp repaintedStamp = stamp.second;
+
+					for (const auto& anim : stamp.second.GetStampAnims())
+					{
+						const Actor& actor = *m_project->GetActor((anim.second.actorId));
+						const SpriteSheet& sheet = *actor.GetSpriteSheet(anim.second.spriteSheetId);
+						Tileset::ReservedBlock reservedBlock = tileset.GetReservedBlock(anim.second.spriteAnimId);
+
+						for (int srcX = 0; srcX < sheet.GetWidthTiles(); srcX++)
+						{
+							for (int srcY = 0; srcY < sheet.GetHeightTiles(); srcY++)
+							{
+								int dstX = srcX + anim.second.position.x;
+								int dstY = srcY + anim.second.position.y;
+								repaintedStamp.SetTile(dstX, dstY, reservedBlock.firstTile + (srcY * sheet.GetWidthTiles()) + srcX);
+							}
+						}
+					}
+
+					stamps.push_back(repaintedStamp);
 				}
 
 				if (tilesetExporter.ExportStamps(stampsetFilename, stamps, paletteSlotMap, defaultPaletteSlot))

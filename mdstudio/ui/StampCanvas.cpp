@@ -432,8 +432,14 @@ void StampCanvas::OnMouseTileEvent(ion::Vector2i mousePos, ion::Vector2i mouseDe
 									// Recreate tileset resources
 									m_renderResources->CreateTilesetTextures();
 									m_renderResources->CreateAnimationOverlay(m_stampSetId, m_stampId, stampAnimId);
-									PaintAnimationOverlay(*m_stamp, stampAnimId);
 									m_project->InvalidateTiles(true);
+								}
+
+								if (m_primitiveStampOverlays.find(spriteAnimId)  == m_primitiveStampOverlays.end())
+								{
+									// Repaint
+									PaintAnimationOverlay(*m_stamp, stampAnimId);
+									PaintStamp(*m_stamp);
 								}
 							}
 						}

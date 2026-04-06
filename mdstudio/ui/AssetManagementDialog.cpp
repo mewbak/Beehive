@@ -1257,7 +1257,6 @@ void DialogAssetManagement::OnListMapDClick(wxCommandEvent& event)
 
 			m_project.InvalidateMap(true);
 			m_project.InvalidateStamps(true);
-			m_project.InvalidateCamera(true);
 		}
 
 		SelectMap(index);

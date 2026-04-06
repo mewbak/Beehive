@@ -286,7 +286,8 @@ void RenderResources::CreatePaletteOverlay(StampSetId stampSetId, StampId stampI
 	const Stamp& stamp = stampset.GetStamp(stampId);
 	const Stamp::Overlay& overlay = stamp.GetOverlay(overlayId);
 	const Tileset& tileset = m_project.GetTileset(stampset.GetTilesetId());
-	const Palette& palette = m_project.GetPalette(overlay.paletteId);
+	const Palette& overlayPalette = m_project.GetPalette(overlay.paletteId);
+	const Palette& tilesetPalette = m_project.GetPalette(tileset.GetDefaultPaletteId());
 
 	TilesetResources tilesetResources;
 
@@ -321,9 +322,11 @@ void RenderResources::CreatePaletteOverlay(StampSetId stampSetId, StampId stampI
 				u8 colourIdx = tile.GetPixelColour(pixelX, pixelY_OGL);
 
 				//Protect against blank tiles
-				if (palette.IsColourUsed(colourIdx))
+				if (   (colourIdx == 0 && tilesetPalette.IsColourUsed(0))
+					|| (colourIdx != 0 && overlayPalette.IsColourUsed(colourIdx)))
 				{
-					const Colour& colour = palette.GetColour(colourIdx);
+					// Colour 0 == tileset bg colour
+					const Colour& colour = (colourIdx == 0) ? tilesetPalette.GetColour(0) : overlayPalette.GetColour(colourIdx);
 
 					int destPixelX = (x * tileWidth) + pixelX;
 					int destPixelY = (y * tileHeight) + pixelY;

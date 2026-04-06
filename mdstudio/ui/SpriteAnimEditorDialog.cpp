@@ -1153,7 +1153,7 @@ void SpriteAnimEditorDialog::EventHandlerDragFrameListMove(wxMouseEvent& event)
 
 void SpriteAnimEditorDialog::EventHandlerDragFrameListEnd(wxMouseEvent& event)
 {
-	if(m_dragImage)
+	if(m_dragImage && m_selectedAnim)
 	{
 		m_dragImage->Hide();
 		m_dragImage->EndDrag();

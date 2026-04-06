@@ -102,6 +102,7 @@ void ViewPanel::SetTilesetId(TilesetId tilesetId)
 	m_selectedTile = InvalidTileId;
 	m_hoverTile = InvalidTileId;
 	InitPanel();
+	ResetZoomPan();
 	Refresh();
 }
 
@@ -204,9 +205,6 @@ void ViewPanel::InitPanel()
 
 	//Redraw contents
 	PaintContents();
-
-	//Reset zoom/pan
-	ResetZoomPan();
 }
 
 void ViewPanel::Refresh(bool eraseBackground, const wxRect *rect)

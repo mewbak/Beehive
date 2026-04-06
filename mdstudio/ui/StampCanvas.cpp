@@ -105,6 +105,13 @@ void StampCanvas::Refresh(bool eraseBackground, const wxRect *rect)
 
 void StampCanvas::SetStamp(StampSetId stampSetId, StampId stampId, const ion::Vector2i& offset)
 {
+	if (m_tileFramePrimitive)
+		delete m_tileFramePrimitive;
+	if (m_terrainCanvasPrimitive)
+		delete m_terrainCanvasPrimitive;
+	if (m_collisionCanvasPrimitive)
+		delete m_collisionCanvasPrimitive;
+
 	m_drawOffset = offset;
 	m_stampId = stampId;
 	m_stampSetId = stampSetId;
@@ -116,6 +123,13 @@ void StampCanvas::SetStamp(StampSetId stampSetId, StampId stampId, const ion::Ve
 	const int height = m_stamp->GetHeight();
 	m_canvasSize.x = width;
 	m_canvasSize.y = height;
+
+	const int tileWidth = m_project->GetPlatformConfig().tileWidth;
+	const int tileHeight = m_project->GetPlatformConfig().tileHeight;
+
+	m_tileFramePrimitive = new ion::render::Chessboard(ion::render::Chessboard::Axis::xy, ion::Vector2((float)width * (tileWidth / 2.0f), (float)height * (tileHeight / 2.0f)), width, height, true);
+	m_terrainCanvasPrimitive = new ion::render::Chessboard(ion::render::Chessboard::Axis::xy, ion::Vector2((float)(width * tileWidth) / 2.0f, (float)(height * tileHeight) / 2.0f), width, height, true);
+	m_collisionCanvasPrimitive = new ion::render::Chessboard(ion::render::Chessboard::Axis::xy, ion::Vector2((float)(width * tileWidth) / 2.0f, (float)(height * tileHeight) / 2.0f), width, height, true);
 
 	PaintStamp(*m_stamp);
 	PaintTerrainBeziers(*m_stamp);
@@ -1350,21 +1364,8 @@ void StampCanvas::RenderAnimPreview(ion::render::Renderer& renderer, const ion::
 
 void StampCanvas::PaintStamp(const Stamp& stamp)
 {
-	if (m_tileFramePrimitive)
-		delete m_tileFramePrimitive;
-	if (m_terrainCanvasPrimitive)
-		delete m_terrainCanvasPrimitive;
-	if (m_collisionCanvasPrimitive)
-		delete m_collisionCanvasPrimitive;
-
-	const int tileWidth = m_project->GetPlatformConfig().tileWidth;
-	const int tileHeight = m_project->GetPlatformConfig().tileHeight;
 	const int width = m_stamp->GetWidth();
 	const int height = m_stamp->GetHeight();
-
-	m_tileFramePrimitive = new ion::render::Chessboard(ion::render::Chessboard::Axis::xy, ion::Vector2((float)width * (tileWidth / 2.0f), (float)height * (tileHeight / 2.0f)), width, height, true);
-	m_terrainCanvasPrimitive = new ion::render::Chessboard(ion::render::Chessboard::Axis::xy, ion::Vector2((float)(width * tileWidth) / 2.0f, (float)(height * tileHeight) / 2.0f), width, height, true);
-	m_collisionCanvasPrimitive = new ion::render::Chessboard(ion::render::Chessboard::Axis::xy, ion::Vector2((float)(width * tileWidth) / 2.0f, (float)(height * tileHeight) / 2.0f), width, height, true);
 
 	for (int x = 0; x < width; x++)
 	{

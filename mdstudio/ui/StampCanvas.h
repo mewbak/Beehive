@@ -39,6 +39,7 @@ public:
 private:
 	static const int s_maxTerrainLayers = 2;
 	static const int s_maxPalettes = 128;
+	static const int s_maxAnims = 128;
 
 	enum ContextMenuItems
 	{
@@ -48,6 +49,7 @@ private:
 		eContextMenuAddOverlay,
 		eContextMenuDeleteOverlay,
 		eContextMenuPlaceStampAnimation,
+		eContextMenuDeleteStampAnimation,
 		eContextMenuSetTerrainLayerFirst,
 		eContextMenuSetTerrainLayerLast = eContextMenuSetTerrainLayerFirst + s_maxTerrainLayers,
 		eContextMenuPaletteFirst,
@@ -74,16 +76,20 @@ private:
 	void RenderBoxSelection(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z);
 	void RenderBoxOverlays(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z);
 	void RenderPaletteOverlays(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z);
-	void RenderAnimations(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z);
+	void RenderAnimationOverlays(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z);
+	void RenderAnimPreview(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z);
 
 	//Canvas drawing
 	void PaintStamp(const Stamp& stamp);
 	void PaintPaletteOverlay(OverlayId overlayId);
+	void PaintAnimationOverlay(const Stamp& stamp, StampAnimId animId);
 	void PaintTerrainBeziers(const Stamp& stamp);
 	void PaintCollisionStamp(const Stamp& stamp);
 	void PaintCollisionTile(TerrainTileId terrainTileId, int x, int y, u16 collisionFlags);
 
 	void ClearTool();
+
+	int m_prevButtonBits = 0;
 
 	//Rendering primitives
 	ion::render::Chessboard* m_terrainCanvasPrimitive;
@@ -92,7 +98,7 @@ private:
 	ion::render::Primitive* m_primitiveBezierPoints;
 	ion::render::Primitive* m_primitiveBezierHandles;
 	ion::render::Primitive* m_primitiveBezierNormals;
-	std::map<ion::UUID64, ion::render::Chessboard*> m_primitivePaletteOverlay;
+	std::map<ion::UUID64, ion::render::Chessboard*> m_primitiveStampOverlays;
 
 	bool m_terrainPrimitiveDirty;
 	bool m_collisionPrimitiveDirty;
@@ -132,6 +138,7 @@ private:
 	std::vector<PaletteId> m_populatedPalettes;
 	std::vector<std::tuple<ActorId,SpriteSheetId,AnimationId>> m_populatedAnims;
 
-	OverlayId m_currentOverlay;
-	std::tuple<ActorId, SpriteSheetId, AnimationId> m_currentAnimation;
+	OverlayId m_selectedOverlay;
+	StampAnimId m_selectedAnimation;
+	std::tuple<ActorId, SpriteSheetId, AnimationId> m_placingAnimation;
 };

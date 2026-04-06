@@ -151,10 +151,10 @@ RenderResources::TilesetResources& RenderResources::GetTilesetResources(TilesetI
 	return it->second;
 }
 
-ion::render::Material* RenderResources::GetMaterial(StampId stampId, OverlayId overlayId) const
+ion::render::Material* RenderResources::GetMaterial(StampId stampId, ion::UUID64 overlayId) const
 {
-	const auto it = m_paletteOverlayResources.find(overlayId);
-	ion::debug::Assert(it != m_paletteOverlayResources.end(), "RenderResources::GetMaterial palette overlay id");
+	const auto it = m_stampOverlayResources.find(overlayId);
+	ion::debug::Assert(it != m_stampOverlayResources.end(), "RenderResources::GetMaterial() invalid overlay id");
 	return it->second.material;
 }
 
@@ -254,11 +254,11 @@ void RenderResources::CreateTilesetTextures()
 		delete data;
 	}
 
-	// Now create all palette overlays
-	CreatePaletteOverlays();
+	// Now create all stamp overlays
+	CreateStampOverlays();
 }
 
-void RenderResources::CreatePaletteOverlays()
+void RenderResources::CreateStampOverlays()
 {
 	for (const auto& stampSet : m_project.GetStampSets())
 	{
@@ -267,6 +267,11 @@ void RenderResources::CreatePaletteOverlays()
 			for (const auto& overlay : stamp.second.GetOverlays())
 			{
 				CreatePaletteOverlay(stampSet.first, stamp.first, overlay.first);
+			}
+
+			for (const auto& anim : stamp.second.GetStampAnims())
+			{
+				CreateAnimationOverlay(stampSet.first, stamp.first, anim.first);
 			}
 		}
 	}
@@ -285,8 +290,8 @@ void RenderResources::CreatePaletteOverlay(StampSetId stampSetId, StampId stampI
 
 	TilesetResources tilesetResources;
 
-	ion::Vector2i regionSize = (overlay.bottomRight - overlay.topLeft) + ion::Vector2i(1,1);
-	u32 numTiles = regionSize.x * regionSize.y;
+	tilesetResources.regionSize = (overlay.bottomRight - overlay.topLeft) + ion::Vector2i(1,1);
+	u32 numTiles = tilesetResources.regionSize.x * tilesetResources.regionSize.y;
 	tilesetResources.tilesetSizeSq = ion::maths::Max(1, (int)ion::maths::Ceil(ion::maths::Sqrt((float)numTiles)));
 	u32 textureWidth = tilesetResources.tilesetSizeSq * tileWidth;
 	u32 textureHeight = tilesetResources.tilesetSizeSq * tileHeight;
@@ -299,8 +304,8 @@ void RenderResources::CreatePaletteOverlay(StampSetId stampSetId, StampId stampI
 
 	for (int i = 0; i < numTiles; i++)
 	{
-		u32 regionX = overlay.topLeft.x + (i % regionSize.x);
-		u32 regionY = overlay.topLeft.y + (i / regionSize.x);
+		u32 regionX = overlay.topLeft.x + (i % tilesetResources.regionSize.x);
+		u32 regionY = overlay.topLeft.y + (i / tilesetResources.regionSize.x);
 		const Tile& tile = tileset.GetTile(stamp.GetTile(regionX, regionY));
 
 		u32 x = i % tilesetResources.tilesetSizeSq;
@@ -365,7 +370,109 @@ void RenderResources::CreatePaletteOverlay(StampSetId stampSetId, StampId stampI
 	tilesetResources.material->SetDiffuseColour(ion::Colour(1.0f, 1.0f, 1.0f));
 	tilesetResources.material->SetShader(m_shaders[eShaderFlatTextured]);
 
-	m_paletteOverlayResources[overlayId] = tilesetResources;
+	m_stampOverlayResources[overlayId] = tilesetResources;
+
+	delete data;
+}
+
+void RenderResources::CreateAnimationOverlay(StampSetId stampSetId, StampId stampId, StampAnimId animId)
+{
+	const int tileWidth = m_project.GetPlatformConfig().tileWidth;
+	const int tileHeight = m_project.GetPlatformConfig().tileHeight;
+
+	const StampSet& stampset = m_project.GetStampSet(stampSetId);
+	const Stamp& stamp = stampset.GetStamp(stampId);
+	const Stamp::StampAnim& anim = stamp.GetStampAnim(animId);
+	const Tileset& tileset = m_project.GetTileset(stampset.GetTilesetId());
+	const Actor& actor = *m_project.GetActor((anim.actorId));
+	const SpriteSheet& sheet = *actor.GetSpriteSheet(anim.spriteSheetId);
+	const Palette& spritePalette = m_project.GetPalette(actor.GetPaletteId());
+	const Palette& tilesetPalette = m_project.GetPalette(tileset.GetDefaultPaletteId());
+	const Tileset::ReservedBlock& tileBlock = tileset.GetReservedBlock(anim.spriteAnimId);
+
+	TilesetResources tilesetResources;
+
+	tilesetResources.regionSize = ion::Vector2i(sheet.GetWidthTiles(), sheet.GetHeightTiles());
+	u32 numTiles = tilesetResources.regionSize.x * tilesetResources.regionSize.y;
+	tilesetResources.tilesetSizeSq = ion::maths::Max(1, (int)ion::maths::Ceil(ion::maths::Sqrt((float)numTiles)));
+	u32 textureWidth = tilesetResources.tilesetSizeSq * tileWidth;
+	u32 textureHeight = tilesetResources.tilesetSizeSq * tileHeight;
+	u32 bytesPerPixel = 3;
+	u32 textureSize = textureWidth * textureHeight * bytesPerPixel;
+	tilesetResources.cellSizeTexSpaceSq = 1.0f / (float)tilesetResources.tilesetSizeSq;
+
+	u8* data = new u8[textureSize];
+	ion::memory::MemSet(data, 255, textureSize);
+
+	for (int i = 0; i < numTiles; i++)
+	{
+		const Tile& tile = tileset.GetTile(tileBlock.firstTile + i);
+
+		u32 x = i % tilesetResources.tilesetSizeSq;
+		u32 y = i / tilesetResources.tilesetSizeSq;
+
+		for (int pixelY = 0; pixelY < tileHeight; pixelY++)
+		{
+			for (int pixelX = 0; pixelX < tileWidth; pixelX++)
+			{
+				//Invert Y for OpenGL
+				int pixelY_OGL = tileHeight - 1 - pixelY;
+
+				u8 colourIdx = tile.GetPixelColour(pixelX, pixelY_OGL);
+
+				//Protect against blank tiles
+				if(    (colourIdx == 0 && tilesetPalette.IsColourUsed(0))
+					|| (colourIdx != 0 && spritePalette.IsColourUsed(colourIdx)))
+				{
+					// Colour 0 == tileset bg colour
+					const Colour& colour = (colourIdx == 0) ? tilesetPalette.GetColour(0) : spritePalette.GetColour(colourIdx);
+
+					int destPixelX = (x * tileWidth) + pixelX;
+					int destPixelY = (y * tileHeight) + pixelY;
+					u32 pixelIdx = (destPixelY * textureWidth) + destPixelX;
+					u32 dataOffset = pixelIdx * bytesPerPixel;
+					ion::debug::Assert(dataOffset + 2 < textureSize, "eOut of bounds");
+					data[dataOffset] = colour.GetRed();
+					data[dataOffset + 1] = colour.GetGreen();
+					data[dataOffset + 2] = colour.GetBlue();
+				}
+			}
+		}
+	}
+
+	ion::render::Texture::TextureDesc desc =
+	{
+		textureWidth,
+		textureHeight,
+		ion::render::Texture::Type::Texture2D,
+		ion::render::Texture::Format::RGB,
+		ion::render::Texture::Format::RGB,
+		ion::render::Texture::BitsPerPixel::BPP24,
+		ion::render::Texture::DataType::Int,
+		false,
+		false,
+		data
+	};
+
+	//Create texture
+	static int idx = 0;
+	std::string texName = "BeehiveAnimOverlayTexture_" + std::to_string(anim.spriteAnimId) + "_" + std::to_string(idx);
+	tilesetResources.texture = m_resourceManager.CreateResource(texName, ion::render::Texture::Create());
+
+	tilesetResources.texture->Load(desc);
+	tilesetResources.texture->SetMinifyFilter(ion::render::Texture::Filter::Nearest);
+	tilesetResources.texture->SetMagnifyFilter(ion::render::Texture::Filter::Nearest);
+	tilesetResources.texture->SetWrapping(ion::render::Texture::Wrapping::Clamp);
+
+	//Create material
+	std::string matName = "BeehiveAnimOverlayMaterial_" + std::to_string(anim.spriteAnimId) + "_" + std::to_string(idx++);
+	tilesetResources.material = m_resourceManager.CreateResource(matName, new ion::render::Material());
+
+	tilesetResources.material->SetTextureMap(ion::render::Material::TextureMapType::Diffuse, tilesetResources.texture);
+	tilesetResources.material->SetDiffuseColour(ion::Colour(1.0f, 1.0f, 1.0f));
+	tilesetResources.material->SetShader(m_shaders[eShaderFlatTextured]);
+
+	m_stampOverlayResources[anim.spriteAnimId] = tilesetResources;
 
 	delete data;
 }
@@ -721,9 +828,10 @@ void RenderResources::GetTileTexCoords(TilesetId tilesetId, TileId tileId, ion::
 	}
 }
 
-void RenderResources::GetTileTexCoords(const Stamp::Overlay& overlay, int x, int y, ion::render::TexCoord texCoords[4], u32 flipFlags) const
+void RenderResources::GetTileTexCoords(ion::UUID64 id, int x, int y, ion::render::TexCoord texCoords[4], u32 flipFlags) const
 {
-	ion::Vector2i regionSize = (overlay.bottomRight - overlay.topLeft) + ion::Vector2i(1, 1);
+	const TilesetResources& resources = m_stampOverlayResources.find(id)->second;
+	ion::Vector2i regionSize = resources.regionSize;
 	u32 numTiles = regionSize.x * regionSize.y;
 	u32 tilesetSizeSq = ion::maths::Max(1, (int)ion::maths::Ceil(ion::maths::Sqrt((float)numTiles)));
 	float cellSizeTexSpaceSq = 1.0f / (float)tilesetSizeSq;

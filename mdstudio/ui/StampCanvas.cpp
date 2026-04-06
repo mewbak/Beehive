@@ -32,9 +32,11 @@ StampCanvas::StampCanvas(wxWindow *parent, wxWindowID id, const wxPoint& pos, co
 	m_terrainPrimitiveDirty = true;
 	m_collisionPrimitiveDirty = true;
 	m_tilesetId = InvalidTilesetId;
+	m_prevButtonBits = 0;
 
-	m_currentOverlay = InvalidOverlayId;
-	std::get<0>(m_currentAnimation) = InvalidActorId;
+	m_selectedOverlay = InvalidOverlayId;
+	m_selectedAnimation = InvalidStampAnimId;
+	std::get<0>(m_placingAnimation) = InvalidActorId;
 
 	ClearTool();
 }
@@ -122,6 +124,11 @@ void StampCanvas::SetStamp(StampSetId stampSetId, StampId stampId, const ion::Ve
 	for (const auto& overlay : m_stamp->GetOverlays())
 	{
 		PaintPaletteOverlay(overlay.first);
+	}
+
+	for (const auto& anim : m_stamp->GetStampAnims())
+	{
+		PaintAnimationOverlay(*m_stamp, anim.first);
 	}
 
 	Refresh();
@@ -247,7 +254,7 @@ void StampCanvas::OnMouseTileEvent(ion::Vector2i mousePos, ion::Vector2i mouseDe
 					if (buttonBits & eMouseLeft)
 					{
 						//If current coord is not inside an existing palette region
-						if (m_currentToolType != eToolStampOverlay || m_currentOverlay == InvalidOverlayId)
+						if (m_currentToolType != eToolStampOverlay || m_selectedOverlay == InvalidOverlayId)
 						{
 							if (!(m_prevMouseBits & eMouseLeft))
 							{
@@ -278,11 +285,11 @@ void StampCanvas::OnMouseTileEvent(ion::Vector2i mousePos, ion::Vector2i mouseDe
 							Refresh();
 						}
 					}
-					else if ((buttonBits & eMouseRight) && (m_currentOverlay || m_boxSelectStart.x >= 0))
+					else if ((buttonBits & eMouseRight) && (m_selectedOverlay || m_boxSelectStart.x >= 0))
 					{
 						wxMenu contextMenu;
 						wxMenu* paletteMenu = new wxMenu();
-						PaletteId paletteId = (m_currentOverlay != InvalidOverlayId) ? m_stamp->GetOverlay(m_currentOverlay).paletteId : m_stamp->FindPaletteAtPosition(m_boxSelectStart);
+						PaletteId paletteId = (m_selectedOverlay != InvalidOverlayId) ? m_stamp->GetOverlay(m_selectedOverlay).paletteId : m_stamp->FindPaletteAtPosition(m_boxSelectStart);
 						int paletteIdx = 0;
 						m_populatedPalettes.clear();
 
@@ -295,9 +302,9 @@ void StampCanvas::OnMouseTileEvent(ion::Vector2i mousePos, ion::Vector2i mouseDe
 							m_populatedPalettes.push_back(palette.first);
 						}
 
-						if (m_currentOverlay)
+						if (m_selectedOverlay)
 						{
-							const Stamp::Overlay& region = m_stamp->GetOverlay(m_currentOverlay);
+							const Stamp::Overlay& region = m_stamp->GetOverlay(m_selectedOverlay);
 							PaletteId paletteId = region.paletteId;
 							contextMenu.Append(eContextMenuAddOverlay, "Set Palette", paletteMenu);
 							contextMenu.Append(eContextMenuDeleteOverlay, "Delete Palette Region");
@@ -315,9 +322,9 @@ void StampCanvas::OnMouseTileEvent(ion::Vector2i mousePos, ion::Vector2i mouseDe
 						if (m_currentToolType == eToolStampOverlay)
 						{
 							OverlayId overlayId = m_stamp->FindOverlayAtPosition(ion::Vector2i(x, y));
-							if (overlayId != m_currentOverlay)
+							if (overlayId != m_selectedOverlay)
 							{
-								m_currentOverlay = overlayId;
+								m_selectedOverlay = overlayId;
 								Refresh();
 							}
 						}
@@ -329,15 +336,32 @@ void StampCanvas::OnMouseTileEvent(ion::Vector2i mousePos, ion::Vector2i mouseDe
 			{
 				if (inMaprange)
 				{
-					if (std::get<0>(m_currentAnimation) != InvalidActorId)
+					m_selectedAnimation = InvalidStampAnimId;
+
+					for (const auto& stampAnim : m_stamp->GetStampAnims())
 					{
-						ActorId actorId = std::get<0>(m_currentAnimation);
-						SpriteSheetId spriteSheetId = std::get<1>(m_currentAnimation);
-						AnimationId animId = std::get<2>(m_currentAnimation);
+						ActorId actorId = stampAnim.second.actorId;
+						SpriteSheetId spriteSheetId = stampAnim.second.spriteSheetId;
+						const Actor& actor = *m_project->GetActor(actorId);
+						const SpriteSheet& spriteSheet = *actor.GetSpriteSheet(spriteSheetId);
+						ion::Vector2i animMin = stampAnim.second.position;
+						ion::Vector2i animMax = stampAnim.second.position + ion::Vector2i(spriteSheet.GetWidthTiles() - 1, spriteSheet.GetHeightTiles() - 1);
+						if (ion::maths::PointInsideBox(ion::Vector2i(x, y), animMin, animMax))
+						{
+							m_selectedAnimation = stampAnim.first;
+							break;
+						}
+					}
+
+					if (std::get<0>(m_placingAnimation) != InvalidActorId && m_selectedAnimation == InvalidStampAnimId)
+					{
+						ActorId actorId = std::get<0>(m_placingAnimation);
+						SpriteSheetId spriteSheetId = std::get<1>(m_placingAnimation);
+						AnimationId spriteAnimId = std::get<2>(m_placingAnimation);
 
 						const Actor& actor = *m_project->GetActor(actorId);
 						const SpriteSheet& spriteSheet = *actor.GetSpriteSheet(spriteSheetId);
-						const SpriteAnimation& animation = *spriteSheet.GetAnimation(animId);
+						const SpriteAnimation& animation = *spriteSheet.GetAnimation(spriteAnimId);
 
 						// Don't allow placement on top of existing anim
 						bool existingAnim = false;
@@ -365,20 +389,20 @@ void StampCanvas::OnMouseTileEvent(ion::Vector2i mousePos, ion::Vector2i mouseDe
 							m_placePosition.x = x;
 							m_placePosition.y = y;
 
-							if (buttonBits & eMouseLeft)
+							if ((buttonBits & eMouseLeft) && !(m_prevButtonBits & eMouseLeft))
 							{
 								// Add anim to stamp
-								m_stamp->AddStampAnim(actorId, spriteSheetId, animId, m_placePosition);
+								StampAnimId stampAnimId = m_stamp->AddStampAnim(actorId, spriteSheetId, spriteAnimId, m_placePosition);
 
 								// If not already allocated in tileset
 								const StampSet& stampSet = m_project->GetStampSet(m_stampSetId);
 								Tileset& tileset = m_project->GetTileset(stampSet.GetTilesetId());
-								Tileset::ReservedBlock reservedBlock = tileset.GetReservedBlock(animId);
+								Tileset::ReservedBlock reservedBlock = tileset.GetReservedBlock(spriteAnimId);
 								
 								if (reservedBlock.firstTile == InvalidTileId)
 								{
 									// Allocate tiles
-									reservedBlock = tileset.AllocateReservedBlock(animId, spriteSheet.GetWidthTiles() * spriteSheet.GetHeightTiles());
+									reservedBlock = tileset.AllocateReservedBlock(spriteAnimId, spriteSheet.GetWidthTiles() * spriteSheet.GetHeightTiles());
 
 									// Copy first frame
 									std::vector<Tile*> tiles;
@@ -393,66 +417,64 @@ void StampCanvas::OnMouseTileEvent(ion::Vector2i mousePos, ion::Vector2i mouseDe
 
 									// Recreate tileset resources
 									m_renderResources->CreateTilesetTextures();
+									m_renderResources->CreateAnimationOverlay(m_stampSetId, m_stampId, stampAnimId);
+									PaintAnimationOverlay(*m_stamp, stampAnimId);
 									m_project->InvalidateTiles(true);
 								}
-
-								// Set new tiles on stamp
-								// TODO: treat this as an overlay, don't mess with the original data
-								for (int srcX = 0; srcX < spriteSheet.GetWidthTiles(); srcX++)
-								{
-									for (int srcY = 0; srcY < spriteSheet.GetHeightTiles(); srcY++)
-									{
-										int dstX = srcX + x;
-										int dstY = srcY + y;
-										m_stamp->SetTile(dstX, dstY, reservedBlock.firstTile + (srcY * spriteSheet.GetWidthTiles()) + srcX);
-									}
-								}
-
-								std::get<0>(m_currentAnimation) = InvalidActorId;
-								m_project->InvalidateStamps(true);
 							}
-
-							Refresh();
 						}
 					}
 
 					if (buttonBits & eMouseRight)
 					{
 						wxMenu contextMenu;
-						wxMenu* actorMenu = new wxMenu();
 
-						int animIdx = 0;
-						m_populatedAnims.clear();
-						for (const auto& actor : m_project->GetActors())
+						if (m_selectedAnimation == InvalidStampAnimId)
 						{
-							wxMenu* spriteMenu = new wxMenu();
+							wxMenu* actorMenu = new wxMenu();
 
-							for (const auto& sprite : actor.second.GetSpriteSheets())
+							int animIdx = 0;
+							m_populatedAnims.clear();
+							for (const auto& actor : m_project->GetActors())
 							{
-								wxMenu* animMenu = new wxMenu();
+								wxMenu* spriteMenu = new wxMenu();
 
-								for (const auto& anim : sprite.second.GetAnimations())
+								for (const auto& sprite : actor.second.GetSpriteSheets())
 								{
-									animMenu->Append(eContextMenuAnimationFirst + animIdx++, anim.second.GetName());
-									m_populatedAnims.push_back(std::make_tuple(actor.first, sprite.first, anim.first));
+									wxMenu* animMenu = new wxMenu();
+
+									for (const auto& anim : sprite.second.GetAnimations())
+									{
+										animMenu->Append(eContextMenuAnimationFirst + animIdx++, anim.second.GetName());
+										m_populatedAnims.push_back(std::make_tuple(actor.first, sprite.first, anim.first));
+									}
+
+									wxMenuItem* spriteItem = spriteMenu->Append(wxID_ANY, sprite.second.GetName(), animMenu);
 								}
 
-								wxMenuItem* spriteItem = spriteMenu->Append(wxID_ANY, sprite.second.GetName(), animMenu);
+								actorMenu->Append(wxID_ANY, actor.second.GetName(), spriteMenu);
 							}
 
-							actorMenu->Append(wxID_ANY, actor.second.GetName(), spriteMenu);
+							contextMenu.Append(eContextMenuPlaceStampAnimation, "Place Animation", actorMenu);
 						}
-
-						contextMenu.Append(eContextMenuPlaceStampAnimation, "Place Animation", actorMenu);
+						else
+						{
+							contextMenu.Append(eContextMenuDeleteStampAnimation, "Delete Animation");
+						}
 
 						contextMenu.Connect(wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&StampCanvas::OnContextMenuClick, NULL, this);
 						PopupMenu(&contextMenu);
 					}
+
+					//Refresh to draw box selection
+					Refresh();
 				}
 				break;
 			}
 		}
 	}
+
+	m_prevButtonBits = buttonBits;
 }
 
 void StampCanvas::OnMousePixelEvent(ion::Vector2i mousePos, ion::Vector2i mouseDelta, ion::Vector2i tileDelta, int buttonBits, int tileX, int tileY)
@@ -773,25 +795,12 @@ void StampCanvas::OnContextMenuClick(wxCommandEvent& event)
 	{
 		m_stamp->SetTerrainBezierGenerateWidth(m_highlightedBezierIdx, event.IsChecked());
 	}
-	else if (event.GetId() >= eContextMenuAnimationFirst)
-	{
-		m_currentAnimation = m_populatedAnims[event.GetId() - eContextMenuAnimationFirst];
-	}
-	else if (event.GetId() == eContextMenuDeleteOverlay)
-	{
-		if (m_currentOverlay != InvalidOverlayId)
-		{
-			m_stamp->DeleteOverlay(m_currentOverlay);
-			m_currentOverlay = InvalidOverlayId;
-			Refresh();
-		}
-	}
 	else if (event.GetId() >= eContextMenuPaletteFirst && event.GetId() < eContextMenuAnimationFirst)
 	{
 		PaletteId paletteId = m_populatedPalettes[event.GetId() - eContextMenuPaletteFirst];
-		OverlayId overlayId = m_currentOverlay;
+		OverlayId overlayId = m_selectedOverlay;
 
-		if (m_currentOverlay != InvalidOverlayId)
+		if (m_selectedOverlay != InvalidOverlayId)
 		{
 			Stamp::Overlay& overlay = m_stamp->GetOverlay(overlayId);
 			overlay.paletteId = paletteId;
@@ -816,6 +825,28 @@ void StampCanvas::OnContextMenuClick(wxCommandEvent& event)
 
 		Refresh();
 	}
+	else if (event.GetId() == eContextMenuDeleteOverlay)
+	{
+		if (m_selectedOverlay != InvalidOverlayId)
+		{
+			m_stamp->DeleteOverlay(m_selectedOverlay);
+			m_selectedOverlay = InvalidOverlayId;
+			Refresh();
+		}
+	}
+	else if (event.GetId() >= eContextMenuAnimationFirst)
+	{
+		m_placingAnimation = m_populatedAnims[event.GetId() - eContextMenuAnimationFirst];
+	}
+	else if (event.GetId() >= eContextMenuDeleteStampAnimation)
+	{
+		if (m_selectedAnimation != InvalidStampAnimId)
+		{
+			m_stamp->DeleteStampAnim(m_selectedAnimation);
+			m_selectedAnimation = InvalidStampAnimId;
+			Refresh();
+		}
+	}
 }
 
 void StampCanvas::OnRender(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float& z, float zOffset)
@@ -830,8 +861,16 @@ void StampCanvas::OnRender(ion::render::Renderer& renderer, const ion::Matrix4& 
 		RenderPaletteOverlays(renderer, cameraInverseMtx, projectionMtx, z);
 		z += zOffset;
 
+		//Render animation overlays
+		RenderAnimationOverlays(renderer, cameraInverseMtx, projectionMtx, z);
+		z += zOffset;
+
 		//Render preview
 		RenderPreview(renderer, cameraInverseMtx, projectionMtx, z);
+		z += zOffset;
+
+		//Render anim preview
+		RenderAnimPreview(renderer, cameraInverseMtx, projectionMtx, z);
 		z += zOffset;
 
 		//Render grid
@@ -864,13 +903,8 @@ void StampCanvas::OnRender(ion::render::Renderer& renderer, const ion::Matrix4& 
 
 		z += zOffset;
 
-		//Render palette overlays
+		//Render overlay outlines
 		RenderBoxOverlays(renderer, cameraInverseMtx, projectionMtx, z);
-
-		z += zOffset;
-
-		//Render animation overlays
-		RenderAnimations(renderer, cameraInverseMtx, projectionMtx, z);
 	}
 }
 
@@ -1140,30 +1174,47 @@ void StampCanvas::RenderBoxOverlays(ion::render::Renderer& renderer, const ion::
 
 		renderer.BindMaterial(*material, ion::Matrix4(), cameraInverseMtx, projectionMtx);
 
-		for (const auto& region : m_stamp->GetOverlays())
+		auto DrawOutline = [&](const ion::Vector2i& topLeftTiles, const ion::Vector2i& bottomRightTiles, bool selected)
+			{
+				//Draw on top of grid
+				const float outlineZOffset = 0.1f;
+				ion::Matrix4 worldViewProjMtx = drawtools::CalcBoxDrawMatrix(topLeftTiles * tileSizePx, bottomRightTiles * tileSizePx, stampSizePx, z + outlineZOffset) * cameraInverseMtx * projectionMtx;
+
+				//Outline
+				worldViewProjParam.SetValue(worldViewProjMtx);
+
+				if (selected)
+				{
+					diffuseParam.SetValue(ion::Colour(1.0f, 0.0f, 0.0f, 1.0f));
+					renderer.SetLineWidth(3.0f);
+				}
+				else
+				{
+					diffuseParam.SetValue(outlineColour);
+					renderer.SetLineWidth(2.0f);
+				}
+
+				renderer.DrawVertexBuffer(primitiveOutline->GetVertexBuffer());
+				renderer.SetLineWidth(1.0f);
+			};
+
+		if (m_currentToolType == eToolStampOverlay)
 		{
-			//Draw on top of grid
-			const float outlineZOffset = 0.1f;
-			ion::Matrix4 worldViewProjMtx = drawtools::CalcBoxDrawMatrix(region.second.topLeft * tileSizePx, (region.second.bottomRight + ion::Vector2i(1,1)) * tileSizePx, stampSizePx, z + outlineZOffset) * cameraInverseMtx * projectionMtx;
+			const Stamp::Overlay* selectedRegion = (m_selectedOverlay != InvalidOverlayId) ? &m_stamp->GetOverlay(m_selectedOverlay) : nullptr;
 
-			//Outline
-			worldViewProjParam.SetValue(worldViewProjMtx);
-
-			const Stamp::Overlay* selectedRegion = (m_currentOverlay != InvalidOverlayId) ? &m_stamp->GetOverlay(m_currentOverlay) : nullptr;
-
-			if (selectedRegion && region.second.topLeft == selectedRegion->topLeft)
+			for (const auto& region : m_stamp->GetOverlays())
 			{
-				diffuseParam.SetValue(ion::Colour(1.0f, 0.0f, 0.0f, 1.0f));
-				renderer.SetLineWidth(3.0f);
+				DrawOutline(region.second.topLeft, region.second.bottomRight + ion::Vector2i(1, 1), selectedRegion && region.second.topLeft == selectedRegion->topLeft);
 			}
-			else
+		}
+		else if (m_currentToolType == eToolStampAnimation)
+		{
+			for (const auto& anim : m_stamp->GetStampAnims())
 			{
-				diffuseParam.SetValue(outlineColour);
-				renderer.SetLineWidth(2.0f);
+				const Actor& actor = *m_project->GetActor(anim.second.actorId);
+				const SpriteSheet& sheet = *actor.GetSpriteSheet(anim.second.spriteSheetId);
+				DrawOutline(anim.second.position, anim.second.position + ion::Vector2i(sheet.GetWidthTiles(), sheet.GetHeightTiles()), anim.first == m_selectedAnimation);
 			}
-
-			renderer.DrawVertexBuffer(primitiveOutline->GetVertexBuffer());
-			renderer.SetLineWidth(1.0f);
 		}
 
 		renderer.UnbindMaterial(*material);
@@ -1179,7 +1230,7 @@ void StampCanvas::RenderPaletteOverlays(ion::render::Renderer& renderer, const i
 
 	for (const auto& region : m_stamp->GetOverlays())
 	{
-		ion::render::Primitive* primitive = m_primitivePaletteOverlay[region.first];
+		ion::render::Primitive* primitive = m_primitiveStampOverlays[region.first];
 		ion::render::Material* material = m_renderResources->GetMaterial(m_stampId, region.first);
 		material->SetDiffuseColour(ion::Colour(1.0f, 1.0f, 1.0f, 1.0f));
 
@@ -1201,75 +1252,99 @@ void StampCanvas::RenderPaletteOverlays(ion::render::Renderer& renderer, const i
 	}
 }
 
-void StampCanvas::RenderAnimations(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z)
+void StampCanvas::RenderAnimationOverlays(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z)
 {
-	auto RenderAnim = [&](const ion::Vector2i& position, ActorId actorId, SpriteSheetId spriteSheetId, AnimationId animId)
-		{
-			const float stampWidth = m_stamp->GetWidth();
-			const float stampHeight = m_stamp->GetHeight();
-			const float tileWidth = m_project->GetPlatformConfig().tileWidth;
-			const float tileHeight = m_project->GetPlatformConfig().tileHeight;
+	const int tileWidth = m_project->GetPlatformConfig().tileWidth;
+	const int tileHeight = m_project->GetPlatformConfig().tileHeight;
+	const ion::Vector2i tileSizePx(m_project->GetPlatformConfig().tileWidth, m_project->GetPlatformConfig().tileHeight);
+	const ion::Vector2i stampSizePx = ion::Vector2i(m_stamp->GetWidth(), m_stamp->GetHeight()) * tileSizePx;
 
-			const ion::Colour& outlineColour = m_renderResources->GetColour(RenderResources::eColourOutline);
-			ion::render::Primitive* primitiveOutline = m_renderResources->GetPrimitive(RenderResources::ePrimitiveUnitLineQuad);
-			ion::render::Primitive* primitiveSprite = m_renderResources->GetPrimitive(RenderResources::ePrimitiveUnitQuad);
-			ion::render::Material* material = m_renderResources->GetMaterial(RenderResources::eMaterialFlatColour);
-
-			const Actor& actor = *m_project->GetActor(actorId);
-			const SpriteSheet& spriteSheet = *actor.GetSpriteSheet(spriteSheetId);
-			const SpriteAnimation& animation = *spriteSheet.GetAnimation(animId);
-
-			int firstFrameIdx = animation.m_trackSpriteFrame.GetValue(0.0f);
-
-			ion::Vector2i boxStartPx(position.x * tileWidth, position.y * tileHeight);
-			ion::Vector2i boxEndPx((position.x + spriteSheet.GetWidthTiles()) * tileWidth, (position.y + spriteSheet.GetHeightTiles()) * tileHeight);
-			ion::Vector2i canvasSizePx(stampWidth * tileWidth, stampHeight * tileHeight);
-			ion::Matrix4 previewMtx = drawtools::CalcBoxDrawMatrix(boxStartPx, boxEndPx, canvasSizePx, z, true);
-
-			//Render overlay
-			renderer.SetAlphaBlending(ion::render::Renderer::AlphaBlendType::Translucent);
-			renderer.SetFaceCulling(ion::render::Renderer::CullingMode::None);
-			material->SetDiffuseColour(outlineColour);
-
-			renderer.BindMaterial(*material, previewMtx, cameraInverseMtx, projectionMtx);
-			renderer.SetLineWidth(3.0f);
-			renderer.DrawVertexBuffer(primitiveOutline->GetVertexBuffer());
-			renderer.SetLineWidth(1.0f);
-			renderer.UnbindMaterial(*material);
-
-			//Render spriteSheet
-			RenderResources::SpriteSheetRenderResources* spriteSheetResources = m_renderResources->GetSpriteSheetResources(spriteSheetId);
-			ion::debug::Assert(spriteSheetResources, "StampCanvas::RenderAnimations() - Missing spriteSheet render resources");
-			ion::debug::Assert(spriteSheetResources->m_frames.size() > 0, "StampCanvas::RenderAnimations() - SpriteSheet contains no frames");
-
-			//ion::render::Primitive* spriteSheetPrimitive = spriteSheetResources->m_primitive;
-			ion::render::Material* spriteSheetMaterial = spriteSheetResources->m_frames[firstFrameIdx].material;
-			spriteSheetMaterial->SetDiffuseColour(ion::Colour(1.0f, 1.0f, 1.0f, 1.0f));
-
-			renderer.BindMaterial(*spriteSheetMaterial, previewMtx, cameraInverseMtx, projectionMtx);
-			renderer.DrawVertexBuffer(primitiveSprite->GetVertexBuffer(), primitiveSprite->GetIndexBuffer());
-			renderer.UnbindMaterial(*spriteSheetMaterial);
-
-			renderer.SetAlphaBlending(ion::render::Renderer::AlphaBlendType::None);
-			renderer.SetFaceCulling(ion::render::Renderer::CullingMode::CounterClockwise);
-		};
-
-	//Preview anim
-	if (std::get<0>(m_currentAnimation) != InvalidActorId)
-	{
-		ActorId actorId = std::get<0>(m_currentAnimation);
-		SpriteSheetId spriteSheetId = std::get<1>(m_currentAnimation);
-		AnimationId animId = std::get<2>(m_currentAnimation);
-		RenderAnim(m_placePosition, actorId, spriteSheetId, animId);
-	}
-
-	//Placed anims
 	for (const auto& stampAnim : m_stamp->GetStampAnims())
 	{
 		ActorId actorId = stampAnim.second.actorId;
 		SpriteSheetId spriteSheetId = stampAnim.second.spriteSheetId;
-		AnimationId animId = stampAnim.second.animId;
-		//RenderAnim(stampAnim.second.position, actorId, spriteSheetId, animId);
+		const Actor& actor = *m_project->GetActor(actorId);
+		const SpriteSheet& sheet = *actor.GetSpriteSheet(spriteSheetId);
+		const ion::Vector2i& position = stampAnim.second.position;
+
+		ion::render::Primitive* primitive = m_primitiveStampOverlays[stampAnim.second.spriteAnimId];
+		ion::render::Material* material = m_renderResources->GetMaterial(m_stampId, stampAnim.second.spriteAnimId);
+		material->SetDiffuseColour(ion::Colour(1.0f, 1.0f, 1.0f, 1.0f));
+
+		int width = sheet.GetWidthTiles() * tileWidth;
+		int height = sheet.GetHeightTiles() * tileHeight;
+
+		const float y_inv = stampSizePx.y - (position.y * tileHeight);
+		const ion::Vector2 mapCentre(stampSizePx.x / 2.0f, stampSizePx.y / 2.0f);
+		const ion::Vector2 boxCentre(width / 2.0f, height / 2.0f);
+		ion::Vector3 boxScale(width, height, 0.0f);
+		ion::Vector3 boxPos((position.x * tileWidth) - mapCentre.x + boxCentre.x, y_inv - mapCentre.y - boxCentre.y, z);
+
+		ion::Matrix4 boxMtx;
+		boxMtx.SetTranslation(boxPos);
+
+		renderer.BindMaterial(*material, boxMtx, cameraInverseMtx, projectionMtx);
+		renderer.DrawVertexBuffer(primitive->GetVertexBuffer(), primitive->GetIndexBuffer());
+		renderer.UnbindMaterial(*material);
+	}
+}
+
+void StampCanvas::RenderAnimPreview(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z)
+{
+	if (std::get<0>(m_placingAnimation) != InvalidActorId && m_selectedAnimation == InvalidStampAnimId)
+	{
+		ActorId actorId = std::get<0>(m_placingAnimation);
+		SpriteSheetId spriteSheetId = std::get<1>(m_placingAnimation);
+		AnimationId animId = std::get<2>(m_placingAnimation);
+		const ion::Vector2i& position = m_placePosition;
+
+		const float stampWidth = m_stamp->GetWidth();
+		const float stampHeight = m_stamp->GetHeight();
+		const float tileWidth = m_project->GetPlatformConfig().tileWidth;
+		const float tileHeight = m_project->GetPlatformConfig().tileHeight;
+
+		const ion::Colour& outlineColour = m_renderResources->GetColour(RenderResources::eColourOutline);
+		ion::render::Primitive* primitiveOutline = m_renderResources->GetPrimitive(RenderResources::ePrimitiveUnitLineQuad);
+		ion::render::Primitive* primitiveSprite = m_renderResources->GetPrimitive(RenderResources::ePrimitiveUnitQuad);
+		ion::render::Material* material = m_renderResources->GetMaterial(RenderResources::eMaterialFlatColour);
+
+		const Actor& actor = *m_project->GetActor(actorId);
+		const SpriteSheet& spriteSheet = *actor.GetSpriteSheet(spriteSheetId);
+		const SpriteAnimation& animation = *spriteSheet.GetAnimation(animId);
+
+		int firstFrameIdx = animation.m_trackSpriteFrame.GetValue(0.0f);
+
+		ion::Vector2i boxStartPx(position.x * tileWidth, position.y * tileHeight);
+		ion::Vector2i boxEndPx((position.x + spriteSheet.GetWidthTiles()) * tileWidth, (position.y + spriteSheet.GetHeightTiles()) * tileHeight);
+		ion::Vector2i canvasSizePx(stampWidth * tileWidth, stampHeight * tileHeight);
+		ion::Matrix4 previewMtx = drawtools::CalcBoxDrawMatrix(boxStartPx, boxEndPx, canvasSizePx, z, true);
+
+		//Render overlay
+		renderer.SetAlphaBlending(ion::render::Renderer::AlphaBlendType::Translucent);
+		renderer.SetFaceCulling(ion::render::Renderer::CullingMode::None);
+		material->SetDiffuseColour(outlineColour);
+
+		renderer.BindMaterial(*material, previewMtx, cameraInverseMtx, projectionMtx);
+		renderer.SetLineWidth(3.0f);
+		renderer.DrawVertexBuffer(primitiveOutline->GetVertexBuffer());
+		renderer.SetLineWidth(1.0f);
+		renderer.UnbindMaterial(*material);
+
+		//Render spriteSheet
+		RenderResources::SpriteSheetRenderResources* spriteSheetResources = m_renderResources->GetSpriteSheetResources(spriteSheetId);
+		ion::debug::Assert(spriteSheetResources, "StampCanvas::RenderAnimations() - Missing spriteSheet render resources");
+		ion::debug::Assert(spriteSheetResources->m_frames.size() > 0, "StampCanvas::RenderAnimations() - SpriteSheet contains no frames");
+
+		//ion::render::Primitive* spriteSheetPrimitive = spriteSheetResources->m_primitive;
+		ion::render::Material* spriteSheetMaterial = spriteSheetResources->m_frames[firstFrameIdx].material;
+		spriteSheetMaterial->SetDiffuseColour(ion::Colour(1.0f, 1.0f, 1.0f, 1.0f));
+
+		renderer.BindMaterial(*spriteSheetMaterial, previewMtx, cameraInverseMtx, projectionMtx);
+		renderer.DrawVertexBuffer(primitiveSprite->GetVertexBuffer(), primitiveSprite->GetIndexBuffer());
+		renderer.UnbindMaterial(*spriteSheetMaterial);
+
+		renderer.SetAlphaBlending(ion::render::Renderer::AlphaBlendType::None);
+		renderer.SetFaceCulling(ion::render::Renderer::CullingMode::CounterClockwise);
 	}
 }
 
@@ -1348,11 +1423,11 @@ void StampCanvas::PaintCollisionTile(TerrainTileId terrainTileId, int x, int y, 
 
 void StampCanvas::PaintPaletteOverlay(OverlayId overlayId)
 {
-	auto& it = m_primitivePaletteOverlay.find(overlayId);
-	if (it != m_primitivePaletteOverlay.end())
+	auto& it = m_primitiveStampOverlays.find(overlayId);
+	if (it != m_primitiveStampOverlays.end())
 	{
 		delete it->second;
-		m_primitivePaletteOverlay.erase(it);
+		m_primitiveStampOverlays.erase(it);
 	}
 
 	const Stamp::Overlay& overlay = m_stamp->GetOverlay(overlayId);
@@ -1374,13 +1449,53 @@ void StampCanvas::PaintPaletteOverlay(OverlayId overlayId)
 
 			//Set texture coords for cell
 			ion::render::TexCoord coords[4];
-			m_renderResources->GetTileTexCoords(overlay, x, y, coords, tileFlags);
+			m_renderResources->GetTileTexCoords(overlayId, x, y, coords, tileFlags);
 			primitive->SetTexCoords((y_inv * width) + x, coords);
 		}
 	}
 
 	primitive->GetVertexBuffer().CommitBuffer();
-	m_primitivePaletteOverlay.insert(std::make_pair(overlayId, primitive));
+	m_primitiveStampOverlays.insert(std::make_pair(overlayId, primitive));
+}
+
+void StampCanvas::PaintAnimationOverlay(const Stamp& stamp, StampAnimId animId)
+{
+	const Stamp::StampAnim& overlay = stamp.GetStampAnim(animId);
+
+	auto& it = m_primitiveStampOverlays.find(overlay.spriteAnimId);
+	if (it != m_primitiveStampOverlays.end())
+	{
+		delete it->second;
+		m_primitiveStampOverlays.erase(it);
+	}
+
+	const Actor* actor = m_project->GetActor(overlay.actorId);
+	const SpriteSheet* sheet = actor->GetSpriteSheet(overlay.spriteSheetId);
+
+	const int tileWidth = m_project->GetPlatformConfig().tileWidth;
+	const int tileHeight = m_project->GetPlatformConfig().tileHeight;
+	const int width = sheet->GetWidthTiles();
+	const int height = sheet->GetHeightTiles();
+
+	ion::render::Chessboard* primitive = new ion::render::Chessboard(ion::render::Chessboard::Axis::xy, ion::Vector2((float)width * (tileWidth / 2.0f), (float)height * (tileHeight / 2.0f)), width, height, true);
+
+	for (int x = 0; x < width; x++)
+	{
+		for (int y = 0; y < height; y++)
+		{
+			int tileX = overlay.position.x + x;
+			int tileY = overlay.position.y + y;
+			int y_inv = height - 1 - y;
+
+			//Set texture coords for cell
+			ion::render::TexCoord coords[4];
+			m_renderResources->GetTileTexCoords(overlay.spriteAnimId, x, y, coords, 0);
+			primitive->SetTexCoords((y_inv * width) + x, coords);
+		}
+	}
+
+	primitive->GetVertexBuffer().CommitBuffer();
+	m_primitiveStampOverlays.insert(std::make_pair(overlay.spriteAnimId, primitive));
 }
 
 void StampCanvas::PaintTerrainBeziers(const Stamp& stamp)
@@ -1433,4 +1548,7 @@ void StampCanvas::ClearTool()
 	m_boxSelectStart.y = -1;
 	m_boxSelectEnd.x = -1;
 	m_boxSelectEnd.y = -1;
+	std::get<0>(m_placingAnimation) = InvalidActorId;
+	m_selectedOverlay = InvalidOverlayId;
+	m_selectedAnimation = InvalidStampAnimId;
 }

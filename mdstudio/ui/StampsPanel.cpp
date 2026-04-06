@@ -226,6 +226,11 @@ void StampsPanel::OnRender(ion::render::Renderer& renderer, const ion::Matrix4& 
 
 	z += zOffset;
 
+	//Render palette overlays
+	RenderAnimationOverlays(renderer, cameraInverseMtx, projectionMtx, z);
+
+	z += zOffset;
+
 	//Render selected stamp
 	if(m_selectedStamp != InvalidStampId)
 	{
@@ -280,7 +285,7 @@ void StampsPanel::RenderPaletteOverlays(ion::render::Renderer& renderer, const i
 		for (const auto& region : stamp.GetOverlays())
 		{
 			//Render spriteSheet
-			ion::render::Primitive* primitive = m_primitivePaletteOverlay[region.first];
+			ion::render::Primitive* primitive = m_primitiveStampOverlays[region.first];
 			ion::render::Material* material = m_renderResources->GetMaterial(stampPlacement.first, region.first);
 			material->SetDiffuseColour(ion::Colour(1.0f, 1.0f, 1.0f, 1.0f));
 
@@ -288,6 +293,46 @@ void StampsPanel::RenderPaletteOverlays(ion::render::Renderer& renderer, const i
 			float y = stampPlacement.second.y + region.second.topLeft.y;
 			float width = (region.second.bottomRight.x - region.second.topLeft.x + 1);
 			float height = (region.second.bottomRight.y - region.second.topLeft.y + 1);
+
+			ion::Matrix4 matrix;
+			float bottom = (float)m_canvasSize.y - y - height;
+			ion::Vector3 translation((x - ((float)m_canvasSize.x / 2.0f) + (width / 2.0f)), (bottom - ((float)m_canvasSize.y / 2.0f) + (height / 2.0f)), z);
+			matrix.SetTranslation(translation * ion::Vector3(tileWidth, tileHeight, 1.0f));
+
+			renderer.BindMaterial(*material, matrix, cameraInverseMtx, projectionMtx);
+			renderer.DrawVertexBuffer(primitive->GetVertexBuffer(), primitive->GetIndexBuffer());
+			renderer.UnbindMaterial(*material);
+		}
+	}
+}
+
+void StampsPanel::RenderAnimationOverlays(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z)
+{
+	const int tileWidth = m_project->GetPlatformConfig().tileWidth;
+	const int tileHeight = m_project->GetPlatformConfig().tileHeight;
+	const int stampWidth = m_project->GetPlatformConfig().stampWidth;
+	const int stampHeight = m_project->GetPlatformConfig().stampHeight;
+	const ion::Vector2i tileSizePx(m_project->GetPlatformConfig().tileWidth, m_project->GetPlatformConfig().tileHeight);
+	const ion::Vector2i stampSizePx = ion::Vector2i(stampWidth, stampHeight) * tileSizePx;
+
+	const StampSet& stampSet = GetStampSet();
+
+	for (const auto& stampPlacement : m_stampPosMap)
+	{
+		const Stamp& stamp = stampSet.GetStamp(stampPlacement.first);
+		for (const auto& anim : stamp.GetStampAnims())
+		{
+			//Render spriteSheet
+			ion::render::Primitive* primitive = m_primitiveStampOverlays[anim.second.spriteAnimId];
+			ion::render::Material* material = m_renderResources->GetMaterial(stampPlacement.first, anim.second.spriteAnimId);
+			const Actor* actor = m_project->GetActor(anim.second.actorId);
+			const SpriteSheet* sheet = actor->GetSpriteSheet(anim.second.spriteSheetId);
+			material->SetDiffuseColour(ion::Colour(1.0f, 1.0f, 1.0f, 1.0f));
+
+			float x = stampPlacement.second.x + anim.second.position.x;
+			float y = stampPlacement.second.y + anim.second.position.y;
+			float width = sheet->GetWidthTiles();
+			float height = sheet->GetHeightTiles();
 
 			ion::Matrix4 matrix;
 			float bottom = (float)m_canvasSize.y - y - height;

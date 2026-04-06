@@ -84,8 +84,9 @@ public:
 	void CreateTilesetTextures();
 
 	//Create and redraw palette region textures
-	void CreatePaletteOverlays();
+	void CreateStampOverlays();
 	void CreatePaletteOverlay(StampSetId stampSetId, StampId stampId, OverlayId overlayId);
+	void CreateAnimationOverlay(StampSetId stampSetId, StampId stampId, StampAnimId animId);
 
 	//Create and redraw terrain widthmap/heightmap tileset textures
 	void CreateTerrainTilesTextures();
@@ -102,7 +103,7 @@ public:
 
 	//Get tileset UV coords for tile
 	void GetTileTexCoords(TilesetId tilesetId, TileId tileId, ion::render::TexCoord texCoords[4], u32 flipFlags) const;
-	void GetTileTexCoords(const Stamp::Overlay& overlay, int x, int y, ion::render::TexCoord texCoords[4], u32 flipFlags) const;
+	void GetTileTexCoords(ion::UUID64 id, int x, int y, ion::render::TexCoord texCoords[4], u32 flipFlags) const;
 
 	//Get terrain tileset UV coords for collision type
 	void GetCollisionTypeTexCoords(u16 collisionFlags, ion::render::TexCoord texCoords[4]) const;
@@ -121,7 +122,7 @@ public:
 	//Get resources
 	ion::render::Material* GetMaterial(MaterialType type) { return m_materials[type]; }
 	ion::render::Material* GetMaterial(TilesetId tilesetId) { return m_tilesetResources[tilesetId].material; }
-	ion::render::Material* GetMaterial(StampId stampId, OverlayId overlayId) const;
+	ion::render::Material* GetMaterial(StampId stampId, ion::UUID64 overlayId) const;
 	ion::render::Shader* GetShader(ShaderType type) { return m_shaders[type].Get(); }
 	ion::render::Primitive* GetPrimitive(PrimitiveType type) const { return m_primitives[type]; }
 	const ion::Colour& GetColour(ColourType type) const { return m_colours[type]; }
@@ -162,6 +163,7 @@ private:
 	struct TilesetResources
 	{
 		std::map<TileId, u32> tileIndexMap;	//Map tile IDs to indices
+		ion::Vector2i regionSize;			//Source map/region/etc size
 		u32 tilesetSizeSq;					//Tileset size sq
 		float cellSizeTexSpaceSq;			//Tileset texture cell size sq
 		ion::io::ResourceHandle<ion::render::Texture> texture;
@@ -188,7 +190,7 @@ private:
 	ion::io::ResourceHandle<ion::render::Texture> m_textures[eTextureMax];
 	ion::io::ResourceHandle<ion::render::Material> m_materials[eMaterialMax];
 	std::map<TilesetId, TilesetResources> m_tilesetResources;
-	std::map<ion::UUID64, TilesetResources> m_paletteOverlayResources;
+	std::map<ion::UUID64, TilesetResources> m_stampOverlayResources;
 	ion::render::Primitive* m_primitives[ePrimitiveMax];
 	ion::Colour m_colours[eColourMax];
 

@@ -355,10 +355,15 @@ void ViewPanel::PaintCollisionTile(TerrainTileId terrainTileId, int x, int y, u1
 
 void ViewPanel::PaintStamp(TilesetId tilesetId, const Stamp& stamp, int x, int y, u32 flipFlags)
 {
-	//Paint palette overlays first
+	//Paint stamp overlays first
 	for (const auto& overlay : stamp.GetOverlays())
 	{
 		PaintPaletteOverlay(stamp, overlay.first);
+	}
+
+	for (const auto& anim : stamp.GetStampAnims())
+	{
+		PaintAnimationOverlay(stamp, anim.first);
 	}
 
 	int width = stamp.GetWidth();
@@ -390,11 +395,11 @@ void ViewPanel::PaintStamp(TilesetId tilesetId, const Stamp& stamp, int x, int y
 
 void ViewPanel::PaintPaletteOverlay(const Stamp& stamp, OverlayId overlayId)
 {
-	auto& it = m_primitivePaletteOverlay.find(overlayId);
-	if (it != m_primitivePaletteOverlay.end())
+	auto& it = m_primitiveStampOverlays.find(overlayId);
+	if (it != m_primitiveStampOverlays.end())
 	{
 		delete it->second;
-		m_primitivePaletteOverlay.erase(it);
+		m_primitiveStampOverlays.erase(it);
 	}
 
 	const Stamp::Overlay& overlay = stamp.GetOverlay(overlayId);
@@ -416,13 +421,53 @@ void ViewPanel::PaintPaletteOverlay(const Stamp& stamp, OverlayId overlayId)
 
 			//Set texture coords for cell
 			ion::render::TexCoord coords[4];
-			m_renderResources->GetTileTexCoords(overlay, x, y, coords, tileFlags);
+			m_renderResources->GetTileTexCoords(overlayId, x, y, coords, tileFlags);
 			primitive->SetTexCoords((y_inv * width) + x, coords);
 		}
 	}
 
 	primitive->GetVertexBuffer().CommitBuffer();
-	m_primitivePaletteOverlay.insert(std::make_pair(overlayId, primitive));
+	m_primitiveStampOverlays.insert(std::make_pair(overlayId, primitive));
+}
+
+void ViewPanel::PaintAnimationOverlay(const Stamp& stamp, StampAnimId animId)
+{
+	const Stamp::StampAnim& overlay = stamp.GetStampAnim(animId);
+
+	auto& it = m_primitiveStampOverlays.find(overlay.spriteAnimId);
+	if (it != m_primitiveStampOverlays.end())
+	{
+		delete it->second;
+		m_primitiveStampOverlays.erase(it);
+	}
+
+	const Actor* actor = m_project->GetActor(overlay.actorId);
+	const SpriteSheet* sheet = actor->GetSpriteSheet(overlay.spriteSheetId);
+
+	const int tileWidth = m_project->GetPlatformConfig().tileWidth;
+	const int tileHeight = m_project->GetPlatformConfig().tileHeight;
+	const int width = sheet->GetWidthTiles();
+	const int height = sheet->GetHeightTiles();
+
+	ion::render::Chessboard* primitive = new ion::render::Chessboard(ion::render::Chessboard::Axis::xy, ion::Vector2((float)width * (tileWidth / 2.0f), (float)height * (tileHeight / 2.0f)), width, height, true);
+
+	for (int x = 0; x < width; x++)
+	{
+		for (int y = 0; y < height; y++)
+		{
+			int tileX = overlay.position.x + x;
+			int tileY = overlay.position.y + y;
+			int y_inv = height - 1 - y;
+
+			//Set texture coords for cell
+			ion::render::TexCoord coords[4];
+			m_renderResources->GetTileTexCoords(overlay.spriteAnimId, x, y, coords, 0);
+			primitive->SetTexCoords((y_inv * width) + x, coords);
+		}
+	}
+
+	primitive->GetVertexBuffer().CommitBuffer();
+	m_primitiveStampOverlays.insert(std::make_pair(overlay.spriteAnimId, primitive));
 }
 
 void ViewPanel::PaintStampCollision(const Stamp& stamp, int x, int y, u32 flipFlags)

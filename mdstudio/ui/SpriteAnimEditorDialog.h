@@ -95,6 +95,8 @@ protected:
 	virtual void OnBtnRenameActor(wxCommandEvent& event);
 	virtual void OnBtnRenameSheet(wxCommandEvent& event);
 	virtual void OnBtnRenameAnim(wxCommandEvent& event);
+	virtual void OnRadioColMajor(wxCommandEvent& event);
+	virtual void OnRadioRowMajor(wxCommandEvent& event);
 
 private:
 	void PopulateActorList();

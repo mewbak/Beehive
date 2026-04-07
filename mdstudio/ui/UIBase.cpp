@@ -2632,15 +2632,6 @@ SpriteAnimEditorDialogBase::SpriteAnimEditorDialogBase( wxWindow* parent, wxWind
 
 	fgSizer115->Add( 0, 0, 1, wxEXPAND, 5 );
 
-	m_staticText160 = new wxStaticText( this, wxID_ANY, wxT("Palette:"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText160->Wrap( -1 );
-	fgSizer115->Add( m_staticText160, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 5 );
-
-	wxArrayString m_choicePaletteChoices;
-	m_choicePalette = new wxChoice( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, m_choicePaletteChoices, 0 );
-	m_choicePalette->SetSelection( 0 );
-	fgSizer115->Add( m_choicePalette, 0, wxALL, 5 );
-
 
 	fgSizer25->Add( fgSizer115, 1, wxEXPAND, 5 );
 
@@ -2680,6 +2671,40 @@ SpriteAnimEditorDialogBase::SpriteAnimEditorDialogBase( wxWindow* parent, wxWind
 
 
 	fgSizer25->Add( fgSizer117, 1, wxEXPAND, 5 );
+
+	wxBoxSizer* bSizer73;
+	bSizer73 = new wxBoxSizer( wxHORIZONTAL );
+
+	m_staticText160 = new wxStaticText( this, wxID_ANY, wxT("Palette:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText160->Wrap( -1 );
+	bSizer73->Add( m_staticText160, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
+	wxArrayString m_choicePaletteChoices;
+	m_choicePalette = new wxChoice( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, m_choicePaletteChoices, 0 );
+	m_choicePalette->SetSelection( 0 );
+	bSizer73->Add( m_choicePalette, 0, wxALL, 5 );
+
+
+	fgSizer25->Add( bSizer73, 1, wxEXPAND, 5 );
+
+
+	fgSizer25->Add( 0, 0, 1, wxEXPAND, 5 );
+
+
+	fgSizer25->Add( 0, 0, 1, wxEXPAND, 5 );
+
+	wxBoxSizer* bSizer72;
+	bSizer72 = new wxBoxSizer( wxVERTICAL );
+
+	m_radioSpriteOrder = new wxRadioButton( this, wxID_ANY, wxT("Column Major (Sprites)"), wxDefaultPosition, wxDefaultSize, wxRB_GROUP );
+	m_radioSpriteOrder->SetValue( true );
+	bSizer72->Add( m_radioSpriteOrder, 0, wxALL, 5 );
+
+	m_radioMapOrder = new wxRadioButton( this, wxID_ANY, wxT("Row Major (Stamps)"), wxDefaultPosition, wxDefaultSize, 0 );
+	bSizer72->Add( m_radioMapOrder, 0, wxALL, 5 );
+
+
+	fgSizer25->Add( bSizer72, 1, wxEXPAND, 5 );
 
 
 	fgSizer24->Add( fgSizer25, 1, wxEXPAND, 5 );
@@ -2797,7 +2822,7 @@ SpriteAnimEditorDialogBase::SpriteAnimEditorDialogBase( wxWindow* parent, wxWind
 	m_staticText43->Wrap( -1 );
 	bSizer28->Add( m_staticText43, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-	m_radioBlendLerp = new wxRadioButton( this, wxID_ANY, wxT("Linear"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_radioBlendLerp = new wxRadioButton( this, wxID_ANY, wxT("Linear"), wxDefaultPosition, wxDefaultSize, wxRB_GROUP );
 	m_radioBlendLerp->SetValue( true );
 	bSizer28->Add( m_radioBlendLerp, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
@@ -2829,7 +2854,6 @@ SpriteAnimEditorDialogBase::SpriteAnimEditorDialogBase( wxWindow* parent, wxWind
 	m_btnNewActor->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( SpriteAnimEditorDialogBase::OnBtnActorNew ), NULL, this );
 	m_btnDeleteActor->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( SpriteAnimEditorDialogBase::OnBtnActorDelete ), NULL, this );
 	m_btnRenameActor->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( SpriteAnimEditorDialogBase::OnBtnRenameActor ), NULL, this );
-	m_choicePalette->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( SpriteAnimEditorDialogBase::OnListPalette ), NULL, this );
 	m_btnImportSpriteSheet->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( SpriteAnimEditorDialogBase::OnBtnSpriteSheetImport ), NULL, this );
 	m_btnDeleteSprite->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( SpriteAnimEditorDialogBase::OnBtnSpriteSheetDelete ), NULL, this );
 	m_btnReplaceSpriteSheet->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( SpriteAnimEditorDialogBase::OnBtnSpriteSheetReplace ), NULL, this );
@@ -2837,6 +2861,9 @@ SpriteAnimEditorDialogBase::SpriteAnimEditorDialogBase( wxWindow* parent, wxWind
 	m_btnNewAnim->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( SpriteAnimEditorDialogBase::OnBtnAnimNew ), NULL, this );
 	m_btnDeleteAnim->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( SpriteAnimEditorDialogBase::OnBtnAnimDelete ), NULL, this );
 	m_btnRenameAnim->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( SpriteAnimEditorDialogBase::OnBtnRenameAnim ), NULL, this );
+	m_choicePalette->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( SpriteAnimEditorDialogBase::OnListPalette ), NULL, this );
+	m_radioSpriteOrder->Connect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( SpriteAnimEditorDialogBase::OnRadioColMajor ), NULL, this );
+	m_radioMapOrder->Connect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( SpriteAnimEditorDialogBase::OnRadioRowMajor ), NULL, this );
 	m_sliderTimeline->Connect( wxEVT_SCROLL_TOP, wxScrollEventHandler( SpriteAnimEditorDialogBase::OnSliderMove ), NULL, this );
 	m_sliderTimeline->Connect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( SpriteAnimEditorDialogBase::OnSliderMove ), NULL, this );
 	m_sliderTimeline->Connect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( SpriteAnimEditorDialogBase::OnSliderMove ), NULL, this );
@@ -2862,7 +2889,6 @@ SpriteAnimEditorDialogBase::~SpriteAnimEditorDialogBase()
 	m_btnNewActor->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( SpriteAnimEditorDialogBase::OnBtnActorNew ), NULL, this );
 	m_btnDeleteActor->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( SpriteAnimEditorDialogBase::OnBtnActorDelete ), NULL, this );
 	m_btnRenameActor->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( SpriteAnimEditorDialogBase::OnBtnRenameActor ), NULL, this );
-	m_choicePalette->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( SpriteAnimEditorDialogBase::OnListPalette ), NULL, this );
 	m_btnImportSpriteSheet->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( SpriteAnimEditorDialogBase::OnBtnSpriteSheetImport ), NULL, this );
 	m_btnDeleteSprite->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( SpriteAnimEditorDialogBase::OnBtnSpriteSheetDelete ), NULL, this );
 	m_btnReplaceSpriteSheet->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( SpriteAnimEditorDialogBase::OnBtnSpriteSheetReplace ), NULL, this );
@@ -2870,6 +2896,9 @@ SpriteAnimEditorDialogBase::~SpriteAnimEditorDialogBase()
 	m_btnNewAnim->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( SpriteAnimEditorDialogBase::OnBtnAnimNew ), NULL, this );
 	m_btnDeleteAnim->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( SpriteAnimEditorDialogBase::OnBtnAnimDelete ), NULL, this );
 	m_btnRenameAnim->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( SpriteAnimEditorDialogBase::OnBtnRenameAnim ), NULL, this );
+	m_choicePalette->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( SpriteAnimEditorDialogBase::OnListPalette ), NULL, this );
+	m_radioSpriteOrder->Disconnect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( SpriteAnimEditorDialogBase::OnRadioColMajor ), NULL, this );
+	m_radioMapOrder->Disconnect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( SpriteAnimEditorDialogBase::OnRadioRowMajor ), NULL, this );
 	m_sliderTimeline->Disconnect( wxEVT_SCROLL_TOP, wxScrollEventHandler( SpriteAnimEditorDialogBase::OnSliderMove ), NULL, this );
 	m_sliderTimeline->Disconnect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( SpriteAnimEditorDialogBase::OnSliderMove ), NULL, this );
 	m_sliderTimeline->Disconnect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( SpriteAnimEditorDialogBase::OnSliderMove ), NULL, this );

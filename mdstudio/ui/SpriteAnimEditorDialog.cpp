@@ -495,6 +495,18 @@ void SpriteAnimEditorDialog::OnBtnRenameAnim(wxCommandEvent& event)
 	}
 }
 
+void SpriteAnimEditorDialog::OnRadioColMajor(wxCommandEvent& event)
+{
+	if (m_selectedActor)
+		m_selectedActor->SetTileOrder(SpriteSheet::TileOrder::ColumnMajor);
+}
+
+void SpriteAnimEditorDialog::OnRadioRowMajor(wxCommandEvent& event)
+{
+	if (m_selectedActor)
+		m_selectedActor->SetTileOrder(SpriteSheet::TileOrder::RowMajor);
+}
+
 void SpriteAnimEditorDialog::OnTimelineCellChange(wxGridEvent& event)
 {
 	if(m_selectedAnim)
@@ -951,6 +963,17 @@ void SpriteAnimEditorDialog::SelectActor(int index)
 			m_selectedActor = m_project.GetActor(m_selectedActorId);
 			ion::debug::Assert(m_selectedActor, "SpriteAnimEditorDialog::OnActorSelected() - Invalid actor ID");
 			PopulateSpriteSheetList(*m_selectedActor);
+
+			if (m_selectedActor->GetTileOrder() == SpriteSheet::TileOrder::ColumnMajor)
+			{
+				m_radioSpriteOrder->SetValue(true);
+				m_radioMapOrder->SetValue(false);
+			}
+			else
+			{
+				m_radioSpriteOrder->SetValue(false);
+				m_radioMapOrder->SetValue(true);
+			}
 
 			PaletteId paletteId = m_selectedActor->GetPaletteId();
 			if (paletteId == InvalidPaletteId)

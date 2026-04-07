@@ -983,8 +983,6 @@ class SpriteAnimEditorDialogBase : public wxDialog
 		wxButton* m_btnNewActor;
 		wxButton* m_btnDeleteActor;
 		wxButton* m_btnRenameActor;
-		wxStaticText* m_staticText160;
-		wxChoice* m_choicePalette;
 		wxButton* m_btnImportSpriteSheet;
 		wxButton* m_btnDeleteSprite;
 		wxButton* m_btnReplaceSpriteSheet;
@@ -992,6 +990,10 @@ class SpriteAnimEditorDialogBase : public wxDialog
 		wxButton* m_btnNewAnim;
 		wxButton* m_btnDeleteAnim;
 		wxButton* m_btnRenameAnim;
+		wxStaticText* m_staticText160;
+		wxChoice* m_choicePalette;
+		wxRadioButton* m_radioSpriteOrder;
+		wxRadioButton* m_radioMapOrder;
 		SpriteCanvas* m_canvas;
 		wxStaticText* m_staticText33;
 		wxGrid* m_gridSpriteFrames;
@@ -1013,7 +1015,6 @@ class SpriteAnimEditorDialogBase : public wxDialog
 		virtual void OnBtnActorNew( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnActorDelete( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnRenameActor( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnListPalette( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnSpriteSheetImport( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnSpriteSheetDelete( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnSpriteSheetReplace( wxCommandEvent& event ) { event.Skip(); }
@@ -1021,6 +1022,9 @@ class SpriteAnimEditorDialogBase : public wxDialog
 		virtual void OnBtnAnimNew( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnAnimDelete( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnRenameAnim( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnListPalette( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnRadioColMajor( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnRadioRowMajor( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnSliderMove( wxScrollEvent& event ) { event.Skip(); }
 		virtual void OnBtnPlay( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBtnStop( wxCommandEvent& event ) { event.Skip(); }

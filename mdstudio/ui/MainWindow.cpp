@@ -2751,6 +2751,7 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 
 					luminary::SceneExporter::SceneData sceneData;
 
+					// Entities
 					for (TGameObjectPosMap::const_iterator objIt = gameObjMap.begin(), end = gameObjMap.end(); objIt != end; ++objIt)
 					{
 						const GameObjectType* gameObjectType = m_project->GetGameObjectType(objIt->first);
@@ -2775,6 +2776,32 @@ void MainWindow::Build(bool exportProj, bool assemble, bool run)
 									luminary::Entity& entity = sceneData.dynamicEntities.back();
 									luminary::beehive::ConvertEntityInstance(*m_project, mapFg, *gameObjectType, gameObject, scriptAddresses, entity);
 								}
+							}
+						}
+					}
+
+					// Stamp animations
+					std::set<SpriteAnimId> stampAnimSet;
+
+					for (const auto& stamp : stampSetFg.GetStamps())
+					{
+						for (const auto& anim : stamp.second.GetStampAnims())
+						{
+							if (stampAnimSet.find(anim.second.spriteAnimId) == stampAnimSet.end())
+							{
+								const Actor& actor = *m_project->GetActor(anim.second.actorId);
+								const SpriteSheet& spriteSheet = *actor.GetSpriteSheet(anim.second.spriteSheetId);
+								const SpriteAnimation& spriteAnim = *spriteSheet.GetAnimation(anim.second.spriteAnimId);
+								const Tileset::ReservedBlock& tileBlock = tileSetFg.GetReservedBlock(anim.second.spriteAnimId);
+
+								luminary::StampAnim stampAnim;
+								stampAnim.actorName = actor.GetName();
+								stampAnim.tileSheetName = spriteSheet.GetName();
+								stampAnim.animationName = spriteAnim.GetName();
+								stampAnim.tileIndex = tileBlock.firstTile;
+
+								sceneData.stampAnimations.push_back(stampAnim);
+								stampAnimSet.insert(anim.second.spriteAnimId);
 							}
 						}
 					}

@@ -28,6 +28,8 @@ public:
 	DialogEditStamp(MainWindow& mainWindow, StampSetId stampSetId, StampId stampId, Project& project, ion::render::Renderer& renderer, wxGLContext& glContext, RenderResources& renderResources);
 	virtual ~DialogEditStamp();
 
+	virtual void OnToolPrevStamp(wxCommandEvent& event);
+	virtual void OnToolNextStamp(wxCommandEvent& event);
 	virtual void OnToolAddBezier(wxCommandEvent& event);
 	virtual void OnToolEditBezier(wxCommandEvent& event);
 	virtual void OnToolDeleteBezier(wxCommandEvent& event);
@@ -38,6 +40,7 @@ public:
 
 private:
 	void Draw();
+	void SetPrevNextButtonState();
 
 	StampSetId m_stampSetId;
 	StampId m_stampId;

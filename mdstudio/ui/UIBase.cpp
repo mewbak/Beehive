@@ -558,6 +558,12 @@ DialogEditStampBase::DialogEditStampBase( wxWindow* parent, wxWindowID id, const
 	fgSizer41->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 
 	m_toolBar = new wxToolBar( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTB_HORIZONTAL );
+	m_toolPrevStamp = m_toolBar->AddTool( wxID_ANY, wxT("tool"), wxBitmap( stepleft_16_16_xpm ), wxNullBitmap, wxITEM_NORMAL, wxEmptyString, wxEmptyString, NULL );
+
+	m_toolNextStamp = m_toolBar->AddTool( wxID_ANY, wxT("tool"), wxBitmap( stepright_16_16_xpm ), wxNullBitmap, wxITEM_NORMAL, wxEmptyString, wxEmptyString, NULL );
+
+	m_toolBar->AddSeparator();
+
 	m_toolTerrainAddBezier = m_toolBar->AddTool( wxID_ANY, wxT("tool"), wxBitmap( tool_addterrainbezier_xpm ), wxNullBitmap, wxITEM_NORMAL, wxEmptyString, wxEmptyString, NULL );
 
 	m_toolTerrainEditBezier = m_toolBar->AddTool( wxID_ANY, wxT("tool"), wxBitmap( tool_editterrainbezier_xpm ), wxNullBitmap, wxITEM_NORMAL, wxEmptyString, wxEmptyString, NULL );
@@ -595,6 +601,8 @@ DialogEditStampBase::DialogEditStampBase( wxWindow* parent, wxWindowID id, const
 	this->Centre( wxBOTH );
 
 	// Connect Events
+	this->Connect( m_toolPrevStamp->GetId(), wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( DialogEditStampBase::OnToolPrevStamp ) );
+	this->Connect( m_toolNextStamp->GetId(), wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( DialogEditStampBase::OnToolNextStamp ) );
 	this->Connect( m_toolTerrainAddBezier->GetId(), wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( DialogEditStampBase::OnToolAddBezier ) );
 	this->Connect( m_toolTerrainEditBezier->GetId(), wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( DialogEditStampBase::OnToolEditBezier ) );
 	this->Connect( m_toolTerrainDeleteBezier->GetId(), wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( DialogEditStampBase::OnToolDeleteBezier ) );
@@ -606,6 +614,8 @@ DialogEditStampBase::DialogEditStampBase( wxWindow* parent, wxWindowID id, const
 DialogEditStampBase::~DialogEditStampBase()
 {
 	// Disconnect Events
+	this->Disconnect( m_toolPrevStamp->GetId(), wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( DialogEditStampBase::OnToolPrevStamp ) );
+	this->Disconnect( m_toolNextStamp->GetId(), wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( DialogEditStampBase::OnToolNextStamp ) );
 	this->Disconnect( m_toolTerrainAddBezier->GetId(), wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( DialogEditStampBase::OnToolAddBezier ) );
 	this->Disconnect( m_toolTerrainEditBezier->GetId(), wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( DialogEditStampBase::OnToolEditBezier ) );
 	this->Disconnect( m_toolTerrainDeleteBezier->GetId(), wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( DialogEditStampBase::OnToolDeleteBezier ) );

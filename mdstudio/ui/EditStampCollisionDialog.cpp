@@ -29,12 +29,81 @@ DialogEditStamp::DialogEditStamp(MainWindow& mainWindow, StampSetId stampSetId, 
 	m_canvas->SetupRendering(&renderer, &glContext, &renderResources);
 
 	Draw();
+	SetPrevNextButtonState();
 }
 
 DialogEditStamp::~DialogEditStamp()
 {
 	m_mainWindow.RefreshPanel(MainWindow::Panel::ePanelMap);
 	m_mainWindow.RefreshPanel(MainWindow::Panel::ePanelStamps);
+}
+
+void DialogEditStamp::OnToolPrevStamp(wxCommandEvent& event)
+{
+	StampSet& stampset = m_project.GetStampSet(m_stampSetId);
+	auto& stamps = stampset.GetStamps();
+	auto it = stamps.find(m_stampId);
+
+	if(it != stamps.begin())
+	{
+		--it;
+		m_stampId = it->first;
+		m_canvas->SetStamp(m_stampSetId, m_stampId, ion::Vector2i());
+	}
+
+	SetPrevNextButtonState();
+}
+
+void DialogEditStamp::OnToolNextStamp(wxCommandEvent& event)
+{
+	StampSet& stampset = m_project.GetStampSet(m_stampSetId);
+	auto& stamps = stampset.GetStamps();
+	auto it = stamps.find(m_stampId);
+	++it;
+
+	if (it != stamps.end())
+	{
+		m_stampId = it->first;
+		m_canvas->SetStamp(m_stampSetId, m_stampId, ion::Vector2i());
+	}
+
+	SetPrevNextButtonState();
+}
+
+void DialogEditStamp::SetPrevNextButtonState()
+{
+	StampSet& stampset = m_project.GetStampSet(m_stampSetId);
+	auto& stamps = stampset.GetStamps();
+
+	if (stamps.size() <= 1)
+	{
+		m_toolBar->EnableTool(m_toolPrevStamp->GetId(), false);
+		m_toolBar->EnableTool(m_toolNextStamp->GetId(), false);
+	}
+	else
+	{
+		auto it = stamps.find(m_stampId);
+		auto next = it;
+		next++;
+
+		if (it == stamps.begin())
+		{
+			m_toolBar->EnableTool(m_toolPrevStamp->GetId(), false);
+			m_toolBar->EnableTool(m_toolNextStamp->GetId(), true);
+		}
+		else if (next == stamps.end())
+		{
+			m_toolBar->EnableTool(m_toolPrevStamp->GetId(), true);
+			m_toolBar->EnableTool(m_toolNextStamp->GetId(), false);
+		}
+		else
+		{
+			m_toolBar->EnableTool(m_toolPrevStamp->GetId(), true);
+			m_toolBar->EnableTool(m_toolNextStamp->GetId(), true);
+		}
+	}
+
+	Refresh();
 }
 
 void DialogEditStamp::OnToolAddBezier(wxCommandEvent& event)

@@ -288,6 +288,8 @@ class DialogEditStampBase : public wxDialog
 
 	protected:
 		wxToolBar* m_toolBar;
+		wxToolBarToolBase* m_toolPrevStamp;
+		wxToolBarToolBase* m_toolNextStamp;
 		wxToolBarToolBase* m_toolTerrainAddBezier;
 		wxToolBarToolBase* m_toolTerrainEditBezier;
 		wxToolBarToolBase* m_toolTerrainDeleteBezier;
@@ -298,6 +300,8 @@ class DialogEditStampBase : public wxDialog
 		wxStaticText* m_txtInfo;
 
 		// Virtual event handlers, override them in your derived class
+		virtual void OnToolPrevStamp( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnToolNextStamp( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnToolAddBezier( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnToolEditBezier( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnToolDeleteBezier( wxCommandEvent& event ) { event.Skip(); }

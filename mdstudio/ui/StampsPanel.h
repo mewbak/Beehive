@@ -36,6 +36,8 @@ protected:
 	//Right-click menu callback
 	void OnContextMenuClick(wxCommandEvent& event);
 
+	virtual void OnResize(wxSizeEvent& event);
+
 private:
 
 	enum MenuItems
@@ -75,7 +77,7 @@ private:
 	virtual void PaintContents();
 
 	//Recalc all stamp positions and canvas size
-	void ArrangeStamps(const ion::Vector2& panelSize);
+	ion::Vector2i CalculateStampArrangement(const ion::Vector2& panelSize, std::vector<std::pair<StampId, ion::Vector2i>>& stampPosMap, ion::Vector2i& selectedStampPos) const;
 
 	//Render stamp outlines
 	void RenderStampOutlines(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z);
@@ -84,9 +86,10 @@ private:
 
 	StampSetId GetStampSetId() const;
 	StampSet& GetStampSet();
+	const StampSet& GetStampSet() const;
 
 	//Stamp position map
-	std::vector< std::pair<StampId, ion::Vector2i> > m_stampPosMap;
+	std::vector<std::pair<StampId, ion::Vector2i>> m_stampPosMap;
 
 	//Current stamp set
 	StampSetId m_stampSetId;

@@ -77,6 +77,11 @@ StampSet& StampsPanel::GetStampSet()
 	return m_project->GetStampSet(GetStampSetId());
 }
 
+const StampSet& StampsPanel::GetStampSet() const
+{
+	return m_project->GetStampSet(GetStampSetId());
+}
+
 void StampsPanel::OnMouseTileEvent(ion::Vector2i mousePos, ion::Vector2i mouseDelta, ion::Vector2i tileDelta, int buttonBits, int x, int y)
 {
 	StampId selectedStamp = InvalidStampId;
@@ -365,21 +370,23 @@ void StampsPanel::Refresh(bool eraseBackground, const wxRect *rect)
 
 ion::Vector2i StampsPanel::CalcCanvasSize()
 {
-	ArrangeStamps(ion::Vector2(m_panelSize.x, m_panelSize.y));
-	return m_canvasSize;
+	std::vector<std::pair<StampId, ion::Vector2i>> stampPosMap;
+	ion::Vector2i selectedStampPos;
+	return CalculateStampArrangement(ion::Vector2(m_panelSize.x, m_panelSize.y), stampPosMap, selectedStampPos);
 }
 
-void StampsPanel::ArrangeStamps(const ion::Vector2& panelSize)
+ion::Vector2i StampsPanel::CalculateStampArrangement(const ion::Vector2& panelSize, std::vector<std::pair<StampId, ion::Vector2i>>& stampPosMap, ion::Vector2i& selectedStampPos) const
 {
 	const int tileWidth = m_project->GetPlatformConfig().tileWidth;
 	const int tileHeight = m_project->GetPlatformConfig().tileHeight;
 
 	//Fit canvas to panel
-	m_canvasSize.x = ion::maths::Ceil(panelSize.x / tileWidth);
-	m_canvasSize.y = ion::maths::Ceil(panelSize.y / tileHeight);
+	ion::Vector2i canvasSize;
+	canvasSize.x = ion::maths::Ceil(panelSize.x / tileWidth);
+	canvasSize.y = ion::maths::Ceil(panelSize.y / tileHeight);
 
-	//Clear stamp position map
-	m_stampPosMap.clear();
+	//Clear stamp pos map
+	stampPosMap.clear();
 
 	//Sort by size, and find widest stamp
 	struct SortedStamp
@@ -399,7 +406,7 @@ void StampsPanel::ArrangeStamps(const ion::Vector2& panelSize)
 		stampsSorted.push_back(SortedStamp({ size, it->first, &stamp }));
 
 		//If wider than current canvas width, grow canvas
-		m_canvasSize.x = ion::maths::Max(m_canvasSize.x, it->second.GetWidth());
+		canvasSize.x = ion::maths::Max(canvasSize.x, it->second.GetWidth());
 	}
 
 	std::sort(stampsSorted.begin(), stampsSorted.end(), [](const SortedStamp& a, SortedStamp& b) { return a.size < b.size; });
@@ -413,7 +420,7 @@ void StampsPanel::ArrangeStamps(const ion::Vector2& panelSize)
 		ion::Vector2i stampSize(stamp.GetWidth(), stamp.GetHeight());
 		ion::Vector2i stampPos;
 
-		if(currPos.x + stampSize.x > m_canvasSize.x)
+		if(currPos.x + stampSize.x > canvasSize.x)
 		{
 			//Can't fit on this line, advance Y by tallest stamp on current row
 			currPos.y += rowHeight;
@@ -441,21 +448,39 @@ void StampsPanel::ArrangeStamps(const ion::Vector2& panelSize)
 		rowHeight = ion::maths::Max(rowHeight, stampSize.y);
 
 		//If Y pos + height extends beyond canvas height, grow canvas
-		m_canvasSize.y = ion::maths::Max(m_canvasSize.y, currPos.y + rowHeight);
+		canvasSize.y = ion::maths::Max(canvasSize.y, currPos.y + rowHeight);
 
 		//Add stamp to position map
-		m_stampPosMap.push_back(std::make_pair(stampsSorted[i].id, stampPos));
+		stampPosMap.push_back(std::make_pair(stampsSorted[i].id, stampPos));
 
 		//If this is the currently selected stamp, update position
 		if(stampsSorted[i].id == m_selectedStamp)
 		{
-			m_selectedStampPos = stampPos;
+			selectedStampPos = stampPos;
 		}
 	}
+
+	return canvasSize;
+}
+
+void StampsPanel::OnResize(wxSizeEvent& event)
+{
+	if (!m_mainWindow->IsRefreshLocked())
+	{
+		if (event.GetSize().x != m_panelSize.x || event.GetSize().y != m_panelSize.y)
+		{
+			PaintContents();
+			Refresh();
+		}
+	}
+
+	ViewPanel::OnResize(event);
 }
 
 void StampsPanel::PaintContents()
 {
+	CalculateStampArrangement(ion::Vector2(m_panelSize.x, m_panelSize.y), m_stampPosMap, m_selectedStampPos);
+
 	const StampSet& stampSet = GetStampSet();
 	TilesetId tilesetId = stampSet.GetTilesetId();
 
@@ -467,6 +492,9 @@ void StampsPanel::PaintContents()
 			PaintStamp(tilesetId, stamp, m_stampPosMap[i].second.x, m_stampPosMap[i].second.y, 0);
 		}
 	}
+
+	//Reset zoom/pan
+	ResetZoomPan();
 }
 
 void StampsPanel::RenderStampOutlines(ion::render::Renderer& renderer, const ion::Matrix4& cameraInverseMtx, const ion::Matrix4& projectionMtx, float z)

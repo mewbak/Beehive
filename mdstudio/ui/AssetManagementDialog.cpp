@@ -273,6 +273,9 @@ void DialogAssetManagement::SelectMap(int index)
 		TilesetId tilesetId = stampSet.GetTilesetId();
 		const Tileset& tileset = m_project.GetTileset(tilesetId);
 
+		const int stampWidth = m_project.GetPlatformConfig().stampWidth;
+		const int stampHeight = m_project.GetPlatformConfig().stampHeight;
+
 		bool isBackgroundMap = false;
 
 		for (const auto& it : m_project.GetMaps())
@@ -333,6 +336,7 @@ void DialogAssetManagement::SelectMap(int index)
 
 		m_txtMapName->SetLabelText(map.GetName());
 		m_txtMapId->SetLabelText(std::to_string(mapId));
+		m_txtMapSize->SetLabelText(std::to_string(map.GetWidth() / stampWidth) + "x" + std::to_string(map.GetHeight() / stampHeight) + " stamps");
 		m_txtMapStampSet->SetLabelText(stampSet.GetName());
 		m_txtMapTileset->SetLabelText(tileset.GetName());
 		m_txtMapType->SetLabelText(isBackgroundMap ? "Background" : "Foreground");

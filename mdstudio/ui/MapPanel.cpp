@@ -2276,32 +2276,34 @@ void MapPanel::RenderGameObjectPreview(ion::render::Renderer& renderer, const io
 		renderer.UnbindMaterial(*material);
 
 		//Find a usable sprite actor, sheet, anim from editor preview, object type, or archetype
-		const GameObjectBase* previewObject = m_previewGameObjectArchetype != InvalidGameObjectArchetypeId ? (GameObjectBase*)gameObjectType->GetArchetype(m_previewGameObjectArchetype) : (GameObjectBase*)gameObjectType;
-		ActorId spriteActorId;
-		SpriteSheetId spriteSheetId;
-		SpriteAnimId spriteAnimId;
-		const Actor* spriteActor = nullptr;
-		const SpriteSheet* spriteSheet = nullptr;
-		const SpriteAnimation* spriteAnim = nullptr;
-		FindGameObjectSprite(*m_project, previewObject, spriteActorId, spriteSheetId, spriteAnimId, spriteActor, spriteSheet, spriteAnim, true);
-
-		if(spriteSheetId != InvalidSpriteSheetId)
+		if (const GameObjectBase* previewObject = m_previewGameObjectArchetype != InvalidGameObjectArchetypeId ? (GameObjectBase*)gameObjectType->GetArchetype(m_previewGameObjectArchetype) : (GameObjectBase*)gameObjectType)
 		{
-			//Render spriteSheet
-			RenderResources::SpriteSheetRenderResources* spriteSheetResources = m_renderResources->GetSpriteSheetResources(spriteSheetId);
-			ion::debug::Assert(spriteSheetResources, "MapPanel::RenderGameObjects() - Missing spriteSheet render resources");
-			ion::debug::Assert(spriteSheetResources->m_frames.size() > 0, "MapPanel::RenderGameObjects() - SpriteSheet contains no frames");
+			ActorId spriteActorId;
+			SpriteSheetId spriteSheetId;
+			SpriteAnimId spriteAnimId;
+			const Actor* spriteActor = nullptr;
+			const SpriteSheet* spriteSheet = nullptr;
+			const SpriteAnimation* spriteAnim = nullptr;
+			FindGameObjectSprite(*m_project, previewObject, spriteActorId, spriteSheetId, spriteAnimId, spriteActor, spriteSheet, spriteAnim, true);
 
-			ion::render::Primitive* spriteSheetPrimitive = spriteSheetResources->m_primitive;
-			ion::render::Material* spriteSheetMaterial = spriteSheetResources->m_frames[0].material;
-			spriteSheetMaterial->SetDiffuseColour(colour);
+			if (spriteSheetId != InvalidSpriteSheetId)
+			{
+				//Render spriteSheet
+				RenderResources::SpriteSheetRenderResources* spriteSheetResources = m_renderResources->GetSpriteSheetResources(spriteSheetId);
+				ion::debug::Assert(spriteSheetResources, "MapPanel::RenderGameObjects() - Missing spriteSheet render resources");
+				ion::debug::Assert(spriteSheetResources->m_frames.size() > 0, "MapPanel::RenderGameObjects() - SpriteSheet contains no frames");
 
-			ion::Matrix4 spriteSheetMtx;
-			spriteSheetMtx.SetTranslation(previewPos);
+				ion::render::Primitive* spriteSheetPrimitive = spriteSheetResources->m_primitive;
+				ion::render::Material* spriteSheetMaterial = spriteSheetResources->m_frames[0].material;
+				spriteSheetMaterial->SetDiffuseColour(colour);
 
-			renderer.BindMaterial(*spriteSheetMaterial, spriteSheetMtx, cameraInverseMtx, projectionMtx);
-			renderer.DrawVertexBuffer(spriteSheetPrimitive->GetVertexBuffer(), spriteSheetPrimitive->GetIndexBuffer());
-			renderer.UnbindMaterial(*spriteSheetMaterial);
+				ion::Matrix4 spriteSheetMtx;
+				spriteSheetMtx.SetTranslation(previewPos);
+
+				renderer.BindMaterial(*spriteSheetMaterial, spriteSheetMtx, cameraInverseMtx, projectionMtx);
+				renderer.DrawVertexBuffer(spriteSheetPrimitive->GetVertexBuffer(), spriteSheetPrimitive->GetIndexBuffer());
+				renderer.UnbindMaterial(*spriteSheetMaterial);
+			}
 		}
 
 		renderer.SetAlphaBlending(ion::render::Renderer::AlphaBlendType::None);

@@ -4578,7 +4578,7 @@ DialogAssetsBase::DialogAssetsBase( wxWindow* parent, wxWindowID id, const wxStr
 	m_tabStamps->SetSizer( fgSizer711 );
 	m_tabStamps->Layout();
 	fgSizer711->Fit( m_tabStamps );
-	m_tabs->AddPage( m_tabStamps, wxT("Stamps"), true );
+	m_tabs->AddPage( m_tabStamps, wxT("Stamps"), false );
 	m_tabMaps = new wxPanel( m_tabs, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxFlexGridSizer* fgSizer712;
 	fgSizer712 = new wxFlexGridSizer( 2, 1, 0, 0 );
@@ -4674,6 +4674,14 @@ DialogAssetsBase::DialogAssetsBase( wxWindow* parent, wxWindowID id, const wxStr
 	m_txtMapId = new wxStaticText( sbSizer22->GetStaticBox(), wxID_ANY, wxT("[None]"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_txtMapId->Wrap( -1 );
 	fgSizer762->Add( m_txtMapId, 0, wxALL, 5 );
+
+	m_staticText9021 = new wxStaticText( sbSizer22->GetStaticBox(), wxID_ANY, wxT("Size:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText9021->Wrap( -1 );
+	fgSizer762->Add( m_staticText9021, 0, wxALL, 5 );
+
+	m_txtMapSize = new wxStaticText( sbSizer22->GetStaticBox(), wxID_ANY, wxT("[None]"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_txtMapSize->Wrap( -1 );
+	fgSizer762->Add( m_txtMapSize, 0, wxALL, 5 );
 
 	m_staticText158 = new wxStaticText( sbSizer22->GetStaticBox(), wxID_ANY, wxT("Type:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText158->Wrap( -1 );
@@ -4825,7 +4833,7 @@ DialogAssetsBase::DialogAssetsBase( wxWindow* parent, wxWindowID id, const wxStr
 	m_tabMaps->SetSizer( fgSizer712 );
 	m_tabMaps->Layout();
 	fgSizer712->Fit( m_tabMaps );
-	m_tabs->AddPage( m_tabMaps, wxT("Maps"), false );
+	m_tabs->AddPage( m_tabMaps, wxT("Maps"), true );
 
 	bSizer76->Add( m_tabs, 1, wxEXPAND | wxALL, 5 );
 
